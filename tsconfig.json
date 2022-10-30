@@ -1,0 +1,31 @@
+{
+	"compilerOptions": {
+		"resolveJsonModule": true,
+		"target": "es2018",
+		"module": "commonjs",
+		"strict": true,
+		"noImplicitAny": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"charset": "utf8",
+		"noEmitOnError": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": false,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"strictPropertyInitialization": false,
+		"noFallthroughCasesInSwitch": false,
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": false,
+		"inlineSourceMap": false,
+		"importHelpers": true,
+		"removeComments": false,
+		"esModuleInterop": true,
+		"jsx": "react"
+	},
+	"paths": {
+		"@/*": ["src/*"]
+	},
+	"include": ["packages/**/*.ts", "packages/**.d.ts"],
+	"exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]
+}
