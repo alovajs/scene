@@ -1,5 +1,5 @@
+import { Mock, MockRequestInit } from '../typings';
 import MockRequest from './MockRequest';
-import { Mock, MockRequestInit } from './types';
 
 type MockWrapper = {
 	enable: boolean;
