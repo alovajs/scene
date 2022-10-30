@@ -4,7 +4,7 @@ export type MockRequestInit<R, T, RC, RE, RH> = {
 	enable?: boolean;
 	delay?: number;
 	httpAdapter?: AlovaRequestAdapter<R, T, RC, RE, RH>;
-	consoleMockRequest?: boolean; // 是否打印模拟请求信息，便于调试
+	mockRequestLogger?: boolean; // 是否打印模拟请求信息，便于调试
 	onMockResponse?: (data: any) => RE;
 };
 

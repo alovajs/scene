@@ -10,7 +10,7 @@ export default function MockRequest<RC, RE, RH>(
 		enable = true,
 		delay = 2000,
 		httpAdapter,
-		consoleMockRequest = true,
+		mockRequestLogger = true,
 		mock,
 		onMockResponse = defaultOnMockResponse as (data: any) => any
 	}: MockRequestInitWithMock<any, any, RC, RE, RH> = { mock: {} }
@@ -79,7 +79,7 @@ export default function MockRequest<RC, RE, RH>(
 		// 如果没有匹配到模拟数据，则表示要发起请求使用httpAdapter来发送请求
 		if (mockDataRaw === undefined) {
 			if (httpAdapter) {
-				consoleMockRequest && consoleRequestInfo(false, url, adapterConfig.method, adapterConfig.headers, query);
+				mockRequestLogger && consoleRequestInfo(false, url, adapterConfig.method, adapterConfig.headers, query);
 				return httpAdapter(adapterConfig);
 			} else {
 				throw new Error(`请设置httpAdapter作为真实请求的适配器：${url}`);
@@ -100,7 +100,7 @@ export default function MockRequest<RC, RE, RH>(
 					setTimeout(() => {
 						if (responseData) {
 							// 打印模拟数据请求信息
-							consoleMockRequest &&
+							mockRequestLogger &&
 								consoleRequestInfo(true, url, adapterConfig.method, adapterConfig.headers, query, data, responseData);
 							resolve(onMockResponse(responseData));
 						} else {
