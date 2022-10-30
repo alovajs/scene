@@ -1,6 +1,6 @@
 import { AlovaRequestAdapterConfig } from 'alova';
 import consoleRequestInfo from './consoleRequestInfo';
-import { Mock, MockRequestInit } from './index.type';
+import { Mock, MockRequestInit } from './types';
 
 const defaultOnMockResponse = (data: any) => new Response(JSON.stringify(data));
 type MockRequestInitWithMock<R, T, RC, RE, RH> = MockRequestInit<R, T, RC, RE, RH> & { mock: Mock };

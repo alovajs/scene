@@ -36,6 +36,6 @@ jobs:
 
       # 这条命令包含了测试和上传覆盖率
       # - run: npm run coveralls
-      - run: yarn workspace @alova/mock run publish
+      - run: yarn workspace @alova/mock run release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ALOVA_PUBLISH_TOKEN }}

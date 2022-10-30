@@ -1,4 +1,4 @@
-import { Mock } from './index.type';
+import { Mock } from './types';
 
 /**
  * 定义模拟数据

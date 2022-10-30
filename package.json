@@ -11,8 +11,6 @@
 		"clean": "rimraf ./dist",
 		"build:esm": "npm run clean && rollup -c config/rollup.config.esm.js"
 	},
-	"author": "JOU-amjs",
-	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/alovajs/extensions.git"
