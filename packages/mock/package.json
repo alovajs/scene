@@ -13,6 +13,7 @@
 		"build:umd": "cross-env NODE_ENV=development EXTENSION=mock rollup -c ../../config/rollup.config.umd.js",
 		"build:umd.min": "cross-env NODE_ENV=production EXTENSION=mock rollup -c ../../config/rollup.config.umd.js",
 		"build": "npm run clean && npm run build:esm && npm run build:umd && npm run build:umd.min",
+		"publish": "npm publish",
 		"coveralls": ""
 	},
 	"author": "JOU-amjs",

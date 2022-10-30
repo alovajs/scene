@@ -82,7 +82,7 @@ export default function MockRequest<RC, RE, RH>(
 				mockRequestLogger && consoleRequestInfo(false, url, adapterConfig.method, adapterConfig.headers, query);
 				return httpAdapter(adapterConfig);
 			} else {
-				throw new Error(`请设置httpAdapter作为真实请求的适配器：${url}`);
+				throw new Error(`could not find the httpAdapter which send request.\n[url]${url}`);
 			}
 		}
 		const responseData =
