@@ -93,11 +93,12 @@ export default function MockRequest<RC, RE, RH>(
 						data
 				  })
 				: mockDataRaw;
-
+    
+    let timer: number;
 		return {
 			response: () =>
 				new Promise<RE>((resolve, reject) =>
-					setTimeout(() => {
+					timer = setTimeout(() => {
 						if (responseData) {
 							// 打印模拟数据请求信息
 							mockRequestLogger &&
@@ -110,7 +111,7 @@ export default function MockRequest<RC, RE, RH>(
 				),
 			headers: () => Promise.resolve<Headers>(new Headers()),
 			abort: () => {
-				console.log('can not be aborted');
+				clearTimeout(timer);
 			}
 		};
 	};
