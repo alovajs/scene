@@ -6,45 +6,61 @@
 var typescript = require('rollup-plugin-typescript2');
 var { readFileSync } = require('fs');
 
-const getCompiler = (opt = {
-  // objectHashIgnoreUnknownHack: true,
-  // clean: true,
-  tsconfigOverride: {
-    compilerOptions: {
-      module: 'ES2015'
-    }
-  }
-}) => typescript(opt);
+const getCompiler = (
+	opt = {
+		// objectHashIgnoreUnknownHack: true,
+		// clean: true,
+		tsconfigOverride: {
+			compilerOptions: {
+				module: 'ES2015'
+			}
+		}
+	}
+) => typescript(opt);
 exports.getCompiler = getCompiler;
 const compilePaths = {
-  mock: {
-    external: ['alova'],
-    packageName: 'AlovaMock',
-    input: 'src/index.ts',
-    output: suffix => `dist/alova-mock.${suffix}.js`,
-  }
+	mock: {
+		external: ['alova'],
+		packageName: 'AlovaMock',
+		input: 'src/index.ts',
+		output: suffix => `dist/alova-mock.${suffix}.js`
+	},
+	extensionVue: {
+		external: ['alova', 'vue'],
+		packageName: 'AlovaVueHook',
+		input: 'src/vue/index.ts',
+		output: suffix => `dist/alova-extended-vue-hooks.${suffix}.js`
+	},
+	extensionReact: {
+		external: ['alova', 'react'],
+		packageName: 'AlovaReactHook',
+		input: 'src/react/index.ts',
+		output: suffix => `dist/alova-extended-react-hooks.${suffix}.js`
+	},
+	extensionVue: {
+		external: ['alova', 'svelte', 'svelte/store'],
+		packageName: 'AlovaSvelteHook',
+		input: 'src/svelte/index.ts',
+		output: suffix => `dist/alova-extended-svelte-hooks.${suffix}.js`
+	}
 };
 exports.external = Object.keys(compilePaths)
-  .reduce((prev, next) => [
-    ...prev,
-    ...(compilePaths[next].external || [])
-  ], [])
-  .filter(key => key !== 'core');
+	.reduce((prev, next) => [...prev, ...(compilePaths[next].external || [])], [])
+	.filter(key => key !== 'core');
 
 const extension = process.env.EXTENSION;
 if (!extension) {
-  console.error('compiling extension error');
-  process.exit(1);
+	console.error('compiling extension error');
+	process.exit(1);
 }
 
 const pkg = JSON.parse(readFileSync('package.json').toString() || '{}');
 const version = pkg.version;
 const author = pkg.author;
 const homepage = pkg.homepage;
-exports.banner =
-  `/**
+exports.banner = `/**
   * ${pkg.name} ${version} (${homepage})
-  * Copyright ${(new Date).getFullYear()} ${author}. All Rights Reserved
+  * Copyright ${new Date().getFullYear()} ${author}. All Rights Reserved
   * Licensed under MIT (${homepage}/blob/master/LICENSE)
   */
 `;

@@ -1,0 +1,53 @@
+{
+	"name": "@alova/hooks",
+	"version": "1.0.0-alpha.1",
+	"description": "extended hooks with alova.js",
+	"homepage": "https://github.com/alovajs/extensions/packages/hooks",
+	"main": "dist/alova-extended-hooks.umd.min.js",
+	"jsnext:main": "dist/alova-extended-hooks.esm.js",
+	"module": "dist/alova-extended-hooks.esm.js",
+	"types": "typings/index.d.ts",
+	"scripts": {
+		"clean": "rimraf ./dist",
+		"build:esm": "cross-env NODE_ENV=development EXTENSION=hooks rollup -c ../../config/rollup.config.esm.js",
+		"build:umd": "cross-env NODE_ENV=development EXTENSION=hooks rollup -c ../../config/rollup.config.umd.js",
+		"build:umd.min": "cross-env NODE_ENV=production EXTENSION=hooks rollup -c ../../config/rollup.config.umd.js",
+		"build": "npm run clean && npm run build:esm && npm run build:umd && npm run build:umd.min",
+		"release": "npm publish",
+		"coveralls": ""
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"author": "JOU-amjs",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/alovajs/extensions.git"
+	},
+	"bugs": {
+		"url": "https://github.com/alovajs/extensions/issues"
+	},
+	"files": [
+		"dist",
+		"typings/*.d.ts"
+	],
+	"exports": {
+		"./vue": "./dist/alova-extended-vue-hooks.esm.js",
+		"./react": "./dist/alova-extended-react-hooks.esm.js",
+		"./svelte": "./dist/alova-extended-svelte-hooks.esm.js"
+	},
+	"typesVersions": {
+		"*": {
+			"vue": [
+				"typings/vue-extension.d.ts"
+			],
+			"react": [
+				"typings/react-extension.d.ts"
+			],
+			"svelte": [
+				"typings/svelte-extension.d.ts"
+			]
+		}
+	}
+}
