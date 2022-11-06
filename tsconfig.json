@@ -24,7 +24,8 @@
 		"jsx": "react"
 	},
 	"paths": {
-		"@/*": ["src/*"]
+		"@/*": ["src/*"],
+		"@mock/*": ["packages/mock/*"]
 	},
 	"include": ["packages/**/*.ts", "packages/**.d.ts"],
 	"exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]

@@ -1,10 +1,11 @@
 /*
  * @Date: 2020-04-09 11:06:01
  * @LastEditors: JOU(wx: huzhen555)
- * @LastEditTime: 2022-10-30 00:08:14
+ * @LastEditTime: 2022-11-06 15:56:36
  */
 var typescript = require('rollup-plugin-typescript2');
 var { readFileSync } = require('fs');
+var compilePaths = require('./extensions');
 
 const getCompiler = (
 	opt = {
@@ -18,32 +19,6 @@ const getCompiler = (
 	}
 ) => typescript(opt);
 exports.getCompiler = getCompiler;
-const compilePaths = {
-	mock: {
-		external: ['alova'],
-		packageName: 'AlovaMock',
-		input: 'src/index.ts',
-		output: suffix => `dist/alova-mock.${suffix}.js`
-	},
-	extensionVue: {
-		external: ['alova', 'vue'],
-		packageName: 'AlovaVueHook',
-		input: 'src/vue/index.ts',
-		output: suffix => `dist/alova-extended-vue-hooks.${suffix}.js`
-	},
-	extensionReact: {
-		external: ['alova', 'react'],
-		packageName: 'AlovaReactHook',
-		input: 'src/react/index.ts',
-		output: suffix => `dist/alova-extended-react-hooks.${suffix}.js`
-	},
-	extensionVue: {
-		external: ['alova', 'svelte', 'svelte/store'],
-		packageName: 'AlovaSvelteHook',
-		input: 'src/svelte/index.ts',
-		output: suffix => `dist/alova-extended-svelte-hooks.${suffix}.js`
-	}
-};
 exports.external = Object.keys(compilePaths)
 	.reduce((prev, next) => [...prev, ...(compilePaths[next].external || [])], [])
 	.filter(key => key !== 'core');
