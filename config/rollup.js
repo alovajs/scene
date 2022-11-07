@@ -19,9 +19,6 @@ const getCompiler = (
 	}
 ) => typescript(opt);
 exports.getCompiler = getCompiler;
-exports.external = Object.keys(compilePaths)
-	.reduce((prev, next) => [...prev, ...(compilePaths[next].external || [])], [])
-	.filter(key => key !== 'core');
 
 const extension = process.env.EXTENSION;
 if (!extension) {
@@ -39,4 +36,5 @@ exports.banner = `/**
   * Licensed under MIT (${homepage}/blob/master/LICENSE)
   */
 `;
-exports.compilePath = compilePaths[extension];
+const compilePath = (exports.compilePath = compilePaths[extension]);
+exports.external = compilePath.external;

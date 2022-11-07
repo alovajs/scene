@@ -21,11 +21,13 @@
 		"importHelpers": true,
 		"removeComments": true,
 		"esModuleInterop": true,
-		"jsx": "react"
+		"jsx": "react",
+		"allowJs": true
 	},
 	"paths": {
 		"@/*": ["src/*"],
-		"@mock/*": ["packages/mock/*"]
+		"@mock/*": ["packages/mock/*"],
+		"@hooks/*": ["packages/hooks/*"]
 	},
 	"include": ["packages/**/*.ts", "packages/**.d.ts"],
 	"exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]

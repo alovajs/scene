@@ -1,0 +1,18 @@
+{
+	"name": "@alova/helper",
+	"version": "1.0.0-alpha.1",
+	"description": "helpers which extended packages of alova.js",
+	"private": true,
+	"jsnext:main": "src/index.ts",
+	"module": "src/index.ts",
+	"types": "typings/index.d.ts",
+	"author": "JOU-amjs",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/alovajs/extensions.git"
+	},
+	"bugs": {
+		"url": "https://github.com/alovajs/extensions/issues"
+	}
+}
