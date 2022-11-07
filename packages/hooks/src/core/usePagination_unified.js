@@ -1,5 +1,7 @@
-import { createSyncOnceRunner, getUniqueReferenceId, noop } from '@alova/helper';
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
+import createSyncOnceRunner from '../helper/createSyncOnceRunner';
+import getUniqueReferenceId from '../helper/getUniqueReferenceId';
+import { noop } from '../helper/utils';
 
 let counter = 0;
 export default function (
@@ -20,7 +22,10 @@ export default function (
 	$,
 	$$,
 	upd$,
-	_$
+	_$,
+	_exp$,
+	_expBatch$,
+	watchSync
 ) {
 	let isRefresh = false;
 	let isReset = false; // 用于控制是否重置
@@ -34,6 +39,13 @@ export default function (
 		`${nameHookPrefix}-${page}-${_$(pageSize)}-${watchingStates
 			.map(state => getUniqueReferenceId(_$(state)))
 			.join('-')}`;
+	const listDataGetter = rawData => dataGetter(rawData) || rawData;
+
+	// 监听状态变化时，重置page为1
+	// TODO: 提供回调函数自定义监听处理
+	watchSync(watchingStates, () => {
+		upd$(page, 1);
+	});
 
 	const states = useWatcher(
 		refreshPage => {
@@ -57,12 +69,12 @@ export default function (
 	// 计算data、pageCount、total、isLastPage参数
 	const stateData = states.data;
 	const data = $([]);
-	const pageCount = $$(() => pageCountGetter(_$$(stateData)) || 0, [stateData]);
-	const total = $$(() => totalGetter(_$$(stateData)) || 0, [stateData]);
+	const pageCount = $$(() => pageCountGetter(_$(stateData)) || 0, [stateData]);
+	const total = $$(() => totalGetter(_$(stateData)) || 0, [stateData]);
 	const lastPage = page => {
 		const pageCountVal = _$(pageCount);
-		const dataVal = _$(data);
-		const dataLen = Array.isArray(dataVal) ? dataVal.length : 0;
+		const statesDataVal = listDataGetter(_$(states.data));
+		const dataLen = Array.isArray(statesDataVal) ? statesDataVal.length : 0;
 		return pageCountVal ? page >= pageCountVal : dataLen < _$(pageSize);
 	};
 	const canPreload = preloadPage => preloadPage > 0 && !lastPage(preloadPage);
@@ -82,7 +94,7 @@ export default function (
 		}
 	};
 	// 如果返回的数据小于pageSize了，则认定为最后一页了
-	const isLastPage = $$(() => lastPage(_$(page)), [page, pageCount, data, pageSize]);
+	const isLastPage = $$(() => lastPage(_$(page)), _expBatch$(page, pageCount, data, pageSize));
 
 	const { fetch } = useFetcher({ force: false });
 	states.onSuccess((rawData, refreshPage) => {
@@ -91,7 +103,7 @@ export default function (
 
 		const pageSizeVal = _$(pageSize);
 		// 如果追加数据，才更新data
-		const listData = dataGetter(rawData) || rawData; // 更新data参数
+		const listData = listDataGetter(rawData); // 更新data参数
 		if (append) {
 			// 如果是reset则先清空数据
 			if (isReset) {
@@ -230,14 +242,12 @@ export default function (
 	/** @Returns */
 	return {
 		...states,
-		page,
-		pageSize,
-
-		// 如果需要追加数据，则使用自定义的data状态，否则使用当前的
-		data,
-		pageCount,
-		total,
-		isLastPage,
+		page: _exp$(page),
+		pageSize: _exp$(pageSize),
+		data: _exp$(data),
+		pageCount: _exp$(pageCount),
+		total: _exp$(total),
+		isLastPage: _exp$(isLastPage),
 
 		refresh,
 		insert,
