@@ -1,6 +1,6 @@
 {
 	"name": "@alova/hooks",
-	"version": "1.0.0-beta.1",
+	"version": "1.0.0-beta.2",
 	"description": "extended hooks with alova.js",
 	"homepage": "https://github.com/alovajs/extensions/packages/hooks",
 	"main": "dist/alova-extended-hooks.umd.min.js",
@@ -42,9 +42,9 @@
 		"typings/*.d.ts"
 	],
 	"exports": {
-		"./vue": "./dist/alova-extended-vue-hooks.esm.js",
-		"./react": "./dist/alova-extended-react-hooks.esm.js",
-		"./svelte": "./dist/alova-extended-svelte-hooks.esm.js"
+		"./vue": "./dist/alova-vue-hooks.esm.js",
+		"./react": "./dist/alova-react-hooks.esm.js",
+		"./svelte": "./dist/alova-svelte-hooks.esm.js"
 	},
 	"typesVersions": {
 		"*": {

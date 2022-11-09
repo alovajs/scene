@@ -454,6 +454,42 @@ describe('vue usePagination', () => {
 		expect(isLastPage.value).toBeTruthy();
 	});
 
+	test('load more paginated data with conditions search', async () => {
+		const alovaInst = createMockAlova();
+		const getter = (page, pageSize, keyword) =>
+			alovaInst.Get('/list-with-search', {
+				params: {
+					page,
+					pageSize,
+					keyword
+				}
+			});
+		const keyword = ref('');
+		const { page, data, onSuccess } = usePagination((p, ps) => getter(p, ps, keyword.value), {
+			watchingStates: [keyword],
+			total: () => undefined,
+			pageCount: () => undefined,
+			data: res => res.list,
+			append: true
+		});
+
+		await untilCbCalled(onSuccess);
+		expect(data.value[0]).toEqual({ id: 0, word: 'aaa' });
+		expect(data.value[data.value.length - 1]).toEqual({ id: 9, word: 'aaa' });
+
+		page.value++;
+		await untilCbCalled(onSuccess);
+		expect(data.value.length).toBe(20);
+		expect(data.value[0]).toEqual({ id: 0, word: 'aaa' });
+		expect(data.value[data.value.length - 1]).toEqual({ id: 19, word: 'bbb' });
+
+		keyword.value = 'bbb';
+		await untilCbCalled(onSuccess);
+		data.value.forEach(({ word }) => expect(word).toBe('bbb'));
+		expect(data.value[0]).toEqual({ id: 1, word: 'bbb' });
+		expect(data.value.length).toBe(10);
+	});
+
 	test('load more mode paginated data refersh page', async () => {
 		const alovaInst = createMockAlova();
 		const getter = (page, pageSize) =>
