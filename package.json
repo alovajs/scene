@@ -19,7 +19,6 @@
 		"url": "https://github.com/alovajs/extensions/issues"
 	},
 	"devDependencies": {
-		"@alova/mock": "^1.0.4",
 		"@babel/core": "^7.18.2",
 		"@babel/preset-env": "^7.18.2",
 		"@rollup/plugin-commonjs": "^22.0.0",

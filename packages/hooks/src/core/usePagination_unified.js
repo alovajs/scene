@@ -1,7 +1,5 @@
+import { createSyncOnceRunner, getUniqueReferenceId, noop } from '@alova/helper';
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
-import createSyncOnceRunner from '../helper/createSyncOnceRunner';
-import getUniqueReferenceId from '../helper/getUniqueReferenceId';
-import { noop } from '../helper/utils';
 
 let counter = 0;
 export default function (

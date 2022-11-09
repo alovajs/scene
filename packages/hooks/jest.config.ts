@@ -2,6 +2,7 @@
  * For a detailed explanation regarding each configuration property and type check, visit:
  * https://jestjs.io/docs/configuration
  */
+import { resolve } from 'path';
 
 export default {
 	// All imported modules in your tests should be mocked automatically
@@ -64,9 +65,7 @@ export default {
 	// maxWorkers: "50%",
 
 	// An array of directory names to be searched recursively up from the requiring module's location
-	// moduleDirectories: [
-	//   "node_modules"
-	// ],
+	// moduleDirectories: ['<rootDir>/node_modules', 'node_modules'],
 
 	// An array of file extensions your modules use
 	moduleFileExtensions: [
@@ -82,9 +81,11 @@ export default {
 	],
 
 	// A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-	// moduleNameMapper: {
-	// 	'^@alova/helper$': '../helper/src/index.ts'
-	// },
+	moduleNameMapper: {
+		// must use absolute paths
+		'^@alova/mock$': resolve(__dirname, '../mock/src/index.ts'),
+		'^@alova/helper$': resolve(__dirname, '../helper/src/index.ts')
+	},
 
 	// An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
 	// modulePathIgnorePatterns: [],
