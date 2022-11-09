@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch as vueWatch } from 'vue';
 
 /**
  * 创建状态
@@ -44,4 +44,14 @@ export const upd$ = (state, newData) => {
 	state.value = typeof newData === 'function' ? newData(state.value) : newData;
 };
 
-export const watchSync = () => {};
+/**
+ * 监听状态触发回调
+ * @param {import('vue').WatchSource} states 监听状态
+ * @param {Function} cb 回调函数
+ */
+export const watch = (states, cb) => {
+	vueWatch(states, cb, {
+		flush: 'sync',
+		deep: true
+	});
+};

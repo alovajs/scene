@@ -82,7 +82,9 @@ export default {
 	],
 
 	// A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-	// moduleNameMapper: {},
+	// moduleNameMapper: {
+	// 	'^@alova/helper$': '../helper/src/index.ts'
+	// },
 
 	// An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
 	// modulePathIgnorePatterns: [],
@@ -140,16 +142,7 @@ export default {
 	// The test environment that will be used for testing
 	testEnvironment: 'jsdom',
 
-	testMatch: [
-		'**/?(*.)+(spec|test).[tj]s?(x)'
-		// "**/test/browser/hooks/useRequest-http-vue.spec.ts(x)?",
-		// "**/test/browser/behavior/persist-response-vue.spec.ts",
-		// "**/test/browser/batch/parallel-request.spec.ts",
-		// "**/test/browser/stateManager/update-state-react.spec.ts(x)?",
-		// "**/test/browser/global/request-response-hook.spec.ts(x)?",
-		// "**/test/browser/fn/methodSend.spec.ts(x)?",
-		// "**/test/browser/requestAdapter/GlobalFetch.spec.ts(x)?",
-	],
+	testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
 
 	// An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
 	testPathIgnorePatterns: [
@@ -168,14 +161,12 @@ export default {
 
 	// A map from regular expressions to paths to transformers
 	transform: {
+		'^.+\\.[tj]s?$': 'ts-jest',
 		'^.+\\.svelte$': 'svelte-jester'
-	}
+	},
 
 	// An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-	// transformIgnorePatterns: [
-	//   "\\\\node_modules\\\\",
-	//   "\\.pnp\\.[^\\\\]+$"
-	// ],
+	transformIgnorePatterns: ['/node_modules/(?!(alova|@alova\\/mock|@alova\\/helper)/)']
 
 	// An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
 	// unmockedModulePathPatterns: undefined,

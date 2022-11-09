@@ -1,4 +1,5 @@
 import { derived, writable } from 'svelte/store';
+import createSyncOnceRunner from '../helper/createSyncOnceRunner';
 
 /**
  * 创建状态
@@ -49,4 +50,25 @@ export const upd$ = (state, newData) => {
 	typeof newData === 'function' ? state.update(newData) : state.set(newData);
 };
 
-export const watchSync = () => {};
+/**
+ * 监听状态触发回调
+ * @param {import('svelte/store').Readable[]} states 监听状态
+ * @param {Function} cb 回调函数
+ */
+export const watch = (states, cb) => {
+	let emited = false;
+	let subscribeStage = true;
+	const syncRunner = createSyncOnceRunner();
+	const subscribeCb = () => {
+		if (!emited && !subscribeStage) {
+			cb();
+			emited = true;
+		}
+		syncRunner(() => {
+			emited = subscribeStage = false;
+		});
+	};
+	states.forEach(state => {
+		state.subscribe(subscribeCb);
+	});
+};

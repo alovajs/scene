@@ -1,7 +1,7 @@
 /**
  * 创建同步多次调用只在异步执行一次的执行器
  */
-export default () => {
+export default (delay = 0) => {
 	let timer: NodeJS.Timer;
 
 	/**
@@ -11,6 +11,6 @@ export default () => {
 		if (timer) {
 			clearTimeout(timer);
 		}
-		timer = setTimeout(fn);
+		timer = setTimeout(fn, delay);
 	};
 };

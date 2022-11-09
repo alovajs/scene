@@ -25,13 +25,14 @@ export default function (
 	_$,
 	_exp$,
 	_expBatch$,
-	watchSync
+	watch
 ) {
+	const id = counter++;
 	let isRefresh = false;
 	let isReset = false; // 用于控制是否重置
 	const page = $(initialPage);
 	const pageSize = $(initialPageSize);
-	const id = counter++;
+	const data = $([]);
 
 	// 构建method name
 	const nameHookPrefix = `pagination-hook-${id}`;
@@ -40,35 +41,32 @@ export default function (
 			.map(state => getUniqueReferenceId(_$(state)))
 			.join('-')}`;
 	const listDataGetter = rawData => dataGetter(rawData) || rawData;
+	const getHandlerMethod = refreshPage => {
+		const pageVal = refreshPage || _$(page);
+		const pageSizeVal = _$(pageSize);
+		const handlerMethod = handler(pageVal, pageSizeVal);
+
+		// 定义统一的名称，方便管理
+		handlerMethod.config.name = buildMethodName(pageVal);
+		return handlerMethod;
+	};
 
 	// 监听状态变化时，重置page为1
 	// TODO: 提供回调函数自定义监听处理
-	watchSync(watchingStates, () => {
+	watch(watchingStates, () => {
 		upd$(page, 1);
+		append && upd$(data, []);
 	});
 
-	const states = useWatcher(
-		refreshPage => {
-			const pageVal = refreshPage || _$(page);
-			const pageSizeVal = _$(pageSize);
-			const handlerMethod = handler(pageVal, pageSizeVal);
-
-			// 定义统一的名称，方便管理
-			handlerMethod.config.name = buildMethodName(pageVal);
-			return handlerMethod;
-		},
-		[page, pageSize, ...watchingStates],
-		{
-			immediate: true,
-			initialData,
-			debounce,
-			force: () => isRefresh
-		}
-	);
+	const states = useWatcher(getHandlerMethod, [page, pageSize, ...watchingStates], {
+		immediate: true,
+		initialData,
+		debounce,
+		force: () => isRefresh
+	});
 
 	// 计算data、pageCount、total、isLastPage参数
 	const stateData = states.data;
-	const data = $([]);
 	const pageCount = $$(() => pageCountGetter(_$(stateData)) || 0, [stateData]);
 	const total = $$(() => totalGetter(_$(stateData)) || 0, [stateData]);
 	const lastPage = page => {
@@ -83,20 +81,23 @@ export default function (
 	const fetchNextPage = () => {
 		const nextPage = _$(page) + 1;
 		if (!isRefresh && preloadNextPage && canPreload(nextPage)) {
-			fetch(handler(nextPage, _$(pageSize)));
+			fetch(getHandlerMethod(nextPage));
 		}
 	};
 	// 预加载上一页数据
 	const fetchPreviousPage = () => {
-		const prevPage = _$(page) + 1;
+		const prevPage = _$(page) - 1;
 		if (!isRefresh && preloadPreviousPage && canPreload(prevPage)) {
-			fetch(handler(prevPage, _$(pageSize)));
+			fetch(getHandlerMethod(prevPage));
 		}
 	};
 	// 如果返回的数据小于pageSize了，则认定为最后一页了
 	const isLastPage = $$(() => lastPage(_$(page)), _expBatch$(page, pageCount, data, pageSize));
 
-	const { fetch } = useFetcher({ force: false });
+	const fetchStates = useFetcher({
+		force: () => isRefresh
+	});
+	const { fetch } = fetchStates;
 	states.onSuccess((rawData, refreshPage) => {
 		fetchNextPage();
 		fetchPreviousPage();
@@ -147,30 +148,37 @@ export default function (
 	let tempData;
 	// 统计同步移除的数量
 	let removedCount = 0;
-	const syncRunner = createSyncOnceRunner();
-	// 删除此usehook的所有缓存
-	const invalidateAllCache = () => invalidateCache(new RegExp('^' + nameHookPrefix));
+	const removeSyncRunner = createSyncOnceRunner();
+	// 删除此usehook除当前页的所有缓存
+	const invalidateOtherCache = () =>
+		invalidateCache({
+			name: new RegExp('^' + nameHookPrefix),
+			filter: method => method.config.name !== buildMethodName(_$(page))
+		});
 	/**
 	 * 移除一条数据
 	 * @param index 移除的索引
 	 */
 	const remove = index => {
 		// 如果同步移除的数量大于pageSize时，将异步更新本页数据，此时不再进行操作了
+		// 因为此块代码在函数头部，因此当pageSize + 1次进入函数时，其removedCount是刚好等于pageSize的
 		const pageSizeVal = _$(pageSize);
-		const exceedsPagesize = removedCount > pageSizeVal;
-		if (exceedsPagesize) {
+		const exceedsPagesize = () => removedCount >= pageSizeVal;
+		if (exceedsPagesize()) {
+			upd$(data, tempData); // 当移除项数大于pageSize时同步还原数据，减少不必要的视图渲染
 			return;
 		}
 
-		let cachedData = undefined;
-		const nextPage = _$(page) + 1;
+		let cachedListData = undefined;
+		const pageVal = _$(page);
+		const nextPage = pageVal + 1;
 		setCacheData(buildMethodName(nextPage), data => {
-			cachedData = data;
+			cachedListData = dataGetter(data);
 			return false;
 		});
 
 		// 如果有下一页数据且同步删除的数量未超过pageSize，则通过缓存数据补位
-		if (cachedData) {
+		if (cachedListData) {
 			if (!tempData) {
 				tempData = [..._$(data)];
 			}
@@ -181,41 +189,50 @@ export default function (
 				});
 				removedCount++;
 				// 用下一页的数据补位，从头部开始取
-				upd$(data, [..._$(data), cachedData[removedCount - 1]]);
+				upd$(data, [..._$(data), cachedListData[removedCount - 1]]);
 			}
 		}
 
 		// 如果没有下一页数据，或同步删除的数量超过了pageSize，则恢复数据并重新加载本页
 		// 需异步操作，因为可能超过pageSize后还有remove函数被同步执行
-		syncRunner(() => {
+		removeSyncRunner(() => {
 			// 让所有缓存失效
-			invalidateAllCache();
-			if (!cachedData || exceedsPagesize) {
-				exceedsPagesize && upd$(data, tempData);
-				refresh(nextPage);
-			}
-
-			// 重新预加载前后一页的数据
+			invalidateOtherCache();
+			// 重新预加载前后一页的数据，需要在refresh前执行，因为refresh时isRefresh为true，此时无法fetch数据
 			fetchNextPage();
 			fetchPreviousPage();
+
+			// 因为有作用域限制，因此exceedsPagesize需要以函数形式实现
+			if (!cachedListData || exceedsPagesize()) {
+				refresh(pageVal);
+			}
 			tempData = undefined;
 			removedCount = 0;
 		});
 	};
 
+	const insertSyncRunner = createSyncOnceRunner(10);
 	/**
 	 * 插入一条数据
 	 * onBefore、插入操作、onAfter三个都需要分别顺序异步执行，因为需要等待视图更新再执行
 	 * @param item 插入项
 	 * @param config 插入配置
 	 */
-	const insert = (item, { index = -1, onBefore = noop, onAfter = noop } = {}) => {
+	const insert = (item, { index = 0, onBefore = noop, onAfter = noop } = {}) => {
 		const asyncCall = fn =>
 			new Promise(resolve => {
 				fn();
 				setTimeout(resolve);
 			});
 
+		// 插入项后也需要让缓存失效，以免不同条件下缓存未更新
+		if (index >= 0) {
+			insertSyncRunner(() => {
+				invalidateOtherCache();
+				fetchNextPage();
+				fetchPreviousPage();
+			});
+		}
 		asyncCall(onBefore)
 			.then(() =>
 				asyncCall(() => {
@@ -242,6 +259,11 @@ export default function (
 	/** @Returns */
 	return {
 		...states,
+		fetching: fetchStates.fetching,
+		onFetchSuccess: fetchStates.onSuccess,
+		onFetchError: fetchStates.onError,
+		onFetchComplete: fetchStates.onComplete,
+
 		page: _exp$(page),
 		pageSize: _exp$(pageSize),
 		data: _exp$(data),

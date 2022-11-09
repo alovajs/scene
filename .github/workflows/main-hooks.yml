@@ -34,8 +34,8 @@ jobs:
       - run: yarn install --immutable
       - run: yarn workspace @alova/hooks run build
 
-      # 这条命令包含了测试和上传覆盖率
-      # - run: npm run coveralls
-      - run: cd ./packages/hooks && npm publish
+      # 测试
+      - run: yarn workspace @alova/hooks run test
+      - run: cd ./packages/hooks && npm publish --tag=beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ALOVA_PUBLISH_TOKEN }}
