@@ -32,10 +32,12 @@ jobs:
 
       # 执行测试和打包操作
       - run: yarn install --immutable
-      - run: yarn workspace @alova/hooks run build
 
       # 测试
       - run: yarn workspace @alova/hooks run test
+
+      # 打包发布
+      - run: yarn workspace @alova/hooks run build
       - run: cd ./packages/hooks && npm publish --tag=beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ALOVA_PUBLISH_TOKEN }}

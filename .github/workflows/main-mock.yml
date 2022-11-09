@@ -32,10 +32,11 @@ jobs:
 
       # 执行测试和打包操作
       - run: yarn install --immutable
-      - run: yarn workspace @alova/mock run build
-
       # 这条命令包含了测试和上传覆盖率
       # - run: npm run coveralls
+
+      # 打包发布
+      - run: yarn workspace @alova/mock run build
       - run: cd ./packages/mock && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ALOVA_PUBLISH_TOKEN }}
