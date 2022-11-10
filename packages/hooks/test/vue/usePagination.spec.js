@@ -584,4 +584,33 @@ describe('vue usePagination', () => {
 			return false;
 		});
 	});
+
+	test.only('load more mode reload paginated data', async () => {
+		const alovaInst = createMockAlova();
+		const getter = (page, pageSize) =>
+			alovaInst.Get('/list', {
+				params: {
+					page,
+					pageSize
+				}
+			});
+
+		const { data, page, pageSize, onSuccess, reload } = usePagination(getter, {
+			total: () => undefined,
+			pageCount: () => undefined,
+			data: res => res.list,
+			append: true,
+			initialPageSize: 4
+		});
+
+		await untilCbCalled(onSuccess);
+		expect(data.value).toEqual([0, 1, 2, 3]);
+		page.value++;
+		await untilCbCalled(onSuccess);
+		expect(data.value).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+
+		reload();
+		await untilCbCalled(onSuccess);
+		expect(data.value).toEqual([0, 1, 2, 3]);
+	});
 });

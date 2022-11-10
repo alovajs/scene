@@ -146,11 +146,11 @@ export default function (
 	// 统计同步移除的数量
 	let removedCount = 0;
 	const removeSyncRunner = createSyncOnceRunner();
-	// 删除此usehook除当前页的所有缓存
-	const invalidateOtherCache = () =>
+	// 删除所有缓存，如果exceptCurrent = true，则删除除此usehook当前页的所有相关缓存
+	const invalidatePaginationCache = (exceptCurrent = true) =>
 		invalidateCache({
 			name: new RegExp('^' + nameHookPrefix),
-			filter: method => method.config.name !== buildMethodName(_$(page))
+			filter: method => (exceptCurrent ? method.config.name !== buildMethodName(_$(page)) : true)
 		});
 	/**
 	 * 移除一条数据
@@ -194,7 +194,7 @@ export default function (
 		// 需异步操作，因为可能超过pageSize后还有remove函数被同步执行
 		removeSyncRunner(() => {
 			// 让所有缓存失效
-			invalidateOtherCache();
+			invalidatePaginationCache();
 			// 重新预加载前后一页的数据，需要在refresh前执行，因为refresh时isRefresh为true，此时无法fetch数据
 			fetchNextPage();
 			fetchPreviousPage();
@@ -225,7 +225,7 @@ export default function (
 		// 插入项后也需要让缓存失效，以免不同条件下缓存未更新
 		if (index >= 0) {
 			insertSyncRunner(() => {
-				invalidateOtherCache();
+				invalidatePaginationCache();
 				fetchNextPage();
 				fetchPreviousPage();
 			});
@@ -253,6 +253,15 @@ export default function (
 			.then(onAfter);
 	};
 
+	/**
+	 * 从第一页开始重新加载列表，并清空缓存
+	 */
+	const reload = () => {
+		invalidatePaginationCache();
+		upd$(page, 1);
+		isReset = true;
+	};
+
 	/** @Returns */
 	return {
 		...states,
@@ -270,6 +279,7 @@ export default function (
 
 		refresh,
 		insert,
-		remove
+		remove,
+		reload
 	};
 }

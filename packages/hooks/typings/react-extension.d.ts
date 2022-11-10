@@ -43,6 +43,11 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	 * @param index 移除的索引
 	 */
 	remove: (index: any) => void;
+
+	/**
+	 * 从第一页开始重新加载列表，并清空缓存
+	 */
+	reload: () => void;
 }
 
 /**
