@@ -11,7 +11,7 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	data: Ref<LD>;
 	pageCount: ComputedRef<number | undefined>;
 	total: ComputedRef<number | undefined>;
-	isLastPage: ComputedRef<Ref<boolean>>;
+	isLastPage: ComputedRef<boolean>;
 
 	abort: () => void;
 	send: (...args: any[]) => Promise<R>;

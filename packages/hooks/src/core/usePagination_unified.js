@@ -50,10 +50,9 @@ export default function (
 	};
 
 	// 监听状态变化时，重置page为1
-	// TODO: 提供回调函数自定义监听处理
 	watch(watchingStates, () => {
 		upd$(page, 1);
-		append && upd$(data, []);
+		isReset = true;
 	});
 
 	const states = useWatcher(getHandlerMethod, [page, pageSize, ...watchingStates], {
@@ -171,7 +170,7 @@ export default function (
 		const pageVal = _$(page);
 		const nextPage = pageVal + 1;
 		setCacheData(buildMethodName(nextPage), data => {
-			cachedListData = dataGetter(data);
+			cachedListData = listDataGetter(data);
 			return false;
 		});
 
