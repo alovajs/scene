@@ -270,8 +270,8 @@ export default function (
 		onFetchError: fetchStates.onError,
 		onFetchComplete: fetchStates.onComplete,
 
-		page: _exp$(page),
-		pageSize: _exp$(pageSize),
+		page: page,
+		pageSize: pageSize,
 		data: _exp$(data),
 		pageCount: _exp$(pageCount),
 		total: _exp$(total),

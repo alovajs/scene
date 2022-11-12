@@ -1,13 +1,15 @@
 import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
-import { DependencyList } from 'react';
+import { DependencyList, Dispatch, SetStateAction } from 'react';
+
+type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
 interface UsePaginationReturnType<LD extends any[], R> {
 	loading: boolean;
 	error: Error | undefined;
 	downloading: Progress;
 	uploading: Progress;
-	page: number;
-	pageSize: number;
+	page: ReactState<number>;
+	pageSize: ReactState<number>;
 	data: LD;
 	pageCount: number | undefined;
 	total: number | undefined;

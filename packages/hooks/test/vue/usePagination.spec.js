@@ -585,7 +585,7 @@ describe('vue usePagination', () => {
 		});
 	});
 
-	test.only('load more mode reload paginated data', async () => {
+	test('load more mode reload paginated data', async () => {
 		const alovaInst = createMockAlova();
 		const getter = (page, pageSize) =>
 			alovaInst.Get('/list', {
@@ -595,7 +595,7 @@ describe('vue usePagination', () => {
 				}
 			});
 
-		const { data, page, pageSize, onSuccess, reload } = usePagination(getter, {
+		const { data, page, onSuccess, reload } = usePagination(getter, {
 			total: () => undefined,
 			pageCount: () => undefined,
 			data: res => res.list,
