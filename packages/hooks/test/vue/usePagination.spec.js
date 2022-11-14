@@ -36,7 +36,6 @@ describe('vue usePagination', () => {
 
 		const { data, pageCount, total, page, pageSize, isLastPage, onSuccess } = usePagination(getter, {
 			total: res => res.total,
-			pageCount: res => res.pageCount,
 			data: res => res.list
 		});
 
@@ -118,26 +117,28 @@ describe('vue usePagination', () => {
 				}
 			});
 		const keyword = ref('');
-		const { page, data, onSuccess } = usePagination((p, ps) => getter(p, ps, keyword.value), {
+		const { page, data, onSuccess, total } = usePagination((p, ps) => getter(p, ps, keyword.value), {
 			watchingStates: [keyword],
 			total: res => res.total,
-			pageCount: res => res.pageCount,
 			data: res => res.list
 		});
 
 		await untilCbCalled(onSuccess);
 		expect(data.value[0]).toEqual({ id: 0, word: 'aaa' });
 		expect(data.value[data.value.length - 1]).toEqual({ id: 9, word: 'aaa' });
+		expect(total.value).toBe(300);
 
 		page.value++;
 		await untilCbCalled(onSuccess);
 		expect(data.value[0]).toEqual({ id: 10, word: 'bbb' });
 		expect(data.value[data.value.length - 1]).toEqual({ id: 19, word: 'bbb' });
+		expect(total.value).toBe(300);
 
 		keyword.value = 'bbb';
 		await untilCbCalled(onSuccess);
 		data.value.forEach(({ word }) => expect(word).toBe('bbb'));
 		expect(data.value[0]).toEqual({ id: 1, word: 'bbb' });
+		expect(total.value).toBe(100);
 	});
 
 	test('paginated data refersh page', async () => {
@@ -152,7 +153,6 @@ describe('vue usePagination', () => {
 
 		const { data, page, pageSize, onSuccess, refresh } = usePagination(getter, {
 			total: res => res.total,
-			pageCount: res => res.pageCount,
 			data: res => res.list
 		});
 
@@ -249,6 +249,11 @@ describe('vue usePagination', () => {
 		});
 		await untilCbCalled(setTimeout, 100);
 		expect(data.value).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
+		// 当前页缓存要保持一致
+		setCacheData(getter(page.value, pageSize.value), cache => {
+			expect(cache.list).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
+			return false;
+		});
 		expect(mockFn2.mock.calls.length).toBe(2);
 	});
 
@@ -346,11 +351,18 @@ describe('vue usePagination', () => {
 		// 删除第二项，将会用下一页的数据补位，并重新拉取上下一页的数据
 		remove(1);
 		remove(1);
+		expect(data.value).toEqual([4, 7, 8, 9]);
 		setMockListData(data => {
 			// 模拟数据中同步删除，这样fetch的数据校验才正常
 			data.splice(5, 2);
 			return data;
 		});
+		// 当前页缓存要保持一致
+		setCacheData(getter(page.value, pageSize.value), cache => {
+			expect(cache.list).toEqual([4, 7, 8, 9]);
+			return false;
+		});
+
 		onFetchSuccess(() => {
 			mockFn();
 		});
@@ -398,6 +410,46 @@ describe('vue usePagination', () => {
 		});
 	});
 
+	test('paginated data remove short list item without preload', async () => {
+		const alovaInst = createMockAlova();
+		const getter = (page, pageSize) =>
+			alovaInst.Get('/list-short', {
+				params: {
+					page,
+					pageSize
+				}
+			});
+
+		const { data, page, total, pageSize, remove, onSuccess } = usePagination(getter, {
+			data: res => res.list,
+			total: res => res.total,
+			initialPage: 3, // 默认从第3页开始
+			initialPageSize: 4,
+			preloadNextPage: false,
+			preloadPreviousPage: false
+		});
+
+		await untilCbCalled(onSuccess);
+
+		remove(1);
+		setMockListData(data => {
+			// 模拟数据中同步删除，这样fetch的数据校验才正常
+			data.splice(8, 1);
+			return data;
+		});
+		expect(data.value).toEqual([8]);
+		// 当前页缓存要保持一致
+		setCacheData(getter(page.value, pageSize.value), cache => {
+			expect(cache.list).toEqual([8]);
+			return false;
+		});
+
+		remove(0);
+		await untilCbCalled(onSuccess); // 最后一页没有数据项了，自动设置为前一页
+		expect(page.value).toBe(2);
+		expect(data.value).toEqual([4, 5, 6, 7]);
+	});
+
 	// 下拉加载更多相关
 	test('load more mode paginated data, and change page/pageSize', async () => {
 		const alovaInst = createMockAlova();
@@ -411,7 +463,6 @@ describe('vue usePagination', () => {
 
 		const { data, page, pageSize, isLastPage, onSuccess } = usePagination(getter, {
 			total: () => undefined,
-			pageCount: () => undefined,
 			data: res => res.list,
 			append: true,
 			preloadNextPage: false,
@@ -468,7 +519,6 @@ describe('vue usePagination', () => {
 		const { page, data, onSuccess } = usePagination((p, ps) => getter(p, ps, keyword.value), {
 			watchingStates: [keyword],
 			total: () => undefined,
-			pageCount: () => undefined,
 			data: res => res.list,
 			append: true
 		});
@@ -502,7 +552,6 @@ describe('vue usePagination', () => {
 
 		const { data, page, onSuccess, refresh } = usePagination(getter, {
 			total: () => undefined,
-			pageCount: () => undefined,
 			data: res => res.list,
 			append: true,
 			preloadNextPage: false,
@@ -546,7 +595,6 @@ describe('vue usePagination', () => {
 
 		const { data, page, pageSize, onSuccess, onFetchSuccess, remove } = usePagination(getter, {
 			total: () => undefined,
-			pageCount: () => undefined,
 			data: res => res.list,
 			append: true,
 			preloadNextPage: false,
@@ -597,7 +645,6 @@ describe('vue usePagination', () => {
 
 		const { data, page, onSuccess, reload } = usePagination(getter, {
 			total: () => undefined,
-			pageCount: () => undefined,
 			data: res => res.list,
 			append: true,
 			initialPageSize: 4

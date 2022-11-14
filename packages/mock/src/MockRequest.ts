@@ -85,14 +85,6 @@ export default function MockRequest<RC, RE, RH>(
 				throw new Error(`could not find the httpAdapter which send request.\n[url]${url}`);
 			}
 		}
-		const responseData =
-			typeof mockDataRaw === 'function'
-				? mockDataRaw({
-						query,
-						params,
-						data
-				  })
-				: mockDataRaw;
 
 		let timer: NodeJS.Timeout;
 		return {
@@ -100,6 +92,14 @@ export default function MockRequest<RC, RE, RH>(
 				new Promise<RE>(
 					(resolve, reject) =>
 						(timer = setTimeout(() => {
+							const responseData =
+								typeof mockDataRaw === 'function'
+									? mockDataRaw({
+											query,
+											params,
+											data
+									  })
+									: mockDataRaw;
 							if (responseData) {
 								// 打印模拟数据请求信息
 								mockRequestLogger &&

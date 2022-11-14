@@ -7,7 +7,6 @@ export default function (
 	{
 		preloadPreviousPage = true,
 		preloadNextPage = true,
-		pageCount: pageCountGetter = data => data['pageCount'],
 		total: totalGetter = data => data['total'],
 		data: dataGetter = data => data['data'],
 		initialData,
@@ -64,8 +63,12 @@ export default function (
 
 	// 计算data、pageCount、total、isLastPage参数
 	const stateData = states.data;
-	const pageCount = $$(() => pageCountGetter(_$(stateData)) || 0, [stateData]);
-	const total = $$(() => totalGetter(_$(stateData)) || 0, [stateData]);
+	const total = $$(() => totalGetter(_$(stateData)) || 0, _expBatch$(stateData));
+	// watch(_expBatch$(stateData), () => {
+	// 	upd$(total, totalGetter(_$(stateData)) || 0);
+	// 	console.log(total);
+	// });
+	const pageCount = $$(() => Math.ceil(_$(total) / _$(pageSize)), _expBatch$(pageSize, total));
 	const lastPage = page => {
 		const pageCountVal = _$(pageCount);
 		const statesDataVal = listDataGetter(_$(states.data));
@@ -91,10 +94,19 @@ export default function (
 	// 如果返回的数据小于pageSize了，则认定为最后一页了
 	const isLastPage = $$(() => lastPage(_$(page)), _expBatch$(page, pageCount, data, pageSize));
 
+	// 更新当前页缓存
+	const updateCurrentPageCache = () => {
+		setCacheData(buildMethodName(_$(page)), rawData => {
+			const cachedListData = listDataGetter(rawData) || [];
+			cachedListData.splice(0, cachedListData.length, ..._$(data));
+			return rawData;
+		});
+	};
+
 	const fetchStates = useFetcher({
 		force: () => isRefresh
 	});
-	const { fetch } = fetchStates;
+	const { fetch, abort: abortFetch } = fetchStates;
 	states.onSuccess((rawData, refreshPage) => {
 		fetchNextPage();
 		fetchPreviousPage();
@@ -143,52 +155,48 @@ export default function (
 
 	// 临时保存的数据，以便当需要重新加载时用于数据恢复
 	let tempData;
-	// 统计同步移除的数量
-	let removedCount = 0;
+	let fillingItem = undefined; // 补位数据项
 	const removeSyncRunner = createSyncOnceRunner();
-	// 删除所有缓存，如果exceptCurrent = true，则删除除此usehook当前页的所有相关缓存
-	const invalidatePaginationCache = (exceptCurrent = true) =>
+	// 删除除此usehook当前页和下一页的所有相关缓存
+	const invalidatePaginationCache = () =>
 		invalidateCache({
 			name: new RegExp('^' + nameHookPrefix),
-			filter: method => (exceptCurrent ? method.config.name !== buildMethodName(_$(page)) : true)
+			filter: method => ![buildMethodName(_$(page)), buildMethodName(_$(page) + 1)].includes(method.config.name)
 		});
 	/**
 	 * 移除一条数据
 	 * @param index 移除的索引
 	 */
 	const remove = index => {
-		// 如果同步移除的数量大于pageSize时，将异步更新本页数据，此时不再进行操作了
-		// 因为此块代码在函数头部，因此当pageSize + 1次进入函数时，其removedCount是刚好等于pageSize的
-		const pageSizeVal = _$(pageSize);
-		const exceedsPagesize = () => removedCount >= pageSizeVal;
-		if (exceedsPagesize()) {
-			upd$(data, tempData); // 当移除项数大于pageSize时同步还原数据，减少不必要的视图渲染
-			return;
-		}
-
-		let cachedListData = undefined;
 		const pageVal = _$(page);
 		const nextPage = pageVal + 1;
 		setCacheData(buildMethodName(nextPage), data => {
-			cachedListData = listDataGetter(data);
-			return false;
+			const cachedListData = listDataGetter(data);
+			// 从下一页列表的头部开始取补位数据
+			fillingItem = (cachedListData || []).shift();
+			return data;
 		});
 
-		// 如果有下一页数据且同步删除的数量未超过pageSize，则通过缓存数据补位
-		if (cachedListData) {
+		const isLastPageVal = _$(isLastPage);
+		abortFetch();
+		if (fillingItem || isLastPageVal) {
+			// 如果有下一页数据则通过缓存数据补位
 			if (!tempData) {
 				tempData = [..._$(data)];
 			}
 			if (index >= 0) {
 				upd$(data, rawd => {
 					rawd.splice(index, 1);
+					// 如果有下一页的补位数据才去补位，因为有可能是最后一页才进入删除的
+					fillingItem && rawd.push(fillingItem);
 					return rawd;
 				});
-				removedCount++;
-				// 用下一页的数据补位，从头部开始取
-				upd$(data, [..._$(data), cachedListData[removedCount - 1]]);
 			}
+		} else if (tempData) {
+			upd$(data, tempData); // 当移除项数都用完时还原数据，减少不必要的视图渲染
 		}
+		// 当前页的缓存同步更新
+		updateCurrentPageCache();
 
 		// 如果没有下一页数据，或同步删除的数量超过了pageSize，则恢复数据并重新加载本页
 		// 需异步操作，因为可能超过pageSize后还有remove函数被同步执行
@@ -196,15 +204,17 @@ export default function (
 			// 让所有缓存失效
 			invalidatePaginationCache();
 			// 重新预加载前后一页的数据，需要在refresh前执行，因为refresh时isRefresh为true，此时无法fetch数据
-			fetchNextPage();
 			fetchPreviousPage();
-
-			// 因为有作用域限制，因此exceedsPagesize需要以函数形式实现
-			if (!cachedListData || exceedsPagesize()) {
+			fetchNextPage();
+			// 移除最后一页数据时，就不需要再刷新了
+			if (!fillingItem && !isLastPageVal) {
 				refresh(pageVal);
 			}
+			if (!append && isLastPageVal && _$(data).length <= 0) {
+				upd$(page, pageVal => pageVal - 1); // 翻页模式下，如果是最后一页且全部项被删除了，则往前翻一页
+			}
 			tempData = undefined;
-			removedCount = 0;
+			fillingItem = undefined;
 		});
 	};
 
@@ -219,35 +229,42 @@ export default function (
 		const asyncCall = fn =>
 			new Promise(resolve => {
 				fn();
-				setTimeout(resolve);
+				setTimeout(resolve, 10);
 			});
 
 		// 插入项后也需要让缓存失效，以免不同条件下缓存未更新
 		if (index >= 0) {
 			insertSyncRunner(() => {
 				invalidatePaginationCache();
-				fetchNextPage();
 				fetchPreviousPage();
+				fetchNextPage();
 			});
 		}
 		asyncCall(onBefore)
 			.then(() =>
 				asyncCall(() => {
-					// 先从末尾去掉一项数据，保证操作页的数量为pageSize
+					abortFetch();
+					const pageVal = _$(page);
+					let popItem = undefined;
 					upd$(data, rawd => {
-						rawd.pop();
+						// 先从末尾去掉一项数据，保证操作页的数量为pageSize
+						popItem = rawd.pop();
+						// 插入位置为空默认插到最前面
+						index >= 0 ? rawd.splice(index, 0, item) : rawd.unshift(item);
 						return rawd;
 					});
 
-					// 插入位置为空默认插到最前面
-					if (index >= 0) {
-						upd$(data, rawd => {
-							rawd.splice(index, 0, item);
-							return rawd;
-						});
-					} else {
-						upd$(data, [item, ..._$(data)]);
-					}
+					// 当前页的缓存同步更新
+					updateCurrentPageCache();
+
+					// 将pop的项放到下一页缓存的头部，与remove的操作保持一致
+					// 这样在同步调用insert和remove时表现才一致
+					const nextPage = pageVal + 1;
+					setCacheData(buildMethodName(nextPage), rawData => {
+						const cachedListData = listDataGetter(rawData) || [];
+						cachedListData.unshift(popItem);
+						return rawData;
+					});
 				})
 			)
 			.then(onAfter);

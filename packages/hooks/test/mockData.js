@@ -19,8 +19,16 @@ export const setMockListWithSearchData = cb => {
 					};
 			  });
 };
+
+const shortTotal = 10;
+let shortList;
+export const setMockShortListData = cb => {
+	shortList = typeof cb === 'function' ? cb(shortList) : Array.from({ length: shortTotal }).map((_, i) => i);
+};
+
 setMockListData();
 setMockListWithSearchData();
+setMockShortListData();
 
 const mocks = defineMock({
 	'/list': ({ query }) => {
@@ -29,9 +37,19 @@ const mocks = defineMock({
 		pageSize = Number(pageSize);
 		const start = (page - 1) * pageSize;
 		return {
-			pageCount: Math.ceil(total / pageSize),
-			total,
+			total: mockListData.length,
 			list: mockListData.slice(start, start + pageSize)
+		};
+	},
+
+	'/list-short': ({ query }) => {
+		let { page = 1, pageSize = 10 } = query;
+		page = Number(page);
+		pageSize = Number(pageSize);
+		const start = (page - 1) * pageSize;
+		return {
+			total: shortList.length,
+			list: shortList.slice(start, start + pageSize)
 		};
 	},
 
@@ -40,12 +58,10 @@ const mocks = defineMock({
 		page = Number(page);
 		pageSize = Number(pageSize);
 		const start = (page - 1) * pageSize;
+		const filteredList = mockListWithSearchData.filter(({ word }) => (keyword ? word === keyword : true));
 		return {
-			pageCount: Math.ceil(total / pageSize),
-			total,
-			list: mockListWithSearchData
-				.filter(({ word }) => (keyword ? word === keyword : true))
-				.slice(start, start + pageSize)
+			total: filteredList.length,
+			list: filteredList.slice(start, start + pageSize)
 		};
 	}
 });
