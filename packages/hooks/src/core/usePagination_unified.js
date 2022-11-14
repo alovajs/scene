@@ -61,6 +61,7 @@ export default function (
 		force: () => isRefresh
 	});
 
+	const { send } = states;
 	// 计算data、total、isLastPage参数
 	const totalLocal = $(undefined);
 	const total = $$(() => {
@@ -153,10 +154,10 @@ export default function (
 				throw new Error("Refresh page can't greater than page");
 			}
 			// 更新当前页数据
-			states.send(refreshPage);
+			send(refreshPage);
 		} else {
 			// 页数相等，则刷新当前页，否则fetch数据
-			refreshPage === _$(page) ? states.send() : fetch(handler(refreshPage, _$(pageSize)));
+			refreshPage === _$(page) ? send() : fetch(handler(refreshPage, _$(pageSize)));
 		}
 	};
 
@@ -165,16 +166,20 @@ export default function (
 	let fillingItem = undefined; // 补位数据项
 	const removeSyncRunner = createSyncOnceRunner();
 	// 删除除此usehook当前页和下一页的所有相关缓存
-	const invalidatePaginationCache = () =>
+	const invalidatePaginationCache = (all = false) => {
 		invalidateCache({
 			name: new RegExp('^' + nameHookPrefix),
 			filter: method => {
+				if (all) {
+					return all;
+				}
 				const pageVal = _$(page);
 				return ![buildMethodName(pageVal - 1), buildMethodName(pageVal), buildMethodName(pageVal + 1)].includes(
 					method.config.name
 				);
 			}
 		});
+	};
 	/**
 	 * 移除一条数据
 	 * @param index 移除的索引
@@ -293,8 +298,8 @@ export default function (
 	 * 从第一页开始重新加载列表，并清空缓存
 	 */
 	const reload = () => {
-		invalidatePaginationCache();
-		upd$(page, 1);
+		invalidatePaginationCache(true);
+		_$(page) === 1 ? send() : upd$(page, 1);
 		isReset = true;
 	};
 

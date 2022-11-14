@@ -691,12 +691,20 @@ describe('vue usePagination', () => {
 
 		await untilCbCalled(onSuccess);
 		expect(data.value).toEqual([0, 1, 2, 3]);
+		setMockListData(data => {
+			data.splice(0, 1, 100);
+			return data;
+		});
+		reload();
+		await untilCbCalled(onSuccess);
+		expect(data.value).toEqual([100, 1, 2, 3]);
+
 		page.value++;
 		await untilCbCalled(onSuccess);
-		expect(data.value).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+		expect(data.value).toEqual([100, 1, 2, 3, 4, 5, 6, 7]);
 
 		reload();
 		await untilCbCalled(onSuccess);
-		expect(data.value).toEqual([0, 1, 2, 3]);
+		expect(data.value).toEqual([100, 1, 2, 3]);
 	});
 });
