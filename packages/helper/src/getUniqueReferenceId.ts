@@ -16,7 +16,7 @@ const generateUniqueId = () => {
 export default (reference: any) => {
 	const refType = typeof reference;
 	if (!['object', 'function', 'symbol'].includes(refType)) {
-		return refType;
+		return reference;
 	}
 
 	let existedRef = referenceList.find(({ ref }) => ref === reference);

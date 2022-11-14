@@ -62,21 +62,19 @@ export default function (
 	});
 
 	// 计算data、total、isLastPage参数
-	const stateData = states.data;
-	const totalLocal = $(0);
+	const totalLocal = $(undefined);
 	const total = $$(() => {
-		const totalInData = totalGetter(_$(stateData)) || 0;
+		const totalInData = totalGetter(_$(states.data)) || 0;
 		const totalLocalVal = _$(totalLocal);
-		return totalLocalVal || totalInData;
-	}, _expBatch$(stateData, totalLocal));
+		return totalLocalVal !== undefined ? totalLocalVal : totalInData;
+		// return totalLocalVal || totalInData;
+	}, _expBatch$(states.data, totalLocal));
 	const pageCount = $$(() => Math.ceil(_$(total) / _$(pageSize)), _expBatch$(pageSize, total));
-	const lastPage = page => {
+	const canPreload = preloadPage => {
 		const pageCountVal = _$(pageCount);
-		const statesDataVal = listDataGetter(_$(states.data));
-		const dataLen = Array.isArray(statesDataVal) ? statesDataVal.length : 0;
-		return pageCountVal ? page >= pageCountVal : dataLen < _$(pageSize);
+		const exceedPageCount = pageCountVal ? preloadPage > pageCountVal : false;
+		return preloadPage > 0 && !exceedPageCount;
 	};
-	const canPreload = preloadPage => preloadPage > 0 && !lastPage(preloadPage);
 
 	// 预加载下一页数据
 	const fetchNextPage = () => {
@@ -93,7 +91,13 @@ export default function (
 		}
 	};
 	// 如果返回的数据小于pageSize了，则认定为最后一页了
-	const isLastPage = $$(() => lastPage(_$(page)), _expBatch$(page, pageCount, data, pageSize));
+	const isLastPage = $$(() => {
+		const pageVal = _$(page);
+		const pageCountVal = _$(pageCount);
+		const statesDataVal = listDataGetter(_$(states.data));
+		const dataLen = Array.isArray(statesDataVal) ? statesDataVal.length : 0;
+		return pageCountVal ? pageVal >= pageCountVal : dataLen < _$(pageSize);
+	}, _expBatch$(page, pageCount, states.data, pageSize));
 
 	// 更新当前页缓存
 	const updateCurrentPageCache = () => {
@@ -110,7 +114,7 @@ export default function (
 	});
 	const { fetch, abort: abortFetch } = fetchStates;
 	states.onSuccess((rawData, refreshPage) => {
-		upd$(totalLocal, 0); // 重新加载数据后重置为0，让total使用服务端的total参数
+		upd$(totalLocal, undefined); // 重新加载数据后重置为0，让total使用服务端的total参数
 		fetchPreviousPage();
 		fetchNextPage();
 
