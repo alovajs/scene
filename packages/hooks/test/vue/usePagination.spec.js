@@ -2,7 +2,7 @@ import { createAlova, setCacheData } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import { usePagination } from '../../src/index-vue';
-import { mockRequestAdapter, setMockListData, setMockListWithSearchData } from '../mockData';
+import { mockRequestAdapter, setMockListData, setMockListWithSearchData, setMockShortListData } from '../mockData';
 import { untilCbCalled } from '../utils';
 
 // 防止Vue warn打印
@@ -16,6 +16,7 @@ console.warn = (...args) => {
 
 beforeEach(() => setMockListData());
 beforeEach(() => setMockListWithSearchData());
+beforeEach(() => setMockShortListData());
 const createMockAlova = () =>
 	createAlova({
 		baseURL: 'http://localhost:8080',
@@ -191,7 +192,7 @@ describe('vue usePagination', () => {
 				}
 			});
 
-		const { data, page, pageSize, insert, onFetchSuccess } = usePagination(getter, {
+		const { data, page, pageSize, total, insert, onFetchSuccess } = usePagination(getter, {
 			data: res => res.list,
 			initialPage: 2 // 默认从第2页开始
 		});
@@ -209,10 +210,7 @@ describe('vue usePagination', () => {
 		});
 
 		const mockFn = jest.fn();
-		setMockListData(data => {
-			data.splice(20, 1, 122);
-			return data;
-		});
+		let totalPrev = total.value;
 		await new Promise(resolve => {
 			insert(300, {
 				index: 0,
@@ -223,27 +221,43 @@ describe('vue usePagination', () => {
 				onAfter: () => {
 					mockFn();
 					expect(data.value).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+					expect(total.value).toBe((totalPrev = totalPrev + 1));
 					resolve();
 				}
 			});
 		});
+		setMockListData(data => {
+			data.splice(10, 0, 300);
+			return data;
+		});
 		expect(mockFn.mock.calls.length).toBe(2);
 
+		await untilCbCalled(setTimeout, 150);
+		// 检查当前页缓存
+		setCacheData(getter(page.value, pageSize.value), cache => {
+			expect(cache.list).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+			return false;
+		});
 		// 检查是否重新fetch了前后一页的数据
-		await untilCbCalled(setTimeout, 100);
 		setCacheData(getter(page.value - 1, pageSize.value), cache => {
 			expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 			return false;
 		});
 		setCacheData(getter(page.value + 1, pageSize.value), cache => {
-			expect(cache.list).toEqual([122, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
+			// insert时不会将缓存末尾去掉，因此剩下11项
+			expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
 			return false;
 		});
 
 		const mockFn2 = jest.fn();
 		insert(400);
 		insert(500, { index: 2 });
-		insert(600, { index: pageSize.value - 1 });
+		insert(600, {
+			index: pageSize.value - 1,
+			onAfter: () => {
+				expect(total.value).toBe((totalPrev = totalPrev + 3));
+			}
+		});
 		onFetchSuccess(() => {
 			mockFn2();
 		});
@@ -267,7 +281,7 @@ describe('vue usePagination', () => {
 				}
 			});
 
-		const { data, page, pageSize, insert, onSuccess, onFetchSuccess } = usePagination(getter, {
+		const { data, page, pageSize, insert, onSuccess } = usePagination(getter, {
 			data: res => res.list,
 			preloadNextPage: false,
 			preloadPreviousPage: false,
@@ -329,7 +343,7 @@ describe('vue usePagination', () => {
 				}
 			});
 
-		const { data, page, pageSize, remove, onFetchSuccess } = usePagination(getter, {
+		const { data, page, pageSize, total, remove, onFetchSuccess } = usePagination(getter, {
 			data: res => res.list,
 			initialPage: 2, // 默认从第2页开始
 			initialPageSize: 4
@@ -348,10 +362,12 @@ describe('vue usePagination', () => {
 		});
 
 		const mockFn = jest.fn();
+		let totalPrev = total.value;
 		// 删除第二项，将会用下一页的数据补位，并重新拉取上下一页的数据
 		remove(1);
 		remove(1);
 		expect(data.value).toEqual([4, 7, 8, 9]);
+		expect(total.value).toBe((totalPrev = totalPrev - 2));
 		setMockListData(data => {
 			// 模拟数据中同步删除，这样fetch的数据校验才正常
 			data.splice(5, 2);
@@ -366,9 +382,25 @@ describe('vue usePagination', () => {
 		onFetchSuccess(() => {
 			mockFn();
 		});
+
+		// 请求发送了，但还没响应，此时再一次删除，期望还可以使用原缓存且中断请求
+		await untilCbCalled(setTimeout);
+		remove(2);
+		setMockListData(data => {
+			data.splice(6, 1);
+			return data;
+		});
+		expect(data.value).toEqual([4, 7, 9, 10]);
+		expect(total.value).toBe((totalPrev = totalPrev - 1));
+		// 检查下一页缓存
+		setCacheData(getter(page.value + 1, pageSize.value), cache => {
+			expect(cache.list).toEqual([11]); // 已经被使用了3项了
+			return false;
+		});
+
 		await untilCbCalled(setTimeout, 100); // 等待重新fetch
-		expect(data.value).toEqual([4, 7, 8, 9]);
-		expect(mockFn.mock.calls.length).toBe(2);
+		expect(data.value).toEqual([4, 7, 9, 10]);
+		expect(mockFn.mock.calls.length).toBe(3); // 有两次是上一页的fetch，但会命中缓存立即执行onSuccess，另一次是最后一次的下一页数据fetch
 		// 检查是否重新fetch了前后一页的数据
 		await untilCbCalled(setTimeout, 100);
 		setCacheData(getter(page.value - 1, pageSize.value), cache => {
@@ -376,7 +408,7 @@ describe('vue usePagination', () => {
 			return false;
 		});
 		setCacheData(getter(page.value + 1, pageSize.value), cache => {
-			expect(cache.list).toEqual([10, 11, 12, 13]);
+			expect(cache.list).toEqual([11, 12, 13, 14]);
 			return false;
 		});
 
@@ -387,7 +419,7 @@ describe('vue usePagination', () => {
 		remove(0);
 		remove(0);
 		remove(0);
-		expect(data.value).toEqual([4, 7, 8, 9]); // 数据被恢复
+		expect(data.value).toEqual([4, 7, 9, 10]); // 数据被恢复
 		setMockListData(data => {
 			// 模拟数据中同步删除
 			data.splice(4, 5);
@@ -398,14 +430,15 @@ describe('vue usePagination', () => {
 		});
 
 		await untilCbCalled(setTimeout, 100);
-		expect(data.value).toEqual([11, 12, 13, 14]);
+		expect(data.value).toEqual([12, 13, 14, 15]);
+		expect(total.value).toBe((totalPrev = totalPrev - 5));
 		expect(mockFn2.mock.calls.length).toBe(2);
 		setCacheData(getter(page.value - 1, pageSize.value), cache => {
 			expect(cache.list).toEqual([0, 1, 2, 3]);
 			return false;
 		});
 		setCacheData(getter(page.value + 1, pageSize.value), cache => {
-			expect(cache.list).toEqual([15, 16, 17, 18]);
+			expect(cache.list).toEqual([16, 17, 18, 19]);
 			return false;
 		});
 	});
@@ -420,7 +453,7 @@ describe('vue usePagination', () => {
 				}
 			});
 
-		const { data, page, total, pageSize, remove, onSuccess } = usePagination(getter, {
+		const { data, page, pageSize, total, remove, onSuccess } = usePagination(getter, {
 			data: res => res.list,
 			total: res => res.total,
 			initialPage: 3, // 默认从第3页开始
@@ -430,14 +463,15 @@ describe('vue usePagination', () => {
 		});
 
 		await untilCbCalled(onSuccess);
-
+		let totalPrev = total.value;
 		remove(1);
-		setMockListData(data => {
+		setMockShortListData(data => {
 			// 模拟数据中同步删除，这样fetch的数据校验才正常
-			data.splice(8, 1);
+			data.splice(9, 1);
 			return data;
 		});
 		expect(data.value).toEqual([8]);
+		expect(total.value).toBe((totalPrev = totalPrev - 1));
 		// 当前页缓存要保持一致
 		setCacheData(getter(page.value, pageSize.value), cache => {
 			expect(cache.list).toEqual([8]);
@@ -445,9 +479,14 @@ describe('vue usePagination', () => {
 		});
 
 		remove(0);
+		setMockShortListData(data => {
+			data.splice(8, 1);
+			return data;
+		});
 		await untilCbCalled(onSuccess); // 最后一页没有数据项了，自动设置为前一页
 		expect(page.value).toBe(2);
 		expect(data.value).toEqual([4, 5, 6, 7]);
+		expect(total.value).toBe(totalPrev - 1);
 	});
 
 	// 下拉加载更多相关

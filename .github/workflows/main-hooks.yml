@@ -38,6 +38,6 @@ jobs:
 
       # 打包发布
       - run: yarn workspace @alova/hooks run build
-      - run: cd ./packages/hooks && npm publish --tag=beta
+      - run: cd ./packages/hooks && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ALOVA_PUBLISH_TOKEN }}

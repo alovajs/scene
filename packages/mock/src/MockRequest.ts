@@ -89,27 +89,26 @@ export default function MockRequest<RC, RE, RH>(
 		let timer: NodeJS.Timeout;
 		return {
 			response: () =>
-				new Promise<RE>(
-					(resolve, reject) =>
-						(timer = setTimeout(() => {
-							const responseData =
-								typeof mockDataRaw === 'function'
-									? mockDataRaw({
-											query,
-											params,
-											data
-									  })
-									: mockDataRaw;
-							if (responseData) {
-								// 打印模拟数据请求信息
-								mockRequestLogger &&
-									consoleRequestInfo(true, url, adapterConfig.method, adapterConfig.headers, query, data, responseData);
-								resolve(onMockResponse(responseData));
-							} else {
-								reject(new Error('404 api not found'));
-							}
-						}, delay))
-				),
+				new Promise<RE>((resolve, reject) => {
+					timer = setTimeout(() => {
+						const responseData =
+							typeof mockDataRaw === 'function'
+								? mockDataRaw({
+										query,
+										params,
+										data
+								  })
+								: mockDataRaw;
+						if (responseData) {
+							// 打印模拟数据请求信息
+							mockRequestLogger &&
+								consoleRequestInfo(true, url, adapterConfig.method, adapterConfig.headers, query, data, responseData);
+							resolve(onMockResponse(responseData));
+						} else {
+							reject(new Error('404 api not found'));
+						}
+					}, delay);
+				}),
 			headers: () => Promise.resolve<Headers>(new Headers()),
 			abort: () => {
 				clearTimeout(timer);
