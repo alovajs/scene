@@ -14,7 +14,8 @@ export default function (
 		initialPage = 1,
 		initialPageSize = 10,
 		debounce,
-		watchingStates = []
+		watchingStates = [],
+		immediate
 	},
 	$,
 	$$,
@@ -55,7 +56,7 @@ export default function (
 	});
 
 	const states = useWatcher(getHandlerMethod, [...watchingStates, page, pageSize], {
-		immediate: true,
+		immediate,
 		initialData,
 		debounce,
 		force: () => isRefresh

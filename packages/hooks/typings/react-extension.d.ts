@@ -1,5 +1,6 @@
 import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
+import { InsertConfig, PaginationConfig } from '.';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
@@ -62,5 +63,5 @@ interface UsePaginationReturnType<LD extends any[], R> {
  */
 export declare function usePagination<S, E, R, T, RC, RE, RH, LD extends any[], WS extends DependencyList>(
 	handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
-	config: PaginationConfig<R, LD, WS>
+	config?: PaginationConfig<R, LD, WS>
 ): UsePaginationReturnType<LD, R>;

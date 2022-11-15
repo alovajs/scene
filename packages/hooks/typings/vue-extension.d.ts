@@ -1,5 +1,6 @@
 import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
 import { ComputedRef, Ref, WatchSource } from 'vue';
+import { InsertConfig, PaginationConfig } from '.';
 
 interface UsePaginationReturnType<LD extends any[], R> {
 	loading: Ref<boolean>;
@@ -70,5 +71,5 @@ export declare function usePagination<
 	WS extends WatchSource[]
 >(
 	handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
-	config: PaginationConfig<R, LD, WS>
+	config?: PaginationConfig<R, LD, WS>
 ): UsePaginationReturnType<LD, R>;
