@@ -15,7 +15,7 @@ export default function (
 		initialPageSize = 10,
 		debounce,
 		watchingStates = [],
-		immediate
+		immediate = true
 	},
 	$,
 	$$,
