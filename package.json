@@ -31,7 +31,7 @@
 		"@types/react": "^18.0.25",
 		"@typescript-eslint/eslint-plugin": "^1.4.2",
 		"@typescript-eslint/parser": "^1.4.2",
-		"alova": "^1.3.3",
+		"alova": "^1.4.1",
 		"babel-jest": "^29.2.2",
 		"coveralls": "^3.1.1",
 		"cross-env": "5.2.0",

@@ -54,7 +54,7 @@ export default function (
 		isReset = true;
 	});
 
-	const states = useWatcher(getHandlerMethod, [page, pageSize, ...watchingStates], {
+	const states = useWatcher(getHandlerMethod, [...watchingStates, page, pageSize], {
 		immediate: true,
 		initialData,
 		debounce,

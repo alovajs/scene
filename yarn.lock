@@ -13,7 +13,7 @@
 
 "@alova/hooks@file:E:\\艺施胡\\extensions\\packages\\hooks":
   "resolved" "file:packages/hooks"
-  "version" "1.0.0-beta.6"
+  "version" "1.0.0-beta.9"
 
 "@alova/mock@file:E:\\艺施胡\\extensions\\packages\\mock":
   "resolved" "file:packages/mock"
@@ -1698,10 +1698,10 @@
     "json-schema-traverse" "^0.4.1"
     "uri-js" "^4.2.2"
 
-"alova@^1.3.3":
-  "integrity" "sha512-ntSWyfrie1vnc/GhTzoU8iTaOoJr4brtBuWKri0ZWQ9yj8q2r9FhRF+tEJK4oMzxbWN9gCtRlo3iZdINQOMb5w=="
-  "resolved" "https://registry.npmmirror.com/alova/-/alova-1.3.3.tgz"
-  "version" "1.3.3"
+"alova@^1.4.1":
+  "integrity" "sha512-qxTwPyYzEYt6uujVaWTjJwM9n8mSnV7vi2gPlhnHaGMOFa4nALUSgh8VDw9AHoCwALhkUhMzvJ3Qxu3SAFH/YA=="
+  "resolved" "https://registry.npmmirror.com/alova/-/alova-1.4.1.tgz"
+  "version" "1.4.1"
 
 "ansi-escapes@^3.2.0":
   "integrity" "sha512-cBhpre4ma+U0T1oM5fXg7Dy1Jw7zzwv7lt/GoCpr+hDQJoYnKVPLL4dCvSEFMmQurOQvSrwT7SL/DAlhBI97RQ=="

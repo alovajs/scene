@@ -1,3 +1,5 @@
+import { WatcherHookConfig } from 'alova';
+
 /** 判断是否为any */
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
 
@@ -12,11 +14,11 @@ interface PaginationConfig<R, LD, WS> {
 	pageCount?: ArgGetter<R, number>;
 	total?: ArgGetter<R, number>;
 	data?: ArgGetter<R, LD>;
-	initialData?: any;
+	initialData?: WatcherHookConfig['initialData'];
 	append?: boolean;
 	initialPage?: number;
 	initialPageSize?: number;
-	debounce?: number;
+	debounce?: WatcherHookConfig['debounce'];
 	watchingStates?: WS;
 }
 interface InsertConfig {
