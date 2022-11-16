@@ -44,7 +44,7 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	 * 移除一条数据
 	 * @param index 移除的索引
 	 */
-	remove: (index: any) => void;
+	remove: (index: number) => void;
 
 	/**
 	 * 替换一条数据
