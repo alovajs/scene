@@ -1,6 +1,7 @@
-import { createSyncOnceRunner, getUniqueReferenceId, noop } from '@alova/helper';
+import { createAssert, createSyncOnceRunner, getUniqueReferenceId } from '@alova/helper';
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
 
+const paginationAssert = createAssert('hooks/usePagination');
 let counter = 0;
 export default function (
 	handler,
@@ -72,16 +73,20 @@ export default function (
 		// return totalLocalVal || totalInData;
 	}, _expBatch$(states.data, totalLocal));
 	const pageCount = $$(() => Math.ceil(_$(total) / _$(pageSize)), _expBatch$(pageSize, total));
-	const canPreload = preloadPage => {
+	const canPreload = (preloadPage, isNextPage = false) => {
 		const pageCountVal = _$(pageCount);
-		const exceedPageCount = pageCountVal ? preloadPage > pageCountVal : false;
+		const exceedPageCount = pageCountVal
+			? preloadPage > pageCountVal
+			: isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
+			? listDataGetter(_$(states.data)).length < _$(pageSize)
+			: false;
 		return preloadPage > 0 && !exceedPageCount;
 	};
 
 	// 预加载下一页数据
 	const fetchNextPage = () => {
 		const nextPage = _$(page) + 1;
-		if (!isRefresh && preloadNextPage && canPreload(nextPage)) {
+		if (!isRefresh && preloadNextPage && canPreload(nextPage, true)) {
 			fetch(getHandlerMethod(nextPage));
 		}
 	};
@@ -151,9 +156,7 @@ export default function (
 	const refresh = refreshPage => {
 		isRefresh = true;
 		if (append) {
-			if (refreshPage > _$(page)) {
-				throw new Error("Refresh page can't greater than page");
-			}
+			paginationAssert(refreshPage <= _$(page), "Refresh page can't greater than page");
 			// 更新当前页数据
 			send(refreshPage);
 		} else {
@@ -181,6 +184,59 @@ export default function (
 			}
 		});
 	};
+
+	// 单独拿出来的原因是
+	// 无论同步调用几次insert、remove，或它们组合调用，reset操作只需要异步执行一次
+	const resetSyncRunner = createSyncOnceRunner();
+	const resetCache = () => {
+		resetSyncRunner(() => {
+			abortFetch();
+			// 缓存失效
+			invalidatePaginationCache();
+			// 重新预加载前后一页的数据，需要在refresh被调用前执行，因为refresh时isRefresh为true，此时无法fetch数据
+			// fetchPreviousPage();
+
+			// 强制请求下一页
+			forceFetch = true;
+			fetchNextPage();
+			forceFetch = false;
+		});
+	};
+
+	/**
+	 * 插入一条数据
+	 * onBefore、插入操作、onAfter三个都需要分别顺序异步执行，因为需要等待视图更新再执行
+	 * @param item 插入项
+	 * @param config 插入配置
+	 */
+	const insert = (item, index = 0) => {
+		const pageVal = _$(page);
+		let popItem = undefined;
+		upd$(data, rawd => {
+			// 先从末尾去掉一项数据，保证操作页的数量为pageSize
+			popItem = rawd.pop();
+			// 插入位置为空默认插到最前面
+			index >= 0 ? rawd.splice(index, 0, item) : rawd.unshift(item);
+			return rawd;
+		});
+		upd$(totalLocal, _$(total) + 1);
+
+		// 当前页的缓存同步更新
+		updateCurrentPageCache();
+
+		// 将pop的项放到下一页缓存的头部，与remove的操作保持一致
+		// 这样在同步调用insert和remove时表现才一致
+		const nextPage = pageVal + 1;
+		setCacheData(buildMethodName(nextPage), rawData => {
+			const cachedListData = listDataGetter(rawData) || [];
+			cachedListData.unshift(popItem);
+			return rawData;
+		});
+
+		// 插入项后也需要让缓存失效，以免不同条件下缓存未更新
+		resetCache();
+	};
+
 	/**
 	 * 移除一条数据
 	 * @param index 移除的索引
@@ -218,18 +274,8 @@ export default function (
 
 		// 如果没有下一页数据，或同步删除的数量超过了pageSize，则恢复数据并重新加载本页
 		// 需异步操作，因为可能超过pageSize后还有remove函数被同步执行
+		resetCache();
 		removeSyncRunner(() => {
-			abortFetch();
-			// 缓存失效
-			invalidatePaginationCache();
-			// 重新预加载前后一页的数据，需要在refresh前执行，因为refresh时isRefresh为true，此时无法fetch数据
-			fetchPreviousPage();
-
-			// 强制请求下一页
-			forceFetch = true;
-			fetchNextPage();
-			forceFetch = false;
-
 			// 移除最后一页数据时，就不需要再刷新了
 			if (!fillingItem && !isLastPageVal) {
 				refresh(pageVal);
@@ -242,57 +288,22 @@ export default function (
 		});
 	};
 
-	const insertSyncRunner = createSyncOnceRunner(10);
 	/**
-	 * 插入一条数据
-	 * onBefore、插入操作、onAfter三个都需要分别顺序异步执行，因为需要等待视图更新再执行
-	 * @param item 插入项
-	 * @param config 插入配置
+	 * 替换列表中的项
+	 * @param {any} item 替换项
+	 * @param {number} index 插入位置
 	 */
-	const insert = (item, { index = 0, onBefore = noop, onAfter = noop } = {}) => {
-		const asyncCall = fn =>
-			new Promise(resolve => {
-				fn();
-				setTimeout(resolve, 10);
-			});
-
-		// 插入项后也需要让缓存失效，以免不同条件下缓存未更新
-		if (index >= 0) {
-			insertSyncRunner(() => {
-				abortFetch();
-				invalidatePaginationCache();
-				fetchPreviousPage();
-				fetchNextPage();
-			});
-		}
-		asyncCall(onBefore)
-			.then(() =>
-				asyncCall(() => {
-					const pageVal = _$(page);
-					let popItem = undefined;
-					upd$(data, rawd => {
-						// 先从末尾去掉一项数据，保证操作页的数量为pageSize
-						popItem = rawd.pop();
-						// 插入位置为空默认插到最前面
-						index >= 0 ? rawd.splice(index, 0, item) : rawd.unshift(item);
-						return rawd;
-					});
-					upd$(totalLocal, _$(total) + 1);
-
-					// 当前页的缓存同步更新
-					updateCurrentPageCache();
-
-					// 将pop的项放到下一页缓存的头部，与remove的操作保持一致
-					// 这样在同步调用insert和remove时表现才一致
-					const nextPage = pageVal + 1;
-					setCacheData(buildMethodName(nextPage), rawData => {
-						const cachedListData = listDataGetter(rawData) || [];
-						cachedListData.unshift(popItem);
-						return rawData;
-					});
-				})
-			)
-			.then(onAfter);
+	const replace = (item, index) => {
+		paginationAssert(
+			typeof index === 'number' && index < _$(data).length,
+			'index must be a number that less than list length'
+		);
+		upd$(data, rawd => {
+			rawd.splice(index, 1, item);
+			return rawd;
+		});
+		// 当前页的缓存同步更新
+		updateCurrentPageCache();
 	};
 
 	/**
@@ -322,6 +333,7 @@ export default function (
 		refresh,
 		insert,
 		remove,
+		replace,
 		reload
 	};
 }

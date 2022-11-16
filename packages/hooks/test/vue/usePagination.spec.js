@@ -14,6 +14,7 @@ console.warn = (...args) => {
 	}
 };
 
+// reset data
 beforeEach(() => setMockListData());
 beforeEach(() => setMockListWithSearchData());
 beforeEach(() => setMockShortListData());
@@ -209,30 +210,14 @@ describe('vue usePagination', () => {
 			return false;
 		});
 
-		const mockFn = jest.fn();
 		let totalPrev = total.value;
-		await new Promise(resolve => {
-			insert(300, {
-				index: 0,
-				onBefore: () => {
-					mockFn();
-					expect(data.value).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
-				},
-				onAfter: () => {
-					mockFn();
-					expect(data.value).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
-					expect(total.value).toBe((totalPrev = totalPrev + 1));
-					resolve();
-				}
-			});
-		});
+		insert(300, 0);
+		expect(data.value).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+		expect(total.value).toBe((totalPrev = totalPrev + 1));
 		setMockListData(data => {
 			data.splice(10, 0, 300);
 			return data;
 		});
-		expect(mockFn.mock.calls.length).toBe(2);
-
-		await untilCbCalled(setTimeout, 150);
 		// 检查当前页缓存
 		setCacheData(getter(page.value, pageSize.value), cache => {
 			expect(cache.list).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
@@ -248,27 +233,72 @@ describe('vue usePagination', () => {
 			expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
 			return false;
 		});
+		await untilCbCalled(setTimeout, 150);
+		// 检查是否重新fetch了前后一页的数据
+		setCacheData(getter(page.value - 1, pageSize.value), cache => {
+			expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+			return false;
+		});
+		setCacheData(getter(page.value + 1, pageSize.value), cache => {
+			// 重新fetch后还是保持pageSize项数据
+			expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
+			return false;
+		});
 
-		const mockFn2 = jest.fn();
 		insert(400);
-		insert(500, { index: 2 });
-		insert(600, {
-			index: pageSize.value - 1,
-			onAfter: () => {
-				expect(total.value).toBe((totalPrev = totalPrev + 3));
-			}
-		});
-		onFetchSuccess(() => {
-			mockFn2();
-		});
-		await untilCbCalled(setTimeout, 100);
+		insert(500, 2);
+		insert(600, pageSize.value - 1);
+		expect(total.value).toBe((totalPrev = totalPrev + 3));
 		expect(data.value).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
 		// 当前页缓存要保持一致
 		setCacheData(getter(page.value, pageSize.value), cache => {
 			expect(cache.list).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
 			return false;
 		});
-		expect(mockFn2.mock.calls.length).toBe(2);
+
+		const mockFn2 = jest.fn();
+		onFetchSuccess(mockFn2);
+		await untilCbCalled(setTimeout, 100);
+		expect(mockFn2.mock.calls.length).toBe(1); // 只会重新预加载下一页数据
+	});
+
+	test('paginated data replace item', async () => {
+		const alovaInst = createMockAlova();
+		const getter = (page, pageSize) =>
+			alovaInst.Get('/list', {
+				params: {
+					page,
+					pageSize
+				}
+			});
+
+		const { data, page, pageSize, replace } = usePagination(getter, {
+			data: res => res.list
+		});
+
+		await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
+
+		expect(() => {
+			replace(100);
+		}).toThrowError();
+		expect(() => {
+			replace(100, 1000);
+		}).toThrowError();
+
+		replace(300, 0);
+		expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+		// 检查当前页缓存
+		setCacheData(getter(page.value, pageSize.value), cache => {
+			expect(cache.list).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+			return false;
+		});
+
+		// 正向顺序替换
+		replace(400, 8);
+		expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 400, 9]);
+		// 逆向顺序替换
+		replace(500, -4);
+		expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 500, 7, 400, 9]);
 	});
 
 	test('paginated data insert item without preload', async () => {
@@ -300,28 +330,14 @@ describe('vue usePagination', () => {
 			return false;
 		});
 
-		const mockFn = jest.fn();
 		setMockListData(data => {
 			data.splice(20, 1, 122);
 			return data;
 		});
-		await new Promise(resolve => {
-			insert(300, {
-				index: 0,
-				onBefore: () => {
-					mockFn();
-					expect(data.value).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
-				},
-				onAfter: () => {
-					mockFn();
-					expect(data.value).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
-					resolve();
-				}
-			});
-		});
-		expect(mockFn.mock.calls.length).toBe(2);
+		insert(300);
+		expect(data.value).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
 
-		// 检查是否重新fetch了前后一页的数据
+		// 预加载设置为false了，因此不会fetch前后一页的数据
 		await untilCbCalled(setTimeout, 100);
 		setCacheData(getter(page.value - 1, pageSize.value), cache => {
 			expect(!!cache).toBeFalsy();
@@ -361,7 +377,6 @@ describe('vue usePagination', () => {
 			return false;
 		});
 
-		const mockFn = jest.fn();
 		let totalPrev = total.value;
 		// 删除第二项，将会用下一页的数据补位，并重新拉取上下一页的数据
 		remove(1);
@@ -379,11 +394,10 @@ describe('vue usePagination', () => {
 			return false;
 		});
 
-		onFetchSuccess(() => {
-			mockFn();
-		});
+		const mockFn = jest.fn();
+		onFetchSuccess(mockFn);
 
-		// 请求发送了，但还没响应，此时再一次删除，期望还可以使用原缓存且中断请求
+		// 请求发送了，但还没响应（响应有50ms延迟），此时再一次删除，期望还可以使用原缓存且中断请求
 		await untilCbCalled(setTimeout);
 		remove(2);
 		setMockListData(data => {
@@ -400,7 +414,7 @@ describe('vue usePagination', () => {
 
 		await untilCbCalled(setTimeout, 100); // 等待重新fetch
 		expect(data.value).toEqual([4, 7, 9, 10]);
-		expect(mockFn.mock.calls.length).toBe(3); // 有两次是上一页的fetch，但会命中缓存立即执行onSuccess，另一次是最后一次的下一页数据fetch
+		expect(mockFn.mock.calls.length).toBe(1); // 有一次下页的fetch被取消，因此只有一次
 		// 检查是否重新fetch了前后一页的数据
 		await untilCbCalled(setTimeout, 100);
 		setCacheData(getter(page.value - 1, pageSize.value), cache => {
@@ -412,7 +426,6 @@ describe('vue usePagination', () => {
 			return false;
 		});
 
-		const mockFn2 = jest.fn();
 		// 同步操作的项数超过pageSize时，移除的数据将被恢复，并重新请求当前页数据
 		remove(0);
 		remove(0);
@@ -425,14 +438,13 @@ describe('vue usePagination', () => {
 			data.splice(4, 5);
 			return data;
 		});
-		onFetchSuccess(() => {
-			mockFn2();
-		});
+		const mockFn2 = jest.fn();
+		onFetchSuccess(mockFn2);
 
 		await untilCbCalled(setTimeout, 100);
 		expect(data.value).toEqual([12, 13, 14, 15]);
 		expect(total.value).toBe((totalPrev = totalPrev - 5));
-		expect(mockFn2.mock.calls.length).toBe(2);
+		expect(mockFn2.mock.calls.length).toBe(1); // 只有下页的预加载触发
 		setCacheData(getter(page.value - 1, pageSize.value), cache => {
 			expect(cache.list).toEqual([0, 1, 2, 3]);
 			return false;
@@ -644,7 +656,6 @@ describe('vue usePagination', () => {
 		await untilCbCalled(onSuccess);
 		expect(data.value).toEqual([0, 1, 2, 3]);
 
-		const mockFn = jest.fn();
 		// 下一页没有缓存的情况下，将会重新请求刷新列表
 		remove(0);
 		remove(0);
@@ -655,9 +666,8 @@ describe('vue usePagination', () => {
 		});
 
 		expect(data.value).toEqual([0, 1, 2, 3]);
-		onFetchSuccess(() => {
-			mockFn();
-		});
+		const mockFn = jest.fn();
+		onFetchSuccess(mockFn);
 
 		await untilCbCalled(setTimeout, 100);
 		expect(data.value).toEqual([2, 3, 4, 5]);
@@ -706,5 +716,37 @@ describe('vue usePagination', () => {
 		reload();
 		await untilCbCalled(onSuccess);
 		expect(data.value).toEqual([100, 1, 2, 3]);
+	});
+
+	test("load more mode paginated data don't need to preload when go to last page", async () => {
+		const alovaInst = createMockAlova();
+		const getter = (page, pageSize) =>
+			alovaInst.Get('/list-short', {
+				params: {
+					page,
+					pageSize
+				}
+			});
+
+		const { data, page, pageSize, onSuccess } = usePagination(getter, {
+			total: () => undefined,
+			data: res => res.list,
+			append: true,
+			initialPage: 2,
+			initialPageSize: 4
+		});
+
+		await untilCbCalled(onSuccess);
+		expect(data.value).toEqual([4, 5, 6, 7]);
+
+		page.value++;
+		await untilCbCalled(onSuccess);
+		expect(data.value).toEqual([4, 5, 6, 7, 8, 9]);
+
+		// 已经到最后一页了，不需要再预加载下一页数据了
+		await untilCbCalled(setTimeout, 100);
+		setCacheData(getter(page.value + 1, pageSize.value), cache => {
+			expect(cache).toBeUndefined();
+		});
 	});
 });
