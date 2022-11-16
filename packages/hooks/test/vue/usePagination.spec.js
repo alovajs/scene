@@ -502,7 +502,7 @@ describe('vue usePagination', () => {
 	});
 
 	// 下拉加载更多相关
-	test('load more mode paginated data, and change page/pageSize', async () => {
+	test('load more mode paginated data. and change page/pageSize', async () => {
 		const alovaInst = createMockAlova();
 		const getter = (page, pageSize) =>
 			alovaInst.Get('/list', {
@@ -632,6 +632,44 @@ describe('vue usePagination', () => {
 		expect(data.value[0]).toBe(100);
 		expect(data.value[data.value.length - 1]).toBe(19);
 		expect(data.value.length).toBe(20);
+	});
+
+	test('load more mode paginated data operate items with remove/insert/replace(open preload)', async () => {
+		const alovaInst = createMockAlova();
+		const getter = (page, pageSize) =>
+			alovaInst.Get('/list', {
+				params: {
+					page,
+					pageSize
+				}
+			});
+
+		const { data, page, total, pageCount, remove, insert, replace } = usePagination(getter, {
+			total: () => undefined,
+			data: res => res.list,
+			initialPage: 2, // 默认从第2页开始
+			initialPageSize: 4
+		});
+
+		await untilCbCalled(setTimeout, 150);
+		expect(total.value).toBeUndefined();
+		expect(pageCount.value).toBeUndefined();
+		remove(1);
+		remove(1);
+		insert(100, 0);
+		replace(200, 2);
+		setMockListData(data => {
+			// 模拟数据中同步删除，这样fetch的数据校验才正常
+			data.splice(5, 2);
+			data.splice(4, 0, 100);
+			data.splice(6, 1, 200);
+			return data;
+		});
+		expect(data.value).toEqual([100, 4, 200, 8]);
+		expect(total.value).toBeUndefined();
+		expect(pageCount.value).toBeUndefined();
+
+		page.value++;
 	});
 
 	test('load more mode paginated data remove item without preload', async () => {

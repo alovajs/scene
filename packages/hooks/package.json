@@ -1,6 +1,6 @@
 {
 	"name": "@alova/hooks",
-	"version": "1.0.0-beta.12",
+	"version": "1.0.0-beta.13",
 	"description": "extended hooks with alova.js",
 	"homepage": "https://github.com/alovajs/extensions/packages/hooks",
 	"main": "dist/alova-extended-hooks.umd.min.js",

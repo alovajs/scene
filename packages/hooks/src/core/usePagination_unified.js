@@ -67,12 +67,14 @@ export default function (
 	// 计算data、total、isLastPage参数
 	const totalLocal = $(undefined);
 	const total = $$(() => {
-		const totalInData = totalGetter(_$(states.data)) || 0;
+		const totalInData = totalGetter(_$(states.data));
 		const totalLocalVal = _$(totalLocal);
 		return totalLocalVal !== undefined ? totalLocalVal : totalInData;
-		// return totalLocalVal || totalInData;
 	}, _expBatch$(states.data, totalLocal));
-	const pageCount = $$(() => Math.ceil(_$(total) / _$(pageSize)), _expBatch$(pageSize, total));
+	const pageCount = $$(() => {
+		const totalVal = _$(total);
+		return totalVal !== undefined ? Math.ceil(totalVal / _$(pageSize)) : undefined;
+	}, _expBatch$(pageSize, total));
 	const canPreload = (preloadPage, isNextPage = false) => {
 		const pageCountVal = _$(pageCount);
 		const exceedPageCount = pageCountVal
@@ -219,7 +221,8 @@ export default function (
 			index >= 0 ? rawd.splice(index, 0, item) : rawd.unshift(item);
 			return rawd;
 		});
-		upd$(totalLocal, _$(total) + 1);
+		const totalVal = _$(total);
+		typeof totalVal === 'number' && upd$(totalLocal, totalVal + 1);
 
 		// 当前页的缓存同步更新
 		updateCurrentPageCache();
@@ -264,7 +267,8 @@ export default function (
 					fillingItem && rawd.push(fillingItem);
 					return rawd;
 				});
-				upd$(totalLocal, _$(total) - 1);
+				const totalVal = _$(total);
+				totalVal && upd$(totalLocal, Math.max(totalVal - 1, 0)); // 不能小于0
 			}
 		} else if (tempData) {
 			upd$(data, tempData); // 当移除项数都用完时还原数据，减少不必要的视图渲染
