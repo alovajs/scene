@@ -1,6 +1,6 @@
 import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
-import { InsertConfig, PaginationConfig } from '.';
+import { PaginationConfig } from '.';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
@@ -34,18 +34,24 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	refresh: (refreshPage: number) => void;
 
 	/**
-	 * 插入一条数据
-	 * onBefore、插入操作、onAfter三个都需要分别顺序异步执行，因为需要等待视图更新再执行
+	 * 插入一条数据，未传入index时默认插入到最前面
 	 * @param item 插入项
-	 * @param config 插入配置
+	 * @param index 插入位置（索引）
 	 */
-	insert: (item: LD[number], config?: InsertConfig) => void;
+	insert: (item: LD[number], index?: number) => void;
 
 	/**
 	 * 移除一条数据
 	 * @param index 移除的索引
 	 */
 	remove: (index: any) => void;
+
+	/**
+	 * 替换一条数据
+	 * @param item 替换项
+	 * @param index 替换位置（索引）
+	 */
+	replace: (item: LD[number], index: number) => void;
 
 	/**
 	 * 从第一页开始重新加载列表，并清空缓存
