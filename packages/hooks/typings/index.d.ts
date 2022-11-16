@@ -7,7 +7,7 @@ type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
 type IsUnknown<T, P, N> = 1 extends 1 & T ? P : N;
 
 /** @description usePagination相关 */
-type ArgGetter<R, T> = (data: R) => T | undefined;
+type ArgGetter<R, LD> = (data: R) => LD | undefined;
 interface PaginationConfig<R, LD, WS> {
 	preloadPreviousPage?: boolean;
 	preloadNextPage?: boolean;
