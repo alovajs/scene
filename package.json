@@ -18,6 +18,26 @@
 	"bugs": {
 		"url": "https://github.com/alovajs/extensions/issues"
 	},
+	"keywords": [
+		"react",
+		"hooks",
+		"xmlhttprequest",
+		"vuejs",
+		"typescript",
+		"vue",
+		"reactjs",
+		"svelte",
+		"axios",
+		"request",
+		"fetch-api",
+		"vue3",
+		"react-hooks",
+		"superagent",
+		"alova",
+		"alova-extension",
+		"@alova/hooks",
+		"alova/mock"
+	],
 	"devDependencies": {
 		"@babel/core": "^7.18.2",
 		"@babel/preset-env": "^7.18.2",
