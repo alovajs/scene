@@ -1,17 +1,25 @@
 import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
-import { PaginationConfig } from '.';
+import { IsUnknown, PaginationConfig } from '.';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
-interface UsePaginationReturnType<LD extends any[], R> {
+interface UsePaginationReturnType<LD, R> {
 	loading: boolean;
 	error: Error | undefined;
 	downloading: Progress;
 	uploading: Progress;
 	page: ReactState<number>;
 	pageSize: ReactState<number>;
-	data: LD;
+	data: IsUnknown<
+		LD,
+		R extends {
+			data: any;
+		}
+			? R['data']
+			: R,
+		LD
+	>;
 	pageCount: number | undefined;
 	total: number | undefined;
 	isLastPage: boolean;
@@ -38,7 +46,7 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	 * @param item 插入项
 	 * @param index 插入位置（索引）
 	 */
-	insert: (item: LD[number], index?: number) => void;
+	insert: (item: LD extends any[] ? LD[number] : any, index?: number) => void;
 
 	/**
 	 * 移除一条数据
@@ -51,7 +59,7 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	 * @param item 替换项
 	 * @param index 替换位置（索引）
 	 */
-	replace: (item: LD[number], index: number) => void;
+	replace: (item: LD extends any[] ? LD[number] : any, index: number) => void;
 
 	/**
 	 * 从第一页开始重新加载列表，并清空缓存
@@ -67,7 +75,7 @@ interface UsePaginationReturnType<LD extends any[], R> {
  * @param config pagination hook配置
  * @returns {UsePaginationReturnType}
  */
-export declare function usePagination<S, E, R, T, RC, RE, RH, LD extends any[], WS extends DependencyList>(
+export declare function usePagination<S, E, R, T, RC, RE, RH, LD, WS extends DependencyList>(
 	handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
 	config?: PaginationConfig<R, LD, WS>
 ): UsePaginationReturnType<LD, R>;

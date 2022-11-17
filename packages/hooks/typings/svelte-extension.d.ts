@@ -1,15 +1,25 @@
 import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
 import { Readable, Writable } from 'svelte/store';
-import { PaginationConfig } from '.';
+import { IsUnknown, PaginationConfig } from '.';
 
-interface UsePaginationReturnType<LD extends any[], R> {
+interface UsePaginationReturnType<LD, R> {
 	loading: Writable<boolean>;
 	error: Writable<Error | undefined>;
 	downloading: Writable<Progress>;
 	uploading: Writable<Progress>;
 	page: Writable<number>;
 	pageSize: Writable<number>;
-	data: Writable<LD>;
+	data: Writable<
+		IsUnknown<
+			LD,
+			R extends {
+				data: any;
+			}
+				? R['data']
+				: R,
+			LD
+		>
+	>;
 	pageCount: Readable<number | undefined>;
 	total: Readable<number | undefined>;
 	isLastPage: Readonly<Readable<boolean>>;
@@ -36,7 +46,7 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	 * @param item 插入项
 	 * @param index 插入位置（索引）
 	 */
-	insert: (item: LD[number], index?: number) => void;
+	insert: (item: LD extends any[] ? LD[number] : any, index?: number) => void;
 
 	/**
 	 * 移除一条数据
@@ -49,7 +59,7 @@ interface UsePaginationReturnType<LD extends any[], R> {
 	 * @param item 替换项
 	 * @param index 替换位置（索引）
 	 */
-	replace: (item: LD[number], index: number) => void;
+	replace: (item: LD extends any[] ? LD[number] : any, index: number) => void;
 
 	/**
 	 * 从第一页开始重新加载列表，并清空缓存
@@ -73,7 +83,7 @@ export declare function usePagination<
 	RC,
 	RE,
 	RH,
-	LD extends any[],
+	LD,
 	WS extends Readable<any>[]
 >(
 	handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
