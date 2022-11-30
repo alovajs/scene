@@ -1,11 +1,11 @@
 /*
  * @Date: 2020-04-09 11:06:01
  * @LastEditors: JOU(wx: huzhen555)
- * @LastEditTime: 2022-11-06 15:56:36
+ * @LastEditTime: 2022-11-30 20:46:39
  */
 var typescript = require('rollup-plugin-typescript2');
 var { readFileSync } = require('fs');
-var compilePaths = require('./extensions');
+var compilePaths = require('./libs');
 
 const getCompiler = (
 	opt = {

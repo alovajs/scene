@@ -1,44 +1,66 @@
 {
-	"name": "alova-extensions",
-	"version": "1.0.0",
-	"description": "The extensions of alova.js",
-	"homepage": "https://github.com/alovajs/extensions",
-	"private": true,
-	"workspaces": [
-		"packages/*"
-	],
+	"name": "@alova/scene",
+	"version": "1.0.0-beta.14",
+	"description": "scenario hooks with alova.js",
+	"homepage": "https://github.com/alovajs/scene",
+	"main": "dist/alova-extended-hooks.umd.min.js",
+	"jsnext:main": "dist/alova-extended-hooks.esm.js",
+	"module": "dist/alova-extended-hooks.esm.js",
+	"types": "typings/index.d.ts",
 	"scripts": {
+		"test": "jest",
+		"test:coverage": "jest --coverage",
 		"clean": "rimraf ./dist",
-		"build:esm": "npm run clean && rollup -c config/rollup.config.esm.js"
+		"build:vuehooks:esm": "cross-env NODE_ENV=development EXTENSION=vuehooks rollup -c ./config/rollup.config.esm.js",
+		"build:vuehooks:umd": "cross-env NODE_ENV=development EXTENSION=vuehooks rollup -c ./config/rollup.config.umd.js",
+		"build:vuehooks:umd.min": "cross-env NODE_ENV=production EXTENSION=vuehooks rollup -c ./config/rollup.config.umd.js",
+		"build:vuehooks": "npm run build:vuehooks:esm && npm run build:vuehooks:umd && npm run build:vuehooks:umd.min",
+		"build:reacthooks:esm": "cross-env NODE_ENV=development EXTENSION=reacthooks rollup -c ./config/rollup.config.esm.js",
+		"build:reacthooks:umd": "cross-env NODE_ENV=development EXTENSION=reacthooks rollup -c ./config/rollup.config.umd.js",
+		"build:reacthooks:umd.min": "cross-env NODE_ENV=production EXTENSION=reacthooks rollup -c ./config/rollup.config.umd.js",
+		"build:reacthooks": "npm run build:reacthooks:esm && npm run build:reacthooks:umd && npm run build:reacthooks:umd.min",
+		"build:sveltehooks:esm": "cross-env NODE_ENV=development EXTENSION=sveltehooks rollup -c ./config/rollup.config.esm.js",
+		"build:sveltehooks:umd": "cross-env NODE_ENV=development EXTENSION=sveltehooks rollup -c ./config/rollup.config.umd.js",
+		"build:sveltehooks:umd.min": "cross-env NODE_ENV=production EXTENSION=sveltehooks rollup -c ./config/rollup.config.umd.js",
+		"build:sveltehooks": "npm run build:sveltehooks:esm && npm run build:sveltehooks:umd && npm run build:sveltehooks:umd.min",
+		"build": "npm run clean && npm run build:vuehooks && npm run build:reacthooks && npm run build:sveltehooks"
 	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"author": "JOU-amjs",
+	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/alovajs/extensions.git"
+		"url": "git://github.com/alovajs/scene.git"
 	},
 	"bugs": {
-		"url": "https://github.com/alovajs/extensions/issues"
+		"url": "https://github.com/alovajs/scene/issues"
 	},
-	"keywords": [
-		"react",
-		"hooks",
-		"xmlhttprequest",
-		"vuejs",
-		"typescript",
-		"vue",
-		"reactjs",
-		"svelte",
-		"axios",
-		"request",
-		"fetch-api",
-		"vue3",
-		"react-hooks",
-		"superagent",
-		"alova",
-		"alova-extension",
-		"@alova/hooks",
-		"alova/mock"
+	"files": [
+		"dist",
+		"typings/*.d.ts"
 	],
+	"exports": {
+		"./vue": "./dist/alova-scene-vue.esm.js",
+		"./react": "./dist/alova-scene-react.esm.js",
+		"./svelte": "./dist/alova-scene-svelte.esm.js"
+	},
+	"typesVersions": {
+		"*": {
+			"vue": [
+				"typings/vue-scene.d.ts"
+			],
+			"react": [
+				"typings/react-scene.d.ts"
+			],
+			"svelte": [
+				"typings/svelte-scene.d.ts"
+			]
+		}
+	},
 	"devDependencies": {
+		"@alova/mock": "^1.0.4",
 		"@babel/core": "^7.18.2",
 		"@babel/preset-env": "^7.18.2",
 		"@rollup/plugin-commonjs": "^22.0.0",

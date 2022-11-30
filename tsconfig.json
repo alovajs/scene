@@ -25,10 +25,8 @@
 		"allowJs": true
 	},
 	"paths": {
-		"@/*": ["src/*"],
-		"@mock/*": ["packages/mock/*"],
-		"@hooks/*": ["packages/hooks/*"]
+		"@/*": ["src/*"]
 	},
-	"include": ["packages/**/*.ts", "packages/**.d.ts"],
-	"exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]
+	"include": ["src/**/*.ts", "typings/*.d.ts"],
+	"exclude": ["node_modules", "**.d.ts"]
 }

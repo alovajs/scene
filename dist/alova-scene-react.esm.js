@@ -1,9 +1,58 @@
-import { createAssert, createSyncOnceRunner, getUniqueReferenceId } from '@alova/helper';
-import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
+/**
+  * @alova/scene 1.0.0-beta.14 (https://github.com/alovajs/scene)
+  * Copyright 2022 JOU-amjs. All Rights Reserved
+  * Licensed under MIT (https://github.com/alovajs/scene/blob/master/LICENSE)
+  */
+
+import { useWatcher, useFetcher, setCacheData, invalidateCache } from 'alova';
+import { useState, useMemo, useRef, useLayoutEffect } from 'react';
+
+const createSyncOnceRunner = (delay = 0) => {
+    let timer;
+    return (fn) => {
+        if (timer) {
+            clearTimeout(timer);
+        }
+        timer = setTimeout(fn, delay);
+    };
+};
+const referenceList = [];
+const uniqueIds = {};
+const generateUniqueId = () => {
+    let id = Math.random().toString(36).substring(2);
+    if (uniqueIds[id]) {
+        id = generateUniqueId();
+    }
+    return id;
+};
+const getUniqueReferenceId = (reference) => {
+    const refType = typeof reference;
+    if (!['object', 'function', 'symbol'].includes(refType)) {
+        return reference;
+    }
+    let existedRef = referenceList.find(({ ref }) => ref === reference);
+    if (!existedRef) {
+        const uniqueId = generateUniqueId();
+        existedRef = {
+            id: uniqueId,
+            ref: reference
+        };
+        referenceList.push(existedRef);
+        uniqueIds[uniqueId] = 1;
+    }
+    return existedRef.id;
+};
+function createAssert(prefix) {
+    return (expression, msg) => {
+        if (!expression) {
+            throw new Error(`[alova/${prefix}:Error]${msg}`);
+        }
+    };
+}
 
 const paginationAssert = createAssert('hooks/usePagination');
 let counter = 0;
-export default function (
+function usePagination_unified (
 	handler,
 	{
 		preloadPreviousPage = true,
@@ -80,8 +129,8 @@ export default function (
 		const exceedPageCount = pageCountVal
 			? preloadPage > pageCountVal
 			: isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-			? listDataGetter(_$(states.data)).length < _$(pageSize)
-			: false;
+				? listDataGetter(_$(states.data)).length < _$(pageSize)
+				: false;
 		return preloadPage > 0 && !exceedPageCount;
 	};
 
@@ -341,3 +390,59 @@ export default function (
 		reload
 	};
 }
+
+/**
+ * 创建状态
+ * @param data 创建状态的数据
+ * @returns {FrameworkState}
+ */
+const $ = useState;
+
+/**
+ * 创建计算属性
+ * @param data 创建计算属性的数据
+ * @returns {FrameworkState}
+ */
+const $$ = useMemo;
+
+/**
+ * 脱水普通状态、计算属性或alova导出的状态，返回状态原始值
+ * @param state 状态
+ * @returns 状态原始值，即状态对应的数据
+ */
+const exportState = state => (Array.isArray(state) && typeof state[1] === 'function' ? state[0] : state);
+
+const _$ = exportState;
+const _exp$ = exportState;
+
+/**
+ * 批量导出状态
+ * @param state 状态
+ * @returns 状态原始值
+ */
+const _expBatch$ = (...states) => states.map(s => _exp$(s));
+
+/**
+ * 更新状态值
+ * @param state 更新的状态
+ * @param newData 新状态值
+ */
+const upd$ = (state, newData) => state[1](newData);
+
+/**
+ * 监听状态触发回调
+ * @param {import('react').DependencyList} states 监听状态
+ * @param {Function} cb 回调函数
+ */
+const watch = (states, cb) => {
+	// 当有监听状态时，状态变化再触发
+	const needEmit = useRef(false);
+	useLayoutEffect(() => {
+		needEmit.current ? cb() : (needEmit.current = true);
+	}, states);
+};
+
+const usePagination = (handler, config = {}) =>
+	usePagination_unified(handler, config, $, $$, upd$, _$, _exp$, _expBatch$, watch);
+
+export { usePagination };

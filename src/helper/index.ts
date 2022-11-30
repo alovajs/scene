@@ -1,3 +1,20 @@
+/**
+ * 创建同步多次调用只在异步执行一次的执行器
+ */
+export const createSyncOnceRunner = (delay = 0) => {
+	let timer: NodeJS.Timer;
+
+	/**
+	 * 执行多次调用此函数将异步执行一次
+	 */
+	return (fn: () => void) => {
+		if (timer) {
+			clearTimeout(timer);
+		}
+		timer = setTimeout(fn, delay);
+	};
+};
+
 const referenceList = [] as { id: string; ref: any }[];
 const uniqueIds: Record<string, 1> = {};
 const generateUniqueId = () => {
@@ -13,7 +30,7 @@ const generateUniqueId = () => {
  * @param {reference} 引用类型数据
  * @returns uniqueId
  */
-export default (reference: any) => {
+export const getUniqueReferenceId = (reference: any) => {
 	const refType = typeof reference;
 	if (!['object', 'function', 'symbol'].includes(refType)) {
 		return reference;
@@ -31,3 +48,18 @@ export default (reference: any) => {
 	}
 	return existedRef.id;
 };
+
+export const noop = () => {};
+
+/**
+ * 自定义断言函数，表达式为false时抛出错误
+ * @param expression 判断表达式，true或false
+ * @param msg 断言消息
+ */
+export function createAssert(prefix: string) {
+	return (expression: boolean, msg: string) => {
+		if (!expression) {
+			throw new Error(`[alova/${prefix}:Error]${msg}`);
+		}
+	};
+}

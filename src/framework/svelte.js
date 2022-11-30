@@ -1,5 +1,5 @@
-import { createSyncOnceRunner } from '@alova/helper';
 import { derived, writable } from 'svelte/store';
+import { createSyncOnceRunner } from '../helper';
 
 /**
  * 创建状态
