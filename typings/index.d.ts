@@ -26,3 +26,21 @@ interface InsertConfig {
 	onAfter?: () => void;
 	onBefore?: () => void;
 }
+
+/** 静默方法实例匹配器 */
+type SilentMethodFilter =
+	| string
+	| RegExp
+	| {
+			name: string | RegExp;
+			filter: (method: SilentMethod, index: number, methods: SilentMethod[]) => boolean;
+	  };
+
+type SilentSubmitBootHandler = () => void;
+type SilentSubmitSuccessHandler = (data: any) => void;
+type SilentSubmitErrorHandler = (error: any) => void;
+type SilentSubmitCompleteHandler = () => void;
+declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): void;
+declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler<R>): void;
+declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): void;
+declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): void;
