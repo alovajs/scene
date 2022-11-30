@@ -7,12 +7,12 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Hooks Unit Test",
-			"runtimeExecutable": "yarn",
+			"name": "Unit Test",
+			"runtimeExecutable": "npm",
 			"windows": {
-				"runtimeExecutable": "yarn.cmd"
+				"runtimeExecutable": "npm.cmd"
 			},
-			"runtimeArgs": ["workspace", "@alova/hooks", "test"],
+			"runtimeArgs": ["run", "test"],
 			"console": "integratedTerminal",
 			"cwd": "${workspaceRoot}",
 			"env": {
