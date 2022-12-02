@@ -1,6 +1,5 @@
 export {
 	bootSilentSubmit,
-	getSilentMethods,
 	onSilentSubmitBoot,
 	onSilentSubmitComplete,
 	onSilentSubmitError,

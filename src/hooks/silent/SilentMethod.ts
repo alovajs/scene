@@ -19,7 +19,6 @@ export default class SilentMethod<S, E, R, T, RC, RE, RH> {
 
 	public resolveHandler?: PromiseExecuteParameter['0'];
 	public rejectHandler?: PromiseExecuteParameter['1'];
-
 	constructor(
 		methodInstance: Method<S, E, R, T, RC, RE, RH>,
 		retry?: number,

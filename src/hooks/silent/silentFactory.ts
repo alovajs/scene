@@ -4,7 +4,7 @@ import {
 	SilentSubmitErrorHandler,
 	SilentSubmitSuccessHandler
 } from '../../../typings';
-import { pushItem } from '../../helper/variables';
+import { pushItem } from '../../helper';
 
 /**
  * 启动静默提交，它将载入缓存中的静默方法，并开始静默提交

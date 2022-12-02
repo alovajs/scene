@@ -1,5 +1,5 @@
-import { instanceOf, valueObject } from '../../helper';
-import { includes, nullValue, undefinedValue } from '../../helper/variables';
+import { includes, instanceOf, valueObject } from '../../helper';
+import { nullValue, undefinedValue } from '../../helper/variables';
 import Null from './Null';
 import Undefined from './Undefined';
 

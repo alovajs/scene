@@ -1,12 +1,12 @@
 import { valueObject } from '../../helper';
 import { nullValue, undefinedValue } from '../../helper/variables';
-import { virtualTagSymbol } from './silentFactory';
+import { virtualTagSymbol } from './virtualResponse';
 
 interface UndefinedConstructor {
 	new (): UndefinedInterface;
 }
 interface UndefinedInterface {
-	[x: symbol]: true;
+	[x: symbol]: true | undefined;
 }
 
 /**

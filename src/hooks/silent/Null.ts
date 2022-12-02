@@ -1,6 +1,6 @@
 import { valueObject } from '../../helper';
 import { nullValue } from '../../helper/variables';
-import { virtualTagSymbol } from './silentFactory';
+import { virtualTagSymbol } from './virtualResponse';
 
 interface NullConstructor {
 	new (): NullInterface;
