@@ -15,9 +15,7 @@ interface NullInterface {
 const Null = function () {} as unknown as NullConstructor;
 Null.prototype = Object.create(nullValue, {
 	[virtualTagSymbol]: valueObject(true),
-	[Symbol.toPrimitive]: valueObject((hint: 'number' | 'string' | 'default') => {
-		return nullValue;
-	}),
+	[Symbol.toPrimitive]: valueObject((hint: 'number' | 'string' | 'default') => (hint === 'string' ? '' : null)),
 	valueOf: valueObject(() => nullValue)
 });
 

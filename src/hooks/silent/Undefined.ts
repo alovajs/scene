@@ -15,9 +15,7 @@ interface UndefinedInterface {
 const Undefined = function () {} as unknown as UndefinedConstructor;
 Undefined.prototype = Object.create(nullValue, {
 	[virtualTagSymbol]: valueObject(true),
-	[Symbol.toPrimitive]: valueObject((hint: 'number' | 'string' | 'default') => {
-		return undefinedValue;
-	}),
+	[Symbol.toPrimitive]: valueObject(() => undefinedValue),
 	valueOf: valueObject(() => undefinedValue)
 });
 
