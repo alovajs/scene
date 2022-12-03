@@ -1,5 +1,5 @@
 export {
-	bootSilentSubmit,
+	bootSilentFactory,
 	onSilentSubmitBoot,
 	onSilentSubmitComplete,
 	onSilentSubmitError,

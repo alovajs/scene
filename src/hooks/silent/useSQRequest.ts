@@ -27,6 +27,7 @@ export default function <S, E, R, T, RC, RE, RH>(
 				const queueResolvePromise = new PromiseCls((resolveHandler, rejectHandler) => {
 					pushNewSilentMethod(
 						method,
+						behaviorFinal,
 						fallbackHandlers,
 						retry,
 						interval,

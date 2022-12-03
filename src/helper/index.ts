@@ -22,9 +22,15 @@ export const getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R
 export const getContextOptions = <S, E, RC, RE, RH>(alovaInstance: Alova<S, E, RC, RE, RH>) => alovaInstance.options;
 export const getOptions = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
 	getContextOptions(getContext(methodInstance));
-export const JSONStringify = <T>(value: T) => JSON.stringify(value);
-export const JSONParse = (value: string) => JSON.parse(value);
-export const objectKeys = (obj: object) => Object.keys(obj);
+export const JSONStringify = (
+	value: any,
+	replacer?: ((this: any, key: string, value: any) => any) | undefined,
+	space?: string | number | undefined
+) => JSON.stringify(value, replacer, space);
+export const JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
+	JSON.parse(text, reviver);
+export const objectKeys = (obj: any) => Object.keys(obj);
+export const objectValues = <T>(obj: Record<any, T>) => Object.values(obj);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
@@ -127,3 +133,12 @@ export const isNumber = (arg: any): arg is number => typeof arg === 'number' && 
  * @returns 该参数是否为字符串
  */
 export const isString = (arg: any): arg is string => typeof arg === 'string';
+
+/**
+ * 创建uuid简易版
+ * @returns uuid
+ */
+export const uuid = () => {
+	const timestamp = new Date().getTime();
+	return Math.floor(Math.random() * timestamp).toString(36);
+};

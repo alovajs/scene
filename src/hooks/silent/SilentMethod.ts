@@ -1,9 +1,11 @@
 import { Method } from 'alova';
 import { FallbackHandler } from '../../../typings';
 
+type MethodEntityPayload = Omit<Method<any, any, any, any, any, any, any>, 'context' | 'response' | 'send'>;
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
-export default class SilentMethod<S, E, R, T, RC, RE, RH> {
-	public method: Method<S, E, R, T, RC, RE, RH>;
+export class SilentMethod {
+	public id: string;
+	public entity: MethodEntityPayload;
 	/** 重试次数 */
 	public retry?: number;
 
@@ -20,7 +22,8 @@ export default class SilentMethod<S, E, R, T, RC, RE, RH> {
 	public resolveHandler?: PromiseExecuteParameter['0'];
 	public rejectHandler?: PromiseExecuteParameter['1'];
 	constructor(
-		methodInstance: Method<S, E, R, T, RC, RE, RH>,
+		id: string,
+		entity: MethodEntityPayload,
 		retry?: number,
 		interval?: number,
 		nextRound?: number,
@@ -28,7 +31,8 @@ export default class SilentMethod<S, E, R, T, RC, RE, RH> {
 		resolveHandler?: PromiseExecuteParameter['0'],
 		rejectHandler?: PromiseExecuteParameter['1']
 	) {
-		this.method = methodInstance;
+		this.id = id;
+		this.entity = entity;
 		this.retry = retry;
 		this.interval = interval;
 		this.nextRound = nextRound;
@@ -36,4 +40,17 @@ export default class SilentMethod<S, E, R, T, RC, RE, RH> {
 		this.resolveHandler = resolveHandler;
 		this.rejectHandler = rejectHandler;
 	}
+}
+
+/**
+ * 创建proxy包裹的silentMethod实例
+ */
+export const createSilentMethodProxy = () => {};
+
+export interface SerializedSilentMethod {
+	id: string;
+	entity: MethodEntityPayload;
+	retry?: number;
+	interval?: number;
+	nextRound?: number;
 }

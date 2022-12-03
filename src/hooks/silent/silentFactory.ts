@@ -1,17 +1,24 @@
 import {
+	SilentFactoryBootOptions,
 	SilentSubmitBootHandler,
 	SilentSubmitCompleteHandler,
 	SilentSubmitErrorHandler,
 	SilentSubmitSuccessHandler
 } from '../../../typings';
 import { pushItem } from '../../helper';
+import { loadSilentQueueMap, mergeSerializer, setStorageAdapter } from './persistSilentMethod';
+import { setSilentMethodQueueMap } from './silentQueue';
 
 /**
  * 启动静默提交，它将载入缓存中的静默方法，并开始静默提交
  * 如果未传入延迟时间，则立即同步启动
  * @param delay 延迟毫秒数
  */
-export const bootSilentSubmit = (delay?: number) => {};
+export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
+	setStorageAdapter(options.storageAdapter);
+	mergeSerializer(options.serializer);
+	setSilentMethodQueueMap(loadSilentQueueMap());
+};
 
 /** 事件绑定函数 */
 const bootHandlers = [] as SilentSubmitBootHandler[];

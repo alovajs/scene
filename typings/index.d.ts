@@ -1,4 +1,4 @@
-import { RequestHookConfig, UseHookReturnType, WatcherHookConfig } from 'alova';
+import { RequestHookConfig, Storage, UseHookReturnType, WatcherHookConfig } from 'alova';
 
 /** 判断是否为any */
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
@@ -97,10 +97,39 @@ type SilentMethodFilter =
 			filter: (method: SilentMethod, index: number, methods: SilentMethod[]) => boolean;
 	  };
 
+interface DataSerializer {
+	forward: (data: any) => any | undefined | void;
+	backward: (data: any) => any | undefined | void;
+}
+
+/** SilentFactory启动选项 */
+interface SilentFactoryBootOptions {
+	/** 延迟毫秒数，不传时默认延迟2000ms */
+	delay?: number;
+
+	/** 持久化SilentMethod的存储适配器，默认使用localStorage */
+	storageAdapter?: Storage;
+
+	/**
+	 * 序列化器集合，用于自定义转换为序列化时某些不能直接转换的数据
+	 * 集合的key作为它的名字进行序列化，当反序列化时会将对应名字的值传入backward函数中
+	 * 因此，在forward中序列化时需判断是否为指定的数据，并返回转换后的数据，否则返回undefined或不返回
+	 * 而在backward中可通过名字来识别，因此只需直接反序列化即可
+	 * 内置的序列化器：
+	 * 1. date序列化器用于转换日期
+	 * 2. regexp序列化器用于转化正则表达式
+	 *
+	 * >>> 可以通过设置同名序列化器来覆盖内置序列化器
+	 */
+	serializer?: Record<string | number, DataSerializer>;
+}
 type SilentSubmitBootHandler = () => void;
 type SilentSubmitSuccessHandler = (data: any) => void;
 type SilentSubmitErrorHandler = (error: any) => void;
 type SilentSubmitCompleteHandler = () => void;
+
+// ************ 导出类型 ***************
+declare function bootSilentFactory(options: SilentFactoryBootOptions): void;
 declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): void;
 declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler<R>): void;
 declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): void;
