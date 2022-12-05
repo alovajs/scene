@@ -1,5 +1,5 @@
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
-import { createAssert, createSyncOnceRunner, getUniqueReferenceId } from '../helper';
+import { createAssert, createSyncOnceRunner, getUniqueReferenceId } from '../../helper';
 
 const paginationAssert = createAssert('hooks/usePagination');
 let counter = 0;

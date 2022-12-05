@@ -2,11 +2,11 @@ import { AlovaMethodHandler, Method, useRequest } from 'alova';
 import { BeforePushQueueHandler, FallbackHandler, PushedQueueHandler, SQRequestHookConfig } from '../../../typings';
 import { isFn, promiseResolve, promiseThen, pushItem, runArgsHandler } from '../../helper';
 import { PromiseCls } from '../../helper/variables';
-import { pushNewSilentMethod } from './silentQueue';
+import { pushNewSilentMethod2Queue } from './silentQueue';
 import { createVirtualResponse } from './virtualResponse';
 
 export default function <S, E, R, T, RC, RE, RH>(
-	methodHandler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+	handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
 	config: SQRequestHookConfig<S, E, R, T, RC, RE, RH>
 ) {
 	const { behavior = 'queue', queue, retry, interval, nextRound } = config || {};
@@ -14,18 +14,18 @@ export default function <S, E, R, T, RC, RE, RH>(
 	const beforePushQueueHandlers: BeforePushQueueHandler[] = [];
 	const pushedQueueHandlers: PushedQueueHandler[] = [];
 
-	const states = useRequest(methodHandler, {
+	const states = useRequest(handler, {
 		...config,
 
 		// 中间件函数
-		middleware: ({ method, sendArgs, statesUpdate, frontStates }, next) => {
+		middleware: ({ method, sendArgs, statesUpdate }, next) => {
 			const behaviorFinal = isFn(behavior) ? behavior() : behavior;
 			if (behaviorFinal !== 'static') {
-				runArgsHandler(beforePushQueueHandlers, sendArgs);
+				runArgsHandler(beforePushQueueHandlers, ...sendArgs);
 
 				// 等待队列中的method执行完毕
 				const queueResolvePromise = new PromiseCls((resolveHandler, rejectHandler) => {
-					pushNewSilentMethod(
+					pushNewSilentMethod2Queue(
 						method,
 						behaviorFinal,
 						fallbackHandlers,
@@ -36,7 +36,7 @@ export default function <S, E, R, T, RC, RE, RH>(
 						rejectHandler,
 						queue
 					);
-					runArgsHandler(pushedQueueHandlers, sendArgs);
+					runArgsHandler(pushedQueueHandlers, ...sendArgs);
 				});
 				if (behaviorFinal === 'queue') {
 					statesUpdate({ loading: true });

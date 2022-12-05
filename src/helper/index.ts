@@ -9,6 +9,7 @@ export const promiseThen = <T, TResult1 = T, TResult2 = never>(
 	onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
 ): Promise<TResult1 | TResult2> => promise.then(onFulfilled, onrejected);
 export const promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
+export const promiseFinally = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
 
 export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn);
 export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);
@@ -31,6 +32,8 @@ export const JSONParse = (text: string, reviver?: ((this: any, key: string, valu
 	JSON.parse(text, reviver);
 export const objectKeys = (obj: any) => Object.keys(obj);
 export const objectValues = <T>(obj: Record<any, T>) => Object.values(obj);
+export const setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay);
+export const clearTimeoutTimer = (timer: NodeJS.Timeout) => clearTimeout(timer);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
@@ -111,7 +114,7 @@ export type GeneralFn = (...args: any[]) => any;
  * @param handlers 事件回调数组
  * @param args 函数参数
  */
-export const runArgsHandler = (handlers: GeneralFn[], args: any[]) => forEach(handlers, handler => handler(...args));
+export const runArgsHandler = (handlers: GeneralFn[], ...args: any[]) => forEach(handlers, handler => handler(...args));
 
 /**
  * 判断参数是否为函数

@@ -1,4 +1,4 @@
-import { RequestHookConfig, Storage, UseHookReturnType, WatcherHookConfig } from 'alova';
+import { Alova, Method, RequestHookConfig, UseHookReturnType, WatcherHookConfig } from 'alova';
 
 /** 判断是否为any */
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
@@ -44,16 +44,20 @@ interface SQHookConfig {
 	behavior?: SQHookBehavior;
 
 	/** 重试次数 */
-	retry?: 3;
+	retry?: number;
 
-	/** 每次重试的间隔时间，表示如果在此时间内未响应则再次发送请求，单位毫秒 */
-	interval?: 3000;
+	/**
+	 * 请求超时时间
+	 * 当达到超时时间后仍未响应则再次发送请求
+	 * 单位毫秒
+	 */
+	interval?: number;
 
 	/**
 	 * 失败后下一轮重试的时间，单位毫秒
 	 * 如果不指定，则在下次刷新时再次触发
 	 */
-	nextRound?: 5000;
+	nextRound?: number;
 
 	/** 队列名，不传时选择默认队列 */
 	queue?: string;
@@ -104,11 +108,14 @@ interface DataSerializer {
 
 /** SilentFactory启动选项 */
 interface SilentFactoryBootOptions {
+	/**
+	 * silentMethod依赖的alova实例
+	 * alova实例的存储适配器、请求适配器等将用于存取SilentMethod实例，以及发送静默提交
+	 */
+	alova: Alova<any, any, any, any, any>;
+
 	/** 延迟毫秒数，不传时默认延迟2000ms */
 	delay?: number;
-
-	/** 持久化SilentMethod的存储适配器，默认使用localStorage */
-	storageAdapter?: Storage;
 
 	/**
 	 * 序列化器集合，用于自定义转换为序列化时某些不能直接转换的数据
@@ -123,10 +130,25 @@ interface SilentFactoryBootOptions {
 	 */
 	serializer?: Record<string | number, DataSerializer>;
 }
+
+/** 静默提交事件 */
+interface SilentSubmitEvent {
+	/** 当前的method实例 */
+	method: Method;
+
+	/** 是否成功 */
+	success: boolean;
+
+	/** 已重试的次数 */
+	retriedTimes: number;
+
+	/** 失败时抛出的错误，只在失败时有值 */
+	error?: any;
+}
 type SilentSubmitBootHandler = () => void;
-type SilentSubmitSuccessHandler = (data: any) => void;
-type SilentSubmitErrorHandler = (error: any) => void;
-type SilentSubmitCompleteHandler = () => void;
+type SilentSubmitSuccessHandler = (event: SilentSubmitEvent) => void;
+type SilentSubmitErrorHandler = (event: SilentSubmitEvent) => void;
+type SilentSubmitCompleteHandler = (event: SilentSubmitEvent) => void;
 
 // ************ 导出类型 ***************
 declare function bootSilentFactory(options: SilentFactoryBootOptions): void;
