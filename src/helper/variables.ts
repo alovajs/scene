@@ -4,3 +4,4 @@ export const undefinedValue = undefined;
 export const nullValue = null;
 export const trueValue = true;
 export const falseValue = false;
+export const symbolToPrimitive = Symbol.toPrimitive;

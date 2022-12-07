@@ -1,6 +1,6 @@
-import { valueObject } from '../../helper';
-import { nullValue, undefinedValue } from '../../helper/variables';
-import { virtualTagSymbol } from './virtualResponse';
+import { uuid, valueObject } from '../../../helper';
+import { nullValue, symbolToPrimitive, undefinedValue } from '../../../helper/variables';
+import { symbolVirtualTag } from '../virtualTag/auxiliary';
 
 interface UndefinedConstructor {
 	new (): UndefinedInterface;
@@ -14,8 +14,8 @@ interface UndefinedInterface {
  */
 const Undefined = function () {} as unknown as UndefinedConstructor;
 Undefined.prototype = Object.create(nullValue, {
-	[virtualTagSymbol]: valueObject(true),
-	[Symbol.toPrimitive]: valueObject(() => undefinedValue),
+	[symbolVirtualTag]: valueObject(uuid()),
+	[symbolToPrimitive]: valueObject(() => undefinedValue),
 	valueOf: valueObject(() => undefinedValue)
 });
 

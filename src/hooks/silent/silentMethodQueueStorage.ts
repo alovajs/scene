@@ -2,7 +2,7 @@ import { isArray } from '@vue/shared';
 import { Method } from 'alova';
 import { SilentFactoryBootOptions } from '../../../typings';
 import { forEach, JSONParse, JSONStringify, len, objectKeys, pushItem } from '../../helper';
-import { undefinedValue } from '../../helper/variables';
+import { trueValue, undefinedValue } from '../../helper/variables';
 import dateSerializer from './serializer/date';
 import regexpSerializer from './serializer/regexp';
 import { dependentAlovaInstance } from './silentFactory';
@@ -69,7 +69,7 @@ export const deserializeMethod = (serializedSilentMethodString: string) => {
 	);
 	const { type, url, config, requestBody } = entity;
 	const methodInstance = new Method(type, dependentAlovaInstance, url, config, requestBody);
-	return new SilentMethod(id, true, methodInstance, retry, interval, nextRound);
+	return new SilentMethod(methodInstance, trueValue, retry, interval, nextRound);
 };
 
 type SerializedSilentMethodIdQueueMap = Record<string, string[]>;

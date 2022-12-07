@@ -51,7 +51,7 @@ interface SQHookConfig {
 	 * 当达到超时时间后仍未响应则再次发送请求
 	 * 单位毫秒
 	 */
-	interval?: number;
+	timeout?: number;
 
 	/**
 	 * 失败后下一轮重试的时间，单位毫秒

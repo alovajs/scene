@@ -52,16 +52,16 @@ export const createSyncOnceRunner = (delay = 0) => {
 	};
 };
 
-const referenceList = [] as { id: string; ref: any }[];
-const uniqueIds: Record<string, 1> = {};
-const generateUniqueId = () => {
-	let id = Math.random().toString(36).substring(2);
-	if (uniqueIds[id]) {
-		id = generateUniqueId();
-	}
-	return id;
+/**
+ * 创建uuid简易版
+ * @returns uuid
+ */
+export const uuid = () => {
+	const timestamp = new Date().getTime();
+	return Math.floor(Math.random() * timestamp).toString(36);
 };
 
+const referenceList = [] as { id: string; ref: any }[];
 /**
  * 获取唯一的引用类型id，如果是非引用类型则返回自身
  * @param {reference} 引用类型数据
@@ -75,13 +75,12 @@ export const getUniqueReferenceId = (reference: any) => {
 
 	let existedRef = referenceList.find(({ ref }) => ref === reference);
 	if (!existedRef) {
-		const uniqueId = generateUniqueId();
+		const uniqueId = uuid();
 		existedRef = {
 			id: uniqueId,
 			ref: reference
 		};
 		referenceList.push(existedRef);
-		uniqueIds[uniqueId] = 1;
 	}
 	return existedRef.id;
 };
@@ -136,12 +135,3 @@ export const isNumber = (arg: any): arg is number => typeof arg === 'number' && 
  * @returns 该参数是否为字符串
  */
 export const isString = (arg: any): arg is string => typeof arg === 'string';
-
-/**
- * 创建uuid简易版
- * @returns uuid
- */
-export const uuid = () => {
-	const timestamp = new Date().getTime();
-	return Math.floor(Math.random() * timestamp).toString(36);
-};

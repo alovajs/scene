@@ -9,11 +9,11 @@ import {
 	promiseThen,
 	pushItem,
 	runArgsHandler,
-	setTimeoutFn,
-	uuid
+	setTimeoutFn
 } from '../../helper';
+import { falseValue, trueValue } from '../../helper/variables';
 import { errorHandlers, silentFactoryStatus, successHandlers } from './silentFactory';
-import { PromiseExecuteParameter, SilentMethod } from './SilentMethod';
+import { MethodHandler, PromiseExecuteParameter, SilentMethod } from './SilentMethod';
 import { push2PersistentSilentQueue, removeSilentMethod } from './silentMethodQueueStorage';
 import SilentSubmitEvent from './SilentSubmitEvent';
 
@@ -77,14 +77,14 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 
 				// 如果有resolveHandler则调用它通知外部
 				resolveHandler(data);
-				runArgsHandler(successHandlers, new SilentSubmitEvent(true, entity, retriedTimes));
+				runArgsHandler(successHandlers, new SilentSubmitEvent(trueValue, entity, retriedTimes));
 			},
 			reason => {
 				// 请求失败，暂时根据失败信息中断请求
 				rejectHandler(reason);
 				runArgsHandler(
 					errorHandlers,
-					runArgsHandler(successHandlers, new SilentSubmitEvent(false, entity, retriedTimes, reason))
+					runArgsHandler(successHandlers, new SilentSubmitEvent(falseValue, entity, retriedTimes, reason))
 				);
 			}
 		).finally(() => {
@@ -121,21 +121,24 @@ export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
 	nextRound?: number,
 	resolveHandler?: PromiseExecuteParameter[0],
 	rejectHandler?: PromiseExecuteParameter[1],
+	methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
+	handlerArgs?: any[],
 	targetQueueName = defaultQueueName
 ) => {
 	const currentQueue = (silentMethodQueueMap[targetQueueName] = silentMethodQueueMap[targetQueueName] || []);
 	const isNewQueue = len(currentQueue) <= 0;
 	const cache = len(fallbackHandlers) <= 0 && behavior === 'silent';
 	const silentMethodInstance = new SilentMethod(
-		uuid(),
-		cache,
 		methodInstance,
+		cache,
 		retry,
 		timeout,
 		nextRound,
 		fallbackHandlers,
 		resolveHandler,
-		rejectHandler
+		rejectHandler,
+		methodHandler,
+		handlerArgs
 	);
 	// 如果没有绑定fallback事件回调，则持久化
 	cache && push2PersistentSilentQueue(silentMethodInstance, targetQueueName);
