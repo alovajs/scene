@@ -1,6 +1,13 @@
-import { includes, uuid } from '../../../helper';
-import { nullValue, symbolToPrimitive } from '../../../helper/variables';
-import { symbolVirtualTag } from './auxiliary';
+import { defineProperties, includes, isObject, uuid } from '../../../helper';
+import {
+	nullValue,
+	ObjectCls,
+	strToString,
+	strValueOf,
+	symbolToPrimitive,
+	undefinedValue
+} from '../../../helper/variables';
+import { symbolVirtualTag, vTagCollectUnified } from './auxiliary';
 import Null from './Null';
 import Undefined from './Undefined';
 
@@ -18,32 +25,44 @@ const proxify = (target: InstanceType<typeof Null | typeof Undefined>, actualVal
 		}
 	});
 
-export const createNullWrapper = () => proxify(new Null());
-export const createUndefinedWrapper = () => proxify(new Undefined());
+export const createNullWrapper = (vTagId?: string) => proxify(new Null(vTagId));
+export const createUndefinedWrapper = (vTagId?: string) => proxify(new Undefined(vTagId));
 
 /**
  * 创建虚拟标签
  * @returns 虚拟响应数据代理实例
  */
-const createVirtualTag = (locked: { v: boolean }, defaults: any = createUndefinedWrapper()) =>
-	new Proxy(defaults, {
+const createVirtualTag = (locked: { v: boolean }, defaults: any) => {
+	const transform2VirtualTag = (value: any) => {
+		const tagValue = () =>
+			defineProperties(value, {
+				[symbolVirtualTag]: uuid(),
+				[symbolToPrimitive]: vTagCollectUnified((thisObj: any) => thisObj.__proto__[strValueOf]()),
+				[strValueOf]: vTagCollectUnified((thisObj: any) => thisObj.__proto__[strValueOf]()),
+				[strToString]: vTagCollectUnified((thisObj: any) => thisObj.__proto__[strToString]())
+			});
+
+		if (value === nullValue) {
+			value = createNullWrapper();
+		} else if (value === undefinedValue) {
+			value = createUndefinedWrapper();
+		} else {
+			value = isObject(value) ? value : new ObjectCls(value);
+			tagValue();
+		}
+		return value;
+	};
+
+	return new Proxy(transform2VirtualTag(defaults), {
 		get(target, key): any {
 			if (locked.v) {
-				return target[key];
+				return vTagCollectUnified(target[key])();
 			}
-			let subTargetValue = defaults && defaults[key] ? defaults[key] : createUndefinedWrapper();
-			if (typeof subTargetValue !== 'object') {
-				subTargetValue = new Object(subTargetValue);
-				subTargetValue[symbolVirtualTag] = uuid();
-				subTargetValue[symbolToPrimitive] = function () {
-					return this.valueOf();
-				};
-			} else if (subTargetValue === nullValue) {
-				subTargetValue = createNullWrapper();
-			}
+			let subTargetValue = transform2VirtualTag(defaults ?? defaults[key]);
 			defaults[key] = subTargetValue;
 			return createVirtualTag(subTargetValue, locked);
 		}
 	});
+};
 
 export default createVirtualTag;

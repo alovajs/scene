@@ -1,5 +1,5 @@
 import { Alova, Method } from 'alova';
-import { PromiseCls } from './variables';
+import { ObjectCls, PromiseCls } from './variables';
 
 export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
 export const promiseReject = <T>(value: T) => PromiseCls.reject(value);
@@ -13,6 +13,7 @@ export const promiseFinally = <T, O>(promise: Promise<T>, onrejected: (reason: a
 
 export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn);
 export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);
+export const map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn);
 export const includes = <T>(ary: T[], target: T) => ary.includes(target);
 export const len = (data: any[] | Uint8Array | string) => data.length;
 
@@ -107,6 +108,17 @@ export const valueObject = <T>(value: T) => ({
 	value
 });
 
+/**
+ * 定义obj属性
+ * @param o 对象
+ * @param attrs 值对象
+ */
+export const defineProperties = (o: object, attrs: Record<string, any>) => {
+	for (const key in attrs) {
+		ObjectCls.defineProperty(o, key, valueObject(attrs[key]));
+	}
+};
+
 export type GeneralFn = (...args: any[]) => any;
 /**
  * 批量执行时间回调函数，并将args作为参数传入
@@ -116,22 +128,55 @@ export type GeneralFn = (...args: any[]) => any;
 export const runArgsHandler = (handlers: GeneralFn[], ...args: any[]) => forEach(handlers, handler => handler(...args));
 
 /**
+ * typof冗余函数
+ * @param arg 任意参数
+ * @returns 参数类型
+ */
+export const typeOf = (arg: any) => typeof arg;
+
+/**
  * 判断参数是否为函数
  * @param fn 任意参数
  * @returns 该参数是否为函数
  */
-export const isFn = (arg: any): arg is GeneralFn => typeof arg === 'function';
+export const isFn = (arg: any): arg is GeneralFn => typeOf(arg) === 'function';
 
 /**
  * 判断参数是否为数字
  * @param arg 任意参数
  * @returns 该参数是否为数字
  */
-export const isNumber = (arg: any): arg is number => typeof arg === 'number' && !isNaN(arg);
+export const isNumber = (arg: any): arg is number => typeOf(arg) === 'number' && !isNaN(arg);
 
 /**
  * 判断参数是否为字符串
  * @param arg 任意参数
  * @returns 该参数是否为字符串
  */
-export const isString = (arg: any): arg is string => typeof arg === 'string';
+export const isString = (arg: any): arg is string => typeOf(arg) === 'string';
+
+/**
+ * 判断参数是否为对象
+ * @param arg 任意参数
+ * @returns 该参数是否为对象
+ */
+export const isObject = (arg: any) => typeOf(arg) === 'object';
+
+/**
+ * 深层遍历目标对象
+ * @param target 目标对象
+ */
+type AttrKey = string | number | symbol;
+export const walkObject = (
+	target: any,
+	callback: (value: any, key: string | number | symbol, parent: any) => void,
+	key?: AttrKey,
+	parent?: any
+) => {
+	parent && key && (target = parent[key] = callback(target, key, parent));
+	if (isObject(target)) {
+		for (const i in target) {
+			walkObject(target[i], callback, i, target);
+		}
+	}
+};

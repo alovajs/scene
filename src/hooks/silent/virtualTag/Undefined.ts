@@ -1,22 +1,24 @@
-import { uuid, valueObject } from '../../../helper';
+import { defineProperties, uuid, valueObject } from '../../../helper';
 import { nullValue, symbolToPrimitive, undefinedValue } from '../../../helper/variables';
-import { symbolVirtualTag } from '../virtualTag/auxiliary';
+import { symbolVirtualTag, vTagCollectUnified } from '../virtualTag/auxiliary';
 
 interface UndefinedConstructor {
-	new (): UndefinedInterface;
+	new (vTagId?: string): UndefinedInterface;
 }
 interface UndefinedInterface {
-	[x: symbol]: true | undefined;
+	[x: symbol]: any;
 }
 
 /**
  * Undefined包装类实现
  */
-const Undefined = function () {} as unknown as UndefinedConstructor;
+const Undefined = function (this: UndefinedInterface, vTagId = uuid()) {
+	defineProperties(this, {
+		[symbolVirtualTag]: vTagId
+	});
+} as unknown as UndefinedConstructor;
 Undefined.prototype = Object.create(nullValue, {
-	[symbolVirtualTag]: valueObject(uuid()),
-	[symbolToPrimitive]: valueObject(() => undefinedValue),
-	valueOf: valueObject(() => undefinedValue)
+	[symbolToPrimitive]: valueObject(vTagCollectUnified(undefinedValue))
 });
 
 export default Undefined;

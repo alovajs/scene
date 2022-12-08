@@ -1,5 +1,6 @@
 import { derived, writable } from 'svelte/store';
-import { createSyncOnceRunner } from '../helper';
+import { createSyncOnceRunner, map } from '../helper';
+import { falseValue, trueValue, undefinedValue } from '../helper/variables';
 
 /**
  * 创建状态
@@ -21,7 +22,7 @@ export const $$ = (getter, depList) => derived(depList, getter);
  * @returns 状态原始值，即状态对应的数据
  */
 export const _$ = state => {
-	let raw = undefined;
+	let raw = undefinedValue;
 	// 订阅时会立即执行一次函数，获取到值后立即调用解除订阅函数
 	state.subscribe(value => (raw = value))();
 	return raw;
@@ -39,7 +40,7 @@ export const _exp$ = state => state;
  * @param state 状态
  * @returns 状态原始值
  */
-export const _expBatch$ = (...states) => states.map(s => _exp$(s));
+export const _expBatch$ = (...states) => map(states, s => _exp$(s));
 
 /**
  * 更新状态值
@@ -56,16 +57,16 @@ export const upd$ = (state, newData) => {
  * @param {Function} cb 回调函数
  */
 export const watch = (states, cb) => {
-	let emited = false;
-	let subscribeStage = true;
+	let emited = falseValue;
+	let subscribeStage = trueValue;
 	const syncRunner = createSyncOnceRunner();
 	const subscribeCb = () => {
 		if (!emited && !subscribeStage) {
 			cb();
-			emited = true;
+			emited = trueValue;
 		}
 		syncRunner(() => {
-			emited = subscribeStage = false;
+			emited = subscribeStage = falseValue;
 		});
 	};
 	states.forEach(state => {

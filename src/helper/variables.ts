@@ -5,3 +5,6 @@ export const nullValue = null;
 export const trueValue = true;
 export const falseValue = false;
 export const symbolToPrimitive = Symbol.toPrimitive;
+export const strValueOf = 'valueOf';
+export const strToString = 'toString';
+export const ObjectCls = Object;

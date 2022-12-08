@@ -69,7 +69,19 @@ export const deserializeMethod = (serializedSilentMethodString: string) => {
 	);
 	const { type, url, config, requestBody } = entity;
 	const methodInstance = new Method(type, dependentAlovaInstance, url, config, requestBody);
-	return new SilentMethod(methodInstance, trueValue, retry, interval, nextRound);
+	return new SilentMethod(methodInstance, trueValue, id, retry, interval, nextRound);
+};
+
+/**
+ * 序列化并保存silentMethod实例
+ * @param silentMethodInstance silentMethod实例
+ */
+export const persistSilentMethod = <S, E, R, T, RC, RE, RH>(
+	silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>
+) => {
+	const silentMethodId = silentMethodInstance.id;
+	const silentMethodStorageKey = silentMethodStorageKeyPrefix + silentMethodId;
+	storage.setItem(silentMethodStorageKey, serializeSilentMethod(silentMethodInstance));
 };
 
 type SerializedSilentMethodIdQueueMap = Record<string, string[]>;
@@ -80,20 +92,16 @@ type SerializedSilentMethodIdQueueMap = Record<string, string[]>;
  * @param queue 操作的队列名
  */
 export const push2PersistentSilentQueue = <S, E, R, T, RC, RE, RH>(
-	silentMethod: SilentMethod<S, E, R, T, RC, RE, RH>,
+	silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,
 	queueName: string
 ) => {
-	// 序列化并保存silentMethod实例
-	const silentMethodId = silentMethod.id;
-	const silentMethodStorageKey = silentMethodStorageKeyPrefix + silentMethodId;
-	storage.setItem(silentMethodStorageKey, serializeSilentMethod(silentMethod));
-
+	persistSilentMethod(silentMethodInstance);
 	// 将silentMethod实例id保存到queue存储中
 	const silentMethodIdQueueMap = JSONParse(
 		storage.getItem(silentMethodIdQueueMapStorageKey) || '{}'
 	) as SerializedSilentMethodIdQueueMap;
 	const currentQueue = (silentMethodIdQueueMap[queueName] = silentMethodIdQueueMap[queueName] || []);
-	pushItem(currentQueue, silentMethodId);
+	pushItem(currentQueue, silentMethodInstance.id);
 	storage.setItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
 };
 
@@ -125,7 +133,7 @@ export const loadSilentQueueMap = () => {
 	const silentMethodQueueMap = {} as SilentQueueMap;
 	forEach(objectKeys(silentMethodIdQueueMap), queueName => {
 		const currentQueue = (silentMethodQueueMap[queueName] = silentMethodQueueMap[queueName] || []);
-		silentMethodIdQueueMap[queueName].map(silentMethodId => {
+		forEach(silentMethodIdQueueMap[queueName], silentMethodId => {
 			const serializedSilentMethodString = storage.getItem(silentMethodStorageKeyPrefix + silentMethodId);
 			serializedSilentMethodString && pushItem(currentQueue, deserializeMethod(serializedSilentMethodString));
 		});

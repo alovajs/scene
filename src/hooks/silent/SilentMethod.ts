@@ -5,7 +5,7 @@ import { uuid } from '../../helper';
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
 export type MethodHandler<S, E, R, T, RC, RE, RH> = (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
 export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
-	public id = uuid();
+	public id: string;
 	public cache: boolean;
 	public entity: Method<S, E, R, T, RC, RE, RH>;
 	/** 重试次数 */
@@ -46,9 +46,13 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 	 * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
 	 */
 	public handlerArgs?: any[];
+
+	/** method创建时所使用的虚拟标签id */
+	public vTags?: string[];
 	constructor(
 		entity: Method<S, E, R, T, RC, RE, RH>,
 		cache: boolean,
+		id = uuid(),
 		retry?: number,
 		timeout?: number,
 		nextRound?: number,
@@ -56,10 +60,12 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 		resolveHandler?: PromiseExecuteParameter['0'],
 		rejectHandler?: PromiseExecuteParameter['1'],
 		methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
-		handlerArgs?: any[]
+		handlerArgs?: any[],
+		vTag?: string[]
 	) {
 		this.entity = entity;
 		this.cache = cache;
+		this.id = id;
 		this.retry = retry;
 		this.timeout = timeout;
 		this.nextRound = nextRound;
@@ -68,6 +74,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 		this.rejectHandler = rejectHandler;
 		this.methodHandler = methodHandler;
 		this.handlerArgs = handlerArgs;
+		this.vTags = vTag;
 	}
 }
 

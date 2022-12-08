@@ -1,22 +1,27 @@
-import { uuid, valueObject } from '../../../helper';
+import { defineProperties, uuid, valueObject } from '../../../helper';
 import { nullValue, symbolToPrimitive } from '../../../helper/variables';
-import { symbolVirtualTag } from '../virtualTag/auxiliary';
+import { symbolVirtualTag, vTagCollectUnified } from '../virtualTag/auxiliary';
 
 interface NullConstructor {
-	new (): NullInterface;
+	new (vTagId?: string): NullInterface;
 }
 interface NullInterface {
-	[x: symbol]: true;
+	[x: symbol]: any;
 }
 
 /**
  * Null包装类实现
  */
-const Null = function () {} as unknown as NullConstructor;
+const Null = function (this: NullInterface, vTagId = uuid()) {
+	defineProperties(this, {
+		[symbolVirtualTag]: vTagId
+	});
+} as unknown as NullConstructor;
 Null.prototype = Object.create(nullValue, {
 	[symbolVirtualTag]: valueObject(uuid()),
-	[symbolToPrimitive]: valueObject((hint: 'number' | 'string' | 'default') => (hint === 'string' ? '' : null)),
-	valueOf: valueObject(() => nullValue)
+	[symbolToPrimitive]: valueObject(
+		vTagCollectUnified((_: any, hint: 'number' | 'string' | 'default') => (hint === 'string' ? '' : null))
+	)
 });
 
 export default Null;

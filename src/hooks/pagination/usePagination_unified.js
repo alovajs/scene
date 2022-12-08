@@ -1,22 +1,23 @@
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
-import { createAssert, createSyncOnceRunner, getUniqueReferenceId } from '../../helper';
+import { createAssert, createSyncOnceRunner, getUniqueReferenceId, map } from '../../helper';
+import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 
 const paginationAssert = createAssert('hooks/usePagination');
 let counter = 0;
 export default function (
 	handler,
 	{
-		preloadPreviousPage = true,
-		preloadNextPage = true,
+		preloadPreviousPage = trueValue,
+		preloadNextPage = trueValue,
 		total: totalGetter = data => data['total'],
 		data: dataGetter = data => data['data'],
 		initialData,
-		append = false,
+		append = falseValue,
 		initialPage = 1,
 		initialPageSize = 10,
 		debounce,
 		watchingStates = [],
-		immediate = true
+		immediate = trueValue
 	},
 	$,
 	$$,
@@ -27,8 +28,8 @@ export default function (
 	watch
 ) {
 	const id = counter++;
-	let isRefresh = false;
-	let isReset = false; // 用于控制是否重置
+	let isRefresh = falseValue;
+	let isReset = falseValue; // 用于控制是否重置
 	const page = $(initialPage);
 	const pageSize = $(initialPageSize);
 	const data = $([]);
@@ -36,9 +37,9 @@ export default function (
 	// 构建method name
 	const nameHookPrefix = `pagination-hook-${id}`;
 	const buildMethodName = page =>
-		`${nameHookPrefix}-${page}-${_$(pageSize)}-${watchingStates
-			.map(state => getUniqueReferenceId(_$(state)))
-			.join('-')}`;
+		`${nameHookPrefix}-${page}-${_$(pageSize)}-${map(watchingStates, state => getUniqueReferenceId(_$(state))).join(
+			'-'
+		)}`;
 	const listDataGetter = rawData => dataGetter(rawData) || rawData;
 	const getHandlerMethod = refreshPage => {
 		const pageVal = refreshPage || _$(page);
@@ -53,7 +54,7 @@ export default function (
 	// 监听状态变化时，重置page为1
 	watch(watchingStates, () => {
 		upd$(page, 1);
-		isReset = true;
+		isReset = trueValue;
 	});
 
 	const states = useWatcher(getHandlerMethod, [...watchingStates, page, pageSize], {
@@ -65,30 +66,30 @@ export default function (
 
 	const { send } = states;
 	// 计算data、total、isLastPage参数
-	const totalLocal = $(undefined);
+	const totalLocal = $(undefinedValue);
 	const total = $$(() => {
 		const totalInData = totalGetter(_$(states.data));
 		const totalLocalVal = _$(totalLocal);
-		return totalLocalVal !== undefined ? totalLocalVal : totalInData;
+		return totalLocalVal !== undefinedValue ? totalLocalVal : totalInData;
 	}, _expBatch$(states.data, totalLocal));
 	const pageCount = $$(() => {
 		const totalVal = _$(total);
-		return totalVal !== undefined ? Math.ceil(totalVal / _$(pageSize)) : undefined;
+		return totalVal !== undefinedValue ? Math.ceil(totalVal / _$(pageSize)) : undefinedValue;
 	}, _expBatch$(pageSize, total));
-	const canPreload = (preloadPage, isNextPage = false) => {
+	const canPreload = (preloadPage, isNextPage = falseValue) => {
 		const pageCountVal = _$(pageCount);
 		const exceedPageCount = pageCountVal
 			? preloadPage > pageCountVal
 			: isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-				? listDataGetter(_$(states.data)).length < _$(pageSize)
-				: false;
+			? listDataGetter(_$(states.data)).length < _$(pageSize)
+			: falseValue;
 		return preloadPage > 0 && !exceedPageCount;
 	};
 
 	// 预加载下一页数据
 	const fetchNextPage = () => {
 		const nextPage = _$(page) + 1;
-		if (!isRefresh && preloadNextPage && canPreload(nextPage, true)) {
+		if (!isRefresh && preloadNextPage && canPreload(nextPage, trueValue)) {
 			fetch(getHandlerMethod(nextPage));
 		}
 	};
@@ -117,13 +118,13 @@ export default function (
 		});
 	};
 
-	let forceFetch = false;
+	let forceFetch = falseValue;
 	const fetchStates = useFetcher({
 		force: () => isRefresh || forceFetch
 	});
 	const { fetch, abort: abortFetch } = fetchStates;
 	states.onSuccess((rawData, refreshPage) => {
-		upd$(totalLocal, undefined); // 重新加载数据后重置为0，让total使用服务端的total参数
+		upd$(totalLocal, undefinedValue); // 重新加载数据后重置为0，让total使用服务端的total参数
 		fetchPreviousPage();
 		fetchNextPage();
 
@@ -135,7 +136,7 @@ export default function (
 			if (isReset) {
 				upd$(data, []);
 			}
-			if (refreshPage === undefined) {
+			if (refreshPage === undefinedValue) {
 				upd$(data, [..._$(data), ...listData]);
 			} else if (refreshPage) {
 				// 如果是刷新页面，则是替换那一页的数据
@@ -147,8 +148,8 @@ export default function (
 		} else {
 			upd$(data, listData);
 		}
-		isRefresh = false;
-		isReset = false;
+		isRefresh = falseValue;
+		isReset = falseValue;
 	});
 
 	/**
@@ -156,7 +157,7 @@ export default function (
 	 * @param refreshPage 刷新的页码
 	 */
 	const refresh = refreshPage => {
-		isRefresh = true;
+		isRefresh = trueValue;
 		if (append) {
 			paginationAssert(refreshPage <= _$(page), "Refresh page can't greater than page");
 			// 更新当前页数据
@@ -169,10 +170,10 @@ export default function (
 
 	// 临时保存的数据，以便当需要重新加载时用于数据恢复
 	let tempData;
-	let fillingItem = undefined; // 补位数据项
+	let fillingItem = undefinedValue; // 补位数据项
 	const removeSyncRunner = createSyncOnceRunner();
 	// 删除除此usehook当前页和下一页的所有相关缓存
-	const invalidatePaginationCache = (all = false) => {
+	const invalidatePaginationCache = (all = falseValue) => {
 		invalidateCache({
 			name: new RegExp('^' + nameHookPrefix),
 			filter: method => {
@@ -199,9 +200,9 @@ export default function (
 			// fetchPreviousPage();
 
 			// 强制请求下一页
-			forceFetch = true;
+			forceFetch = trueValue;
 			fetchNextPage();
-			forceFetch = false;
+			forceFetch = falseValue;
 		});
 	};
 
@@ -213,7 +214,7 @@ export default function (
 	 */
 	const insert = (item, index = 0) => {
 		const pageVal = _$(page);
-		let popItem = undefined;
+		let popItem = undefinedValue;
 		upd$(data, rawd => {
 			// 先从末尾去掉一项数据，保证操作页的数量为pageSize
 			popItem = rawd.pop();
@@ -287,8 +288,8 @@ export default function (
 			if (!append && isLastPageVal && _$(data).length <= 0) {
 				upd$(page, pageVal => pageVal - 1); // 翻页模式下，如果是最后一页且全部项被删除了，则往前翻一页
 			}
-			tempData = undefined;
-			fillingItem = undefined;
+			tempData = undefinedValue;
+			fillingItem = undefinedValue;
 		});
 	};
 
@@ -314,9 +315,9 @@ export default function (
 	 * 从第一页开始重新加载列表，并清空缓存
 	 */
 	const reload = () => {
-		invalidatePaginationCache(true);
+		invalidatePaginationCache(trueValue);
 		_$(page) === 1 ? send() : upd$(page, 1);
-		isReset = true;
+		isReset = trueValue;
 	};
 
 	/** @Returns */

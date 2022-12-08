@@ -11,7 +11,7 @@ import {
 	runArgsHandler,
 	setTimeoutFn
 } from '../../helper';
-import { falseValue, trueValue } from '../../helper/variables';
+import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 import { errorHandlers, silentFactoryStatus, successHandlers } from './silentFactory';
 import { MethodHandler, PromiseExecuteParameter, SilentMethod } from './SilentMethod';
 import { push2PersistentSilentQueue, removeSilentMethod } from './silentMethodQueueStorage';
@@ -123,6 +123,7 @@ export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
 	rejectHandler?: PromiseExecuteParameter[1],
 	methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
 	handlerArgs?: any[],
+	vTag?: string[],
 	targetQueueName = defaultQueueName
 ) => {
 	const currentQueue = (silentMethodQueueMap[targetQueueName] = silentMethodQueueMap[targetQueueName] || []);
@@ -131,6 +132,7 @@ export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
 	const silentMethodInstance = new SilentMethod(
 		methodInstance,
 		cache,
+		undefinedValue,
 		retry,
 		timeout,
 		nextRound,
@@ -138,7 +140,8 @@ export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
 		resolveHandler,
 		rejectHandler,
 		methodHandler,
-		handlerArgs
+		handlerArgs,
+		vTag
 	);
 	// 如果没有绑定fallback事件回调，则持久化
 	cache && push2PersistentSilentQueue(silentMethodInstance, targetQueueName);

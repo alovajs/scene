@@ -1,4 +1,6 @@
 import { computed, ref, watch as vueWatch } from 'vue';
+import { map } from '../helper';
+import { trueValue } from '../helper/variables';
 
 /**
  * 创建状态
@@ -33,7 +35,7 @@ export const _exp$ = state => state;
  * @param state 状态
  * @returns 状态原始值
  */
-export const _expBatch$ = (...states) => states.map(s => _exp$(s));
+export const _expBatch$ = (...states) => map(states, s => _exp$(s));
 
 /**
  * 更新状态值
@@ -52,6 +54,6 @@ export const upd$ = (state, newData) => {
 export const watch = (states, cb) => {
 	vueWatch(states, cb, {
 		flush: 'sync',
-		deep: true
+		deep: trueValue
 	});
 };

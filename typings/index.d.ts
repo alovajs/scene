@@ -14,23 +14,68 @@ interface PaginationConfig<R, LD, WS> {
 	pageCount?: ArgGetter<R, number>;
 	total?: ArgGetter<R, number>;
 	data?: ArgGetter<R, LD>;
-	initialData?: WatcherHookConfig['initialData'];
+	initialData?: WatcherHookConfig<any, any, any, any, any, any, any>['initialData'];
 	append?: boolean;
 	initialPage?: number;
 	initialPageSize?: number;
-	debounce?: WatcherHookConfig['debounce'];
+	debounce?: WatcherHookConfig<any, any, any, any, any, any, any>['debounce'];
 	watchingStates?: WS;
-}
-interface InsertConfig {
-	index?: number;
-	onAfter?: () => void;
-	onBefore?: () => void;
 }
 
 // =========================
+interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
+	/** silentMethod实例id */
+	id: string;
+	/** 是否为持久化实例 */
+	cache: boolean;
+	/** method实例 */
+	entity: Method<S, E, R, T, RC, RE, RH>;
+	/** 重试次数 */
+	retry?: number;
+	/**
+	 * 请求超时时间
+	 * 当达到超时时间后仍未响应则再次发送请求
+	 * 单位毫秒
+	 */
+	timeout?: number;
+
+	/**
+	 * 失败后下一轮重试的时间，单位毫秒
+	 * 如果不指定，则在下次刷新时再次触发
+	 */
+	nextRound?: number;
+
+	/** 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用 */
+	fallbackHandlers?: FallbackHandler[];
+
+	/** Promise的resolve函数，调用将通过对应的promise对象 */
+	resolveHandler?: Parameters<ConstructorParameters<typeof Promise<any>>['0']>['0'];
+
+	/** Promise的reject函数，调用将失败对应的promise对象 */
+	rejectHandler?: Parameters<ConstructorParameters<typeof Promise<any>>['0']>['1'];
+
+	/** 虚拟响应数据，通过delayUpdateState保存到此 */
+	virtualResponse?: any;
+
+	/**
+	 * method实例生成函数，由虚拟标签内的Symbol.toPrimitive函数保存至此
+	 * 当虚拟响应数据被替换为实际响应数据时，将调用此函数重新创建method，达到替换虚拟标签的目的
+	 */
+	methodHandler?: (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
+
+	/**
+	 * methodHandler的调用参数
+	 * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
+	 */
+	handlerArgs?: any[];
+
+	/** method创建时所使用的虚拟标签id */
+	vTags?: string[];
+}
+
 // 静默队列hooks相关
 type SQHookBehavior = 'static' | 'queue' | 'silent' | (() => 'static' | 'queue' | 'silent');
-interface SQHookConfig {
+interface SQHookConfig<S, E, R, T, RC, RE, RH> {
 	/**
 	 * hook行为，可选值为silent、queue、static，默认为queue
 	 * 可以设置为可选值，或一个带返回可选值的回调函数
@@ -61,10 +106,19 @@ interface SQHookConfig {
 
 	/** 队列名，不传时选择默认队列 */
 	queue?: string;
+
+	/** 静默提交时默认的响应数据 */
+	silentDefaultResponse?: () => any;
+
+	/**
+	 * 它将在捕获到method中带有虚拟标签时调用
+	 * 当此捕获回调返回了数据时将会以此数据作为响应数据处理，而不再发送请求
+	 */
+	vTagCaptured?: (method: Method<S, E, R, T, RC, RE, RH>) => R;
 }
-type SQRequestHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig &
+type SQRequestHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
 	Omit<RequestHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
-type SQWatcherHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig &
+type SQWatcherHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
 	Omit<WatcherHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
 
 type FallbackHandler = (...args: any[]) => void;
@@ -153,6 +207,6 @@ type SilentSubmitCompleteHandler = (event: SilentSubmitEvent) => void;
 // ************ 导出类型 ***************
 declare function bootSilentFactory(options: SilentFactoryBootOptions): void;
 declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): void;
-declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler<R>): void;
+declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): void;
 declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): void;
 declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): void;
