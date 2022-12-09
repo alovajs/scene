@@ -1,8 +1,8 @@
 import { DataSerializer } from '../../../../typings';
 import { instanceOf } from '../../../helper';
 import { nullValue, ObjectCls, undefinedValue } from '../../../helper/variables';
-import { stringVirtualTag } from '../virtualTag/auxiliary';
 import { createNullWrapper, createUndefinedWrapper } from '../virtualTag/createVirtualTag';
+import { stringVirtualTag } from '../virtualTag/helper';
 import Null from '../virtualTag/Null';
 import Undefined from '../virtualTag/Undefined';
 

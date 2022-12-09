@@ -1,8 +1,8 @@
-import { Method } from 'alova';
-import { FallbackHandler, SilentMethodFilter, SQHookBehavior } from '../../../typings';
+import { Method, updateState, UpdateStateCollection } from 'alova';
 import {
 	clearTimeoutTimer,
 	forEach,
+	instanceOf,
 	len,
 	noop,
 	objectKeys,
@@ -11,24 +11,25 @@ import {
 	runArgsHandler,
 	setTimeoutFn
 } from '../../helper';
-import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
-import { errorHandlers, silentFactoryStatus, successHandlers } from './silentFactory';
-import { MethodHandler, PromiseExecuteParameter, SilentMethod } from './SilentMethod';
+import { undefinedValue } from '../../helper/variables';
+import createSQEvent from './createSQEvent';
+import { completeHandlers, errorHandlers, silentFactoryStatus, successHandlers } from './silentFactory';
+import { SilentMethod } from './SilentMethod';
 import { push2PersistentSilentQueue, removeSilentMethod } from './silentMethodQueueStorage';
-import SilentSubmitEvent from './SilentSubmitEvent';
+import { parseResponseWithVirtualResponse, replaceVirtualMethod, replaceVTag } from './virtualTag/helper';
 
 export type SilentQueueMap = Record<string, SilentMethod[]>;
 /** 静默方法队列集合 */
-export let silentMethodQueueMap = {} as SilentQueueMap;
+export let silentQueueMap = {} as SilentQueueMap;
 export const defaultQueueName = 'default';
 
 /**
  * 合并queueMap到silentMethod队列集合
  * @param queueMap silentMethod队列集合
  */
-export const merge2SilentMethodQueueMap = (queueMap: SilentQueueMap) => {
+export const merge2SilentQueueMap = (queueMap: SilentQueueMap) => {
 	forEach(objectKeys(queueMap), queueName => {
-		silentMethodQueueMap[queueName] = [...(silentMethodQueueMap[queueName] || []), ...queueMap[queueName]];
+		silentQueueMap[queueName] = [...(silentQueueMap[queueName] || []), ...queueMap[queueName]];
 	});
 };
 
@@ -44,6 +45,7 @@ export const merge2SilentMethodQueueMap = (queueMap: SilentQueueMap) => {
 export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 	const silentMethodRequest = (silentMethodInstance: SilentMethod, retriedTimes = 0) => {
 		const {
+			behavior,
 			entity,
 			retry = 0,
 			timeout = 2000,
@@ -74,18 +76,59 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 				queue.shift();
 				removeSilentMethod(0, queueName);
 				silentMethodRequest(queue[0]);
-
 				// 如果有resolveHandler则调用它通知外部
 				resolveHandler(data);
-				runArgsHandler(successHandlers, new SilentSubmitEvent(trueValue, entity, retriedTimes));
+
+				const { virtualResponse, targetRefMethod, updateStates } = silentMethodInstance;
+				// 替换队列中后面方法实例中的虚拟标签为真实数据
+
+				const virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
+
+				// 将虚拟标签找出来，并依次替换
+				replaceVirtualMethod(virtualTagReplacedResponseMap);
+
+				// 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据
+				// 此为延迟数据更新的实现
+				if (instanceOf(targetRefMethod, Method) && updateStates && len(updateStates) > 0) {
+					const updateStateCollection: UpdateStateCollection<any> = {};
+					forEach(updateStates, stateName => {
+						updateStateCollection[stateName] = dataRaw => replaceVTag(dataRaw, virtualTagReplacedResponseMap).d;
+					});
+					updateState(targetRefMethod, updateStateCollection);
+				}
+
+				// 触发全局的成功事件和完成事件
+				const createGlobalSuccessEvent = () =>
+					createSQEvent(
+						0,
+						behavior,
+						entity,
+						silentMethodInstance,
+						retriedTimes,
+						undefinedValue,
+						data,
+						virtualTagReplacedResponseMap
+					);
+				runArgsHandler(successHandlers, createGlobalSuccessEvent());
+				runArgsHandler(completeHandlers, createGlobalSuccessEvent());
 			},
 			reason => {
 				// 请求失败，暂时根据失败信息中断请求
 				rejectHandler(reason);
-				runArgsHandler(
-					errorHandlers,
-					runArgsHandler(successHandlers, new SilentSubmitEvent(falseValue, entity, retriedTimes, reason))
-				);
+				const createGlobalErrorEvent = () =>
+					createSQEvent(
+						1,
+						behavior,
+						entity,
+						silentMethodInstance,
+						retriedTimes,
+						undefinedValue,
+						undefinedValue,
+						undefinedValue,
+						reason
+					);
+				runArgsHandler(errorHandlers, createGlobalErrorEvent());
+				runArgsHandler(completeHandlers, createGlobalErrorEvent());
 			}
 		).finally(() => {
 			clearTimeoutTimer(retryTimer);
@@ -93,12 +136,6 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 	};
 	silentMethodRequest(queue[0]);
 };
-
-/**
- * 获取静默方法，根据静默方法实例匹配器格式，默认向default队列获取
- * @param matcher 静默方法实例匹配器
- */
-export const getSilentMethods = (matcher: SilentMethodFilter, queue = defaultQueueName) => {};
 
 /**
  * 将新的silentMethod实例放入队列中
@@ -113,38 +150,17 @@ export const getSilentMethods = (matcher: SilentMethodFilter, queue = defaultQue
  * @param targetQueueName 目标队列名
  */
 export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
-	methodInstance: Method<S, E, R, T, RC, RE, RH>,
-	behavior: SQHookBehavior,
-	fallbackHandlers: FallbackHandler[],
-	retry?: number,
-	timeout?: number,
-	nextRound?: number,
-	resolveHandler?: PromiseExecuteParameter[0],
-	rejectHandler?: PromiseExecuteParameter[1],
-	methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
-	handlerArgs?: any[],
-	vTag?: string[],
-	targetQueueName = defaultQueueName
+	silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,
+	targetQueueName = defaultQueueName,
+	onBeforePush: () => void
 ) => {
-	const currentQueue = (silentMethodQueueMap[targetQueueName] = silentMethodQueueMap[targetQueueName] || []);
+	const currentQueue = (silentQueueMap[targetQueueName] = silentQueueMap[targetQueueName] || []);
 	const isNewQueue = len(currentQueue) <= 0;
-	const cache = len(fallbackHandlers) <= 0 && behavior === 'silent';
-	const silentMethodInstance = new SilentMethod(
-		methodInstance,
-		cache,
-		undefinedValue,
-		retry,
-		timeout,
-		nextRound,
-		fallbackHandlers,
-		resolveHandler,
-		rejectHandler,
-		methodHandler,
-		handlerArgs,
-		vTag
-	);
-	// 如果没有绑定fallback事件回调，则持久化
-	cache && push2PersistentSilentQueue(silentMethodInstance, targetQueueName);
+
+	onBeforePush();
+
+	// silent行为下，如果没有绑定fallback事件回调，则持久化
+	silentMethodInstance.cache && push2PersistentSilentQueue(silentMethodInstance, targetQueueName);
 	pushItem(currentQueue, silentMethodInstance);
 
 	// 如果是新的队列且状态为已启动，则执行它

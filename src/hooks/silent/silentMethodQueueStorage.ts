@@ -52,12 +52,12 @@ export const serializeSilentMethod = <S, E, R, T, RC, RE, RH>(
 	});
 
 /**
- * 反序列化请求方法实例，根据序列化器的名称进行反序列化
+ * 反序列化silentMethod实例，根据序列化器的名称进行反序列化
  * @param methodInstance 请求方法实例
  * @returns 请求方法实例
  */
-export const deserializeMethod = (serializedSilentMethodString: string) => {
-	const { id, entity, retry, interval, nextRound }: SerializedSilentMethod = JSONParse(
+export const deserializeSilentMethod = (serializedSilentMethodString: string) => {
+	const { id, behavior, entity, retry, interval, nextRound, targetRefMethod }: SerializedSilentMethod = JSONParse(
 		serializedSilentMethodString,
 		(_, value) => {
 			if (isArray(value) && len(value) === 2) {
@@ -67,9 +67,27 @@ export const deserializeMethod = (serializedSilentMethodString: string) => {
 			return value;
 		}
 	);
-	const { type, url, config, requestBody } = entity;
-	const methodInstance = new Method(type, dependentAlovaInstance, url, config, requestBody);
-	return new SilentMethod(methodInstance, trueValue, id, retry, interval, nextRound);
+
+	// method类实例化
+	const deserializeMethod = (methodPayload: SerializedSilentMethod['entity']) => {
+		const { type, url, config, requestBody } = methodPayload;
+		return new Method(type, dependentAlovaInstance, url, config, requestBody);
+	};
+	const silentMethodInstance = new SilentMethod(
+		deserializeMethod(entity),
+		trueValue,
+		behavior,
+		id,
+		retry,
+		interval,
+		nextRound
+	);
+	// targetRefMethod反序列化
+	if (targetRefMethod) {
+		silentMethodInstance.targetRefMethod = deserializeMethod(targetRefMethod);
+	}
+
+	return silentMethodInstance;
 };
 
 /**
@@ -130,13 +148,13 @@ export const loadSilentQueueMap = () => {
 	const silentMethodIdQueueMap = JSONParse(
 		storage.getItem(silentMethodIdQueueMapStorageKey) || '{}'
 	) as SerializedSilentMethodIdQueueMap;
-	const silentMethodQueueMap = {} as SilentQueueMap;
+	const silentQueueMap = {} as SilentQueueMap;
 	forEach(objectKeys(silentMethodIdQueueMap), queueName => {
-		const currentQueue = (silentMethodQueueMap[queueName] = silentMethodQueueMap[queueName] || []);
+		const currentQueue = (silentQueueMap[queueName] = silentQueueMap[queueName] || []);
 		forEach(silentMethodIdQueueMap[queueName], silentMethodId => {
 			const serializedSilentMethodString = storage.getItem(silentMethodStorageKeyPrefix + silentMethodId);
-			serializedSilentMethodString && pushItem(currentQueue, deserializeMethod(serializedSilentMethodString));
+			serializedSilentMethodString && pushItem(currentQueue, deserializeSilentMethod(serializedSilentMethodString));
 		});
 	});
-	return silentMethodQueueMap;
+	return silentQueueMap;
 };

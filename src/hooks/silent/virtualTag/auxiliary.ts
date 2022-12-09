@@ -1,27 +1,12 @@
-import { isString } from '@vue/shared';
-import { forEach, includes, instanceOf, isFn, isObject, objectKeys, pushItem, walkObject } from '../../../helper';
-import { falseValue, nullValue, trueValue, undefinedValue } from '../../../helper/variables';
-import { vtagIdCollectBasket } from '../createSilentQueueMiddlewares';
-import { persistSilentMethod } from '../silentMethodQueueStorage';
-import { silentMethodQueueMap } from '../silentQueue';
+import { updateOptions, updateState } from 'alova';
+import { SilentMethod } from '../../../../typings';
+import { getConfig, includes, instanceOf, isFn, isObject, noop, objectKeys } from '../../../helper';
+import { nullValue, undefinedValue } from '../../../helper/variables';
+import { currentSilentMethod } from '../createSilentQueueMiddlewares';
+import { defaultQueueName, silentQueueMap } from '../silentQueue';
+import { symbolVirtualTag, vTagCollectUnified } from './helper';
 import Null from './Null';
 import Undefined from './Undefined';
-
-export const symbolVirtualTag = Symbol('vtag');
-export const regVirtualTag = /\[vtag([0-9a-z]+)\]/g;
-
-/** 辅助函数 */
-/**
- * 统一的vTag收集函数
- * @param returnValue 返回值，如果是函数则调用它
- * @returns 收集函数
- */
-export const vTagCollectUnified = (returnValue: any) =>
-	function (this: any, arg?: any) {
-		let thisObj = this;
-		pushItem(vtagIdCollectBasket || [], thisObj[symbolVirtualTag]);
-		return isFn(returnValue) ? returnValue(thisObj, arg) : returnValue;
-	};
 
 /**
  * 获取带虚拟标签变量的原始值
@@ -44,73 +29,54 @@ export const valueOf = (target: any) => {
 };
 
 /**
- * 获取虚拟标签id
- * @param target 虚拟标签
- * @returns 虚拟标签id
+ * 更新对应method的状态
+ * 与updateState不同的是，除了立即更新状态外，它还会在silent模式下响应后再次更新一次，目的是将虚拟标签替换为实际数据
+ * @param method 请求方法对象
+ * @param handleUpdate 更新回调
  */
-export const stringVirtualTag = (target: any) =>
-	isObject(target) ? `[vtag${target[symbolVirtualTag]}]` : undefinedValue;
-
-/**
- * 解析响应数据
- * @param response 真实响应数据
- * @param virtualResponse 虚拟响应数据
- * @returns 虚拟标签id所构成的对应真实数据集合
- */
-export const parseResponseWithVirtualResponse = (response: any, virtualResponse: any) => {
-	let replacedResponseMap = {} as Record<string, any>;
-	let virtualTagId = stringVirtualTag(response);
-	virtualTagId && (replacedResponseMap[virtualTagId] = response);
-
-	if (isObject(virtualResponse)) {
-		for (const i in virtualResponse) {
-			replacedResponseMap = {
-				...replacedResponseMap,
-				...parseResponseWithVirtualResponse(response ?? response[i], virtualResponse[i])
-			};
+export const updateStateEffect: typeof updateState = (matcher, handleUpdate, options) => {
+	const optionsUnified = (options || {}) as updateOptions;
+	const onMatch = optionsUnified.onMatch;
+	optionsUnified.onMatch = method => {
+		// 将目标method实例保存到当前的silentMethod实例
+		if (currentSilentMethod) {
+			currentSilentMethod.targetRefMethod = method;
+			currentSilentMethod.updateStates = isFn(updateState) ? ['data'] : objectKeys(updateState);
 		}
-	}
-	return replacedResponseMap;
+		(onMatch || noop)(method);
+	};
+	return updateState(matcher, handleUpdate, optionsUnified);
 };
 
 /**
- * 替换带有虚拟标签的method实例
- * 当它有methodHandler时调用它重新生成
- * @param virtualTagReplacedResponseMap 虚拟id和对应真实数据的集合
+ * 按method名称或正则表达式筛选满足条件的所有silentMethod实例
+ * @param methodNameMatcher method名称匹配器
+ * @param queueName 查找队列名，默认为default队列
+ * @returns silentMethod实例数组
  */
-export const replaceVirtualMethod = (virtualTagReplacedResponseMap: Record<string, any>) => {
-	forEach(objectKeys(silentMethodQueueMap), queueName => {
-		const currentQueue = silentMethodQueueMap[queueName];
-		forEach(currentQueue, silentMethodItem => {
-			const handlerArgs = silentMethodItem.handlerArgs || [];
-			forEach(handlerArgs, (arg, i) => {
-				if (virtualTagReplacedResponseMap[arg]) {
-					handlerArgs[i] = virtualTagReplacedResponseMap[arg];
-				}
-			});
-			// 重新生成一个method实例并替换
-			let methodUpdated = falseValue;
-			if (silentMethodItem.methodHandler) {
-				silentMethodItem.entity = silentMethodItem.methodHandler(...handlerArgs);
-				methodUpdated = trueValue;
-			} else {
-				// 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
-				walkObject(silentMethodItem.entity, value => {
-					const virtualTagId = stringVirtualTag(value);
-					const newValue = virtualTagId
-						? virtualTagReplacedResponseMap[virtualTagId]
-						: isString(value)
-						? value.replace(regVirtualTag, (_, rep) => virtualTagReplacedResponseMap[rep])
-						: value;
-					if (!methodUpdated && newValue !== value) {
-						methodUpdated = trueValue;
-					}
-					return newValue;
-				});
-			}
-
-			// 如果method实例有更新，则重新持久化此silentMethod实例
-			methodUpdated && persistSilentMethod(silentMethodItem);
-		});
+export const filterSilentMethods = (methodNameMatcher: string | RegExp, queueName = defaultQueueName) =>
+	(silentQueueMap[queueName] || []).filter(silentMethodItem => {
+		const name = getConfig(silentMethodItem.entity).name || '';
+		return instanceOf(methodNameMatcher, RegExp) ? methodNameMatcher.test(name) : name === methodNameMatcher;
 	});
+
+/**
+ * 按method名称或正则表达式查找第一个满足条件的silentMethod实例
+ * @param methodNameMatcher method名称匹配器
+ * @param queueName 查找队列名，默认为default队列
+ * @returns silentMethod实例，未找到时为undefined
+ */
+export const getSilentMethod = (
+	methodNameMatcher: string | RegExp,
+	queueName = defaultQueueName
+): SilentMethod | undefined => filterSilentMethods(methodNameMatcher, queueName)[0];
+
+/**
+ * 虚拟标签字符串化，如果参数不是虚拟标签则返回原数据
+ * @param target 虚拟标签
+ * @returns 虚拟标签id或原数据
+ */
+export const stringifyVtag = (target: any) => {
+	const virtualTagId = isObject(target) ? `[vtag:${target[symbolVirtualTag]}]` : undefinedValue;
+	return virtualTagId || target;
 };

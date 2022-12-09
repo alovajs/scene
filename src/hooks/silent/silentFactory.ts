@@ -8,7 +8,7 @@ import {
 } from '../../../typings';
 import { forEach, objectKeys, pushItem, runArgsHandler } from '../../helper';
 import { loadSilentQueueMap, mergeSerializer } from './silentMethodQueueStorage';
-import { bootSilentQueue, merge2SilentMethodQueueMap, silentMethodQueueMap } from './silentQueue';
+import { bootSilentQueue, merge2SilentQueueMap, silentQueueMap } from './silentQueue';
 
 /** 依赖的alova实例，它的存储适配器、请求适配器等将用于存取SilentMethod实例，以及发送静默提交 */
 export let dependentAlovaInstance: Alova<any, any, any, any, any>;
@@ -63,12 +63,12 @@ export const onSilentSubmitComplete = (handler: SilentSubmitCompleteHandler) => 
 export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
 	dependentAlovaInstance = options.alova;
 	mergeSerializer(options.serializer);
-	merge2SilentMethodQueueMap(loadSilentQueueMap());
+	merge2SilentQueueMap(loadSilentQueueMap());
 
 	// 循环启动队列静默提交
 	// 多条队列是并行执行的
-	forEach(objectKeys(silentMethodQueueMap), queueName => {
-		bootSilentQueue(silentMethodQueueMap[queueName], queueName);
+	forEach(objectKeys(silentQueueMap), queueName => {
+		bootSilentQueue(silentQueueMap[queueName], queueName);
 	});
 	silentFactoryStatus = 1; // 设置状态为已启动
 	runArgsHandler(bootHandlers);

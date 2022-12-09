@@ -1,6 +1,6 @@
 import { defineProperties, uuid, valueObject } from '../../../helper';
 import { nullValue, symbolToPrimitive } from '../../../helper/variables';
-import { symbolVirtualTag, vTagCollectUnified } from '../virtualTag/auxiliary';
+import { symbolVirtualTag, vTagCollectUnified } from './helper';
 
 interface NullConstructor {
 	new (vTagId?: string): NullInterface;

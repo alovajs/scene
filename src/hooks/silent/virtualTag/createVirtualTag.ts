@@ -7,7 +7,7 @@ import {
 	symbolToPrimitive,
 	undefinedValue
 } from '../../../helper/variables';
-import { symbolVirtualTag, vTagCollectUnified } from './auxiliary';
+import { symbolVirtualTag, vTagCollectUnified } from './helper';
 import Null from './Null';
 import Undefined from './Undefined';
 
@@ -32,7 +32,7 @@ export const createUndefinedWrapper = (vTagId?: string) => proxify(new Undefined
  * 创建虚拟标签
  * @returns 虚拟响应数据代理实例
  */
-const createVirtualTag = (locked: { v: boolean }, defaults: any) => {
+const createVirtualTag = (defaults: any, locked: { v: boolean }) => {
 	const transform2VirtualTag = (value: any) => {
 		const tagValue = () =>
 			defineProperties(value, {

@@ -5,4 +5,5 @@ export {
 	onSilentSubmitError,
 	onSilentSubmitSuccess
 } from './hooks/silent/silentFactory';
-export { valueOf } from './hooks/silent/virtualTag/auxiliary';
+export { silentQueueMap } from './hooks/silent/silentQueue';
+export * from './hooks/silent/virtualTag/auxiliary';
