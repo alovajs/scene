@@ -1,15 +1,14 @@
 import { DataSerializer } from '../../../../typings';
 import { instanceOf } from '../../../helper';
-import { nullValue, ObjectCls, undefinedValue } from '../../../helper/variables';
-import { createNullWrapper, createUndefinedWrapper } from '../virtualTag/createVirtualTag';
-import { stringVirtualTag } from '../virtualTag/helper';
-import Null from '../virtualTag/Null';
-import Undefined from '../virtualTag/Undefined';
+import { nullValue, ObjectCls, trueValue, undefinedValue } from '../../../helper/variables';
+import { createNullWrapper, Null } from '../virtualTag/Null';
+import stringifyVtag from '../virtualTag/stringifyVtag';
+import { createUndefinedWrapper, Undefined } from '../virtualTag/Undefined';
 
 const undefinedFlag = '__$$undef__';
 export default {
 	forward: data => {
-		const virtualTagId = stringVirtualTag(data);
+		const virtualTagId = stringifyVtag(data);
 
 		// 如果是undefined或null的包装类，则需要自行指定标识值
 		return virtualTagId
@@ -18,8 +17,8 @@ export default {
 	},
 	backward: ([virtualTagId, raw]) =>
 		raw === undefinedFlag
-			? createUndefinedWrapper(virtualTagId)
+			? createUndefinedWrapper({ v: trueValue }, virtualTagId)
 			: raw === nullValue
-			? createNullWrapper(virtualTagId)
+			? createNullWrapper({ v: trueValue }, virtualTagId)
 			: new ObjectCls(raw)
 } as DataSerializer;

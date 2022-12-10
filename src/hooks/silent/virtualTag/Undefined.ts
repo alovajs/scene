@@ -1,6 +1,8 @@
 import { defineProperties, uuid, valueObject } from '../../../helper';
 import { nullValue, symbolToPrimitive, undefinedValue } from '../../../helper/variables';
-import { symbolVirtualTag, vTagCollectUnified } from './helper';
+import { VirtualResponseLocked } from './createVirtualResponse';
+import { proxify, vTagCollectUnified } from './helper';
+import { symbolVirtualTag } from './variables';
 
 interface UndefinedConstructor {
 	new (vTagId?: string): UndefinedInterface;
@@ -12,7 +14,7 @@ interface UndefinedInterface {
 /**
  * Undefined包装类实现
  */
-const Undefined = function (this: UndefinedInterface, vTagId = uuid()) {
+export const Undefined = function (this: UndefinedInterface, vTagId = uuid()) {
 	defineProperties(this, {
 		[symbolVirtualTag]: vTagId
 	});
@@ -21,4 +23,5 @@ Undefined.prototype = Object.create(nullValue, {
 	[symbolToPrimitive]: valueObject(vTagCollectUnified(undefinedValue))
 });
 
-export default Undefined;
+export const createUndefinedWrapper = (locked: VirtualResponseLocked, vTagId?: string) =>
+	proxify(new Undefined(vTagId), locked);

@@ -1,8 +1,8 @@
 import { Method } from 'alova';
 import { FallbackHandler, SQHookBehavior } from '../../../typings';
 import { uuid } from '../../helper';
-import { persistSilentMethod } from './silentMethodQueueStorage';
 import { silentQueueMap } from './silentQueue';
+import { persistSilentMethod } from './storage/silentMethodStorage';
 
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
 export type MethodHandler<S, E, R, T, RC, RE, RH> = (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;

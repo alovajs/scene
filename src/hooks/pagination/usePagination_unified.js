@@ -1,5 +1,5 @@
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
-import { createAssert, createSyncOnceRunner, getUniqueReferenceId, map } from '../../helper';
+import { createAssert, createSyncOnceRunner, getUniqueReferenceId, isArray, map } from '../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 
 const paginationAssert = createAssert('hooks/usePagination');
@@ -105,7 +105,7 @@ export default function (
 		const pageVal = _$(page);
 		const pageCountVal = _$(pageCount);
 		const statesDataVal = listDataGetter(_$(states.data));
-		const dataLen = Array.isArray(statesDataVal) ? statesDataVal.length : 0;
+		const dataLen = isArray(statesDataVal) ? statesDataVal.length : 0;
 		return pageCountVal ? pageVal >= pageCountVal : dataLen < _$(pageSize);
 	}, _expBatch$(page, pageCount, states.data, pageSize));
 

@@ -58,7 +58,32 @@ export default {
 	// globalTeardown: undefined,
 
 	// A set of global variables that need to be available in all test environments
-	// globals: {},
+	// globals: {
+	// 	// mock import.meta, see https://www.npmjs.com/package/ts-jest-mock-import-meta
+	// 	'ts-jest': {
+	// 		diagnostics: {
+	// 			ignoreCodes: [1343]
+	// 		},
+	// 		astTransformers: {
+	// 			// 转换import.meta
+	// 			before: [
+	// 				{
+	// 					path: 'node_modules/ts-jest-mock-import-meta',
+	// 					options: {
+	// 						metaObjectReplacement: {
+	// 							url: 'https://xxx',
+	// 							env: {
+	// 								PROD: false,
+	// 								DEV: true
+	// 							},
+	// 							status: 2
+	// 						}
+	// 					}
+	// 				}
+	// 			]
+	// 		}
+	// 	}
+	// },
 
 	// The maximum amount of workers used to run your tests. Can be specified as % or a number. E.g. maxWorkers: 10% will use 10% of your CPU amount + 1 as the maximum worker number. maxWorkers: 2 will use a maximum of 2 workers.
 	// maxWorkers: "50%",
@@ -94,7 +119,7 @@ export default {
 	// notifyMode: "failure-change",
 
 	// A preset that is used as a base for Jest's configuration
-	preset: 'ts-jest',
+	// preset: 'ts-jest/presets/js-with-ts',
 
 	// Run tests from one or more projects
 	// projects: undefined,
@@ -140,7 +165,10 @@ export default {
 	// The test environment that will be used for testing
 	testEnvironment: 'jsdom',
 
-	testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
+	testMatch: [
+		// '**/?(*.)+(spec|test).[tj]s?(x)',
+		'**/test/utils/silentQueue/virtualResponse.spec.ts(x)?'
+	],
 
 	// An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
 	testPathIgnorePatterns: [
@@ -159,7 +187,33 @@ export default {
 
 	// A map from regular expressions to paths to transformers
 	transform: {
-		'^.+\\.[tj]s?$': 'ts-jest',
+		'\\.(j|t)sx?$': [
+			'ts-jest',
+			// mock import.meta, see https://www.npmjs.com/package/ts-jest-mock-import-meta
+			{
+				diagnostics: {
+					ignoreCodes: [1343]
+				},
+				astTransformers: {
+					// 转换import.meta
+					before: [
+						{
+							path: 'node_modules/ts-jest-mock-import-meta',
+							options: {
+								metaObjectReplacement: {
+									url: 'https://xxx',
+									env: {
+										PROD: false,
+										DEV: true
+									},
+									status: 2
+								}
+							}
+						}
+					]
+				}
+			}
+		],
 		'^.+\\.svelte$': 'svelte-jester'
 	},
 

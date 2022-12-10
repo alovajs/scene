@@ -3,17 +3,12 @@ import { BeforePushQueueHandler, FallbackHandler, PushedQueueHandler, SQHookConf
 import { GeneralFn, isFn, len, promiseResolve, promiseThen, pushItem, runArgsHandler, walkObject } from '../../helper';
 import { falseValue, PromiseCls, trueValue, undefinedValue } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
+import { setVtagIdCollectBasket, vtagIdCollectBasket } from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';
 import { pushNewSilentMethod2Queue } from './silentQueue';
-import { stringifyVtag } from './virtualTag/auxiliary';
-import createVirtualTag from './virtualTag/createVirtualTag';
-import { regVirtualTag } from './virtualTag/helper';
-
-/**
- * 全局的虚拟标签收集数组
- * 它只会在method创建时为数组，其他时间为undefined
- */
-export let vtagIdCollectBasket: string[] | undefined;
+import createVirtualResponse from './virtualTag/createVirtualResponse';
+import stringifyVtag from './virtualTag/stringifyVtag';
+import { regVirtualTag } from './virtualTag/variables';
 
 /**
  * 全局的silentMethod实例，它将在第一个成功事件触发前到最后一个成功事件触发后有值（同步时段）
@@ -43,7 +38,7 @@ export default <S, E, R, T, RC, RE, RH>(
 	 * @returns {Method}
 	 */
 	const createMethod = (...args: any[]) => {
-		vtagIdCollectBasket = [];
+		setVtagIdCollectBasket([]);
 		handlerArgs = args;
 		const methodHandler = isFn(handler) ? handler : () => handler;
 		const methodInstance = methodHandler(...args);
@@ -150,7 +145,7 @@ export default <S, E, R, T, RC, RE, RH>(
 					runArgsHandler(beforePushQueueHandlers, createPushEvent());
 				});
 				// 置空临时收集变量
-				vtagIdCollectBasket = collectedMethodHandler = handlerArgs = undefinedValue;
+				setVtagIdCollectBasket((collectedMethodHandler = handlerArgs = undefinedValue));
 
 				// 执行放入队列后回调
 				runArgsHandler(pushedQueueHandlers, createPushEvent());
@@ -160,7 +155,7 @@ export default <S, E, R, T, RC, RE, RH>(
 			}
 
 			// 在silent模式下创建虚拟响应数据，虚拟响应数据可生成任意的虚拟标签
-			const virtualResponse = ((silentMethodInstance as SilentMethod).virtualResponse = createVirtualTag(
+			const virtualResponse = ((silentMethodInstance as SilentMethod).virtualResponse = createVirtualResponse(
 				isFn(silentDefaultResponse) ? silentDefaultResponse() : {},
 				virtualTagLocked
 			));

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { map } from '../helper';
+import { isArray, map } from '../helper';
 import { falseValue } from '../helper/variables';
 
 /**
@@ -21,7 +21,7 @@ export const $$ = useMemo;
  * @param state 状态
  * @returns 状态原始值，即状态对应的数据
  */
-const exportState = state => (Array.isArray(state) && typeof state[1] === 'function' ? state[0] : state);
+const exportState = state => (isArray(state) && typeof state[1] === 'function' ? state[0] : state);
 
 export const _$ = exportState;
 export const _exp$ = exportState;

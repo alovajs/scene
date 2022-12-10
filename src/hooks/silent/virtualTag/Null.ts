@@ -1,6 +1,8 @@
 import { defineProperties, uuid, valueObject } from '../../../helper';
 import { nullValue, symbolToPrimitive } from '../../../helper/variables';
-import { symbolVirtualTag, vTagCollectUnified } from './helper';
+import { VirtualResponseLocked } from './createVirtualResponse';
+import { proxify, vTagCollectUnified } from './helper';
+import { symbolVirtualTag } from './variables';
 
 interface NullConstructor {
 	new (vTagId?: string): NullInterface;
@@ -12,7 +14,7 @@ interface NullInterface {
 /**
  * Null包装类实现
  */
-const Null = function (this: NullInterface, vTagId = uuid()) {
+export const Null = function (this: NullInterface, vTagId = uuid()) {
 	defineProperties(this, {
 		[symbolVirtualTag]: vTagId
 	});
@@ -24,4 +26,5 @@ Null.prototype = Object.create(nullValue, {
 	)
 });
 
-export default Null;
+export const createNullWrapper = (locked: VirtualResponseLocked, vTagId?: string) =>
+	proxify(new Null(vTagId), locked, nullValue);

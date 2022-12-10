@@ -1,4 +1,3 @@
-import { Alova } from 'alova';
 import {
 	SilentFactoryBootOptions,
 	SilentSubmitBootHandler,
@@ -7,25 +6,17 @@ import {
 	SilentSubmitSuccessHandler
 } from '../../../typings';
 import { forEach, objectKeys, pushItem, runArgsHandler } from '../../helper';
-import { loadSilentQueueMap, mergeSerializer } from './silentMethodQueueStorage';
+import {
+	bootHandlers,
+	completeHandlers,
+	errorHandlers,
+	setDependentAlova,
+	setSilentFactoryStatus,
+	successHandlers
+} from './globalVariables';
+import { mergeSerializer } from './serializer';
 import { bootSilentQueue, merge2SilentQueueMap, silentQueueMap } from './silentQueue';
-
-/** 依赖的alova实例，它的存储适配器、请求适配器等将用于存取SilentMethod实例，以及发送静默提交 */
-export let dependentAlovaInstance: Alova<any, any, any, any, any>;
-
-/** 事件绑定函数 */
-export const bootHandlers = [] as SilentSubmitBootHandler[];
-export const successHandlers = [] as SilentSubmitSuccessHandler[];
-export const errorHandlers = [] as SilentSubmitErrorHandler[];
-export const completeHandlers = [] as SilentSubmitCompleteHandler[];
-
-/**
- * silentFactory状态
- * 0表示未启动
- * 1表示已启动
- * 调用bootSilentFactory后状态为1
- */
-export let silentFactoryStatus = 0;
+import loadSilentQueueMapFromStorage from './storage/loadSilentQueueMapFromStorage';
 
 /**
  * 绑定silentSubmit启动事件
@@ -61,15 +52,15 @@ export const onSilentSubmitComplete = (handler: SilentSubmitCompleteHandler) => 
  * @param {SilentFactoryBootOptions} options 延迟毫秒数
  */
 export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
-	dependentAlovaInstance = options.alova;
+	setDependentAlova(options.alova);
 	mergeSerializer(options.serializer);
-	merge2SilentQueueMap(loadSilentQueueMap());
+	merge2SilentQueueMap(loadSilentQueueMapFromStorage());
 
 	// 循环启动队列静默提交
 	// 多条队列是并行执行的
 	forEach(objectKeys(silentQueueMap), queueName => {
 		bootSilentQueue(silentQueueMap[queueName], queueName);
 	});
-	silentFactoryStatus = 1; // 设置状态为已启动
+	setSilentFactoryStatus(1); // 设置状态为已启动
 	runArgsHandler(bootHandlers);
 };

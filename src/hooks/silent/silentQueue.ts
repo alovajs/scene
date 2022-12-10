@@ -3,6 +3,7 @@ import {
 	clearTimeoutTimer,
 	forEach,
 	instanceOf,
+	isObject,
 	len,
 	noop,
 	objectKeys,
@@ -11,16 +12,17 @@ import {
 	runArgsHandler,
 	setTimeoutFn
 } from '../../helper';
-import { undefinedValue } from '../../helper/variables';
+import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import { completeHandlers, errorHandlers, silentFactoryStatus, successHandlers } from './silentFactory';
+import { completeHandlers, errorHandlers, silentFactoryStatus, successHandlers } from './globalVariables';
 import { SilentMethod } from './SilentMethod';
-import { push2PersistentSilentQueue, removeSilentMethod } from './silentMethodQueueStorage';
-import { parseResponseWithVirtualResponse, replaceVirtualMethod, replaceVTag } from './virtualTag/helper';
+import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
+import { replaceVTag } from './virtualTag/helper';
+import stringifyVtag from './virtualTag/stringifyVtag';
 
 export type SilentQueueMap = Record<string, SilentMethod[]>;
 /** 静默方法队列集合 */
-export let silentQueueMap = {} as SilentQueueMap;
+export const silentQueueMap = {} as SilentQueueMap;
 export const defaultQueueName = 'default';
 
 /**
@@ -31,6 +33,59 @@ export const merge2SilentQueueMap = (queueMap: SilentQueueMap) => {
 	forEach(objectKeys(queueMap), queueName => {
 		silentQueueMap[queueName] = [...(silentQueueMap[queueName] || []), ...queueMap[queueName]];
 	});
+};
+
+/**
+ * 替换带有虚拟标签的method实例
+ * 当它有methodHandler时调用它重新生成
+ * @param virtualTagReplacedResponseMap 虚拟id和对应真实数据的集合
+ */
+const replaceVirtualMethod = (virtualTagReplacedResponseMap: Record<string, any>) => {
+	forEach(objectKeys(silentQueueMap), queueName => {
+		const currentQueue = silentQueueMap[queueName];
+		forEach(currentQueue, silentMethodItem => {
+			const handlerArgs = silentMethodItem.handlerArgs || [];
+			forEach(handlerArgs, (arg, i) => {
+				if (virtualTagReplacedResponseMap[arg]) {
+					handlerArgs[i] = virtualTagReplacedResponseMap[arg];
+				}
+			});
+			// 重新生成一个method实例并替换
+			let methodUpdated = falseValue;
+			if (silentMethodItem.methodHandler) {
+				silentMethodItem.entity = silentMethodItem.methodHandler(...handlerArgs);
+				methodUpdated = trueValue;
+			} else {
+				// 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
+				methodUpdated = replaceVTag(silentMethodItem.entity, virtualTagReplacedResponseMap).r;
+			}
+
+			// 如果method实例有更新，则重新持久化此silentMethod实例
+			methodUpdated && persistSilentMethod(silentMethodItem);
+		});
+	});
+};
+
+/**
+ * 解析响应数据
+ * @param response 真实响应数据
+ * @param virtualResponse 虚拟响应数据
+ * @returns 虚拟标签id所构成的对应真实数据集合
+ */
+const parseResponseWithVirtualResponse = (response: any, virtualResponse: any) => {
+	let replacedResponseMap = {} as Record<string, any>;
+	const virtualTagId = stringifyVtag(response);
+	virtualTagId && (replacedResponseMap[virtualTagId] = response);
+
+	if (isObject(virtualResponse)) {
+		for (const i in virtualResponse) {
+			replacedResponseMap = {
+				...replacedResponseMap,
+				...parseResponseWithVirtualResponse(response ?? response[i], virtualResponse[i])
+			};
+		}
+	}
+	return replacedResponseMap;
 };
 
 /**
