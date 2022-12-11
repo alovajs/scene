@@ -1,8 +1,8 @@
-import { includes, instanceOf } from '../../../helper';
+import { instanceOf } from '../../../helper';
 import { nullValue, undefinedValue } from '../../../helper/variables';
 import { vTagCollectUnified } from './helper';
-import { Null } from './Null';
-import { Undefined } from './Undefined';
+import Null from './Null';
+import Undefined from './Undefined';
 import { symbolVirtualTag } from './variables';
 
 /**
@@ -15,12 +15,17 @@ import { symbolVirtualTag } from './variables';
  * @returns 具有原始类型的目标值
  */
 export default (target: any) => {
+	vTagCollectUnified(target);
 	if (instanceOf(target, Undefined)) {
 		target = undefinedValue;
 	} else if (instanceOf(target, Null)) {
 		target = nullValue;
-	} else if (target && includes([Number, String, Boolean], target.constructor) && target[symbolVirtualTag]) {
+	} else if (
+		target &&
+		target[symbolVirtualTag] &&
+		(instanceOf(target, Number) || instanceOf(target, String) || instanceOf(target, Boolean))
+	) {
 		target = target.valueOf();
 	}
-	return vTagCollectUnified(target);
+	return target;
 };

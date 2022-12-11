@@ -1,5 +1,5 @@
 import { Alova, Method } from 'alova';
-import { ObjectCls, PromiseCls } from './variables';
+import { falseValue, ObjectCls, PromiseCls } from './variables';
 
 export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
 export const promiseReject = <T>(value: T) => PromiseCls.reject(value);
@@ -100,13 +100,14 @@ export const instanceOf = <T>(arg: any, cls: new (...args: any[]) => T): arg is 
 export const createAssert = (prefix: string) => {
 	return (expression: boolean, msg: string) => {
 		if (!expression) {
-			throw new Error(`[alova/${prefix}:Error]${msg}`);
+			throw newInstance(Error, `[alova/${prefix}:Error]${msg}`);
 		}
 	};
 };
 
-export const valueObject = <T>(value: T) => ({
-	value
+export const valueObject = <T>(value: T, writable = false) => ({
+	value,
+	writable
 });
 
 /**
@@ -114,10 +115,10 @@ export const valueObject = <T>(value: T) => ({
  * @param o 对象
  * @param attrs 值对象
  */
-export const defineProperties = (o: object, attrs: Record<string, any>) => {
-	for (const key in attrs) {
-		ObjectCls.defineProperty(o, key, valueObject(attrs[key]));
-	}
+export const defineProperties = (o: object, attrs: Record<string, any>, writable = falseValue) => {
+	forEach([...objectKeys(attrs), ...ObjectCls.getOwnPropertySymbols(attrs)], key => {
+		ObjectCls.defineProperty(o, key, valueObject(attrs[key as keyof typeof attrs], writable));
+	});
 };
 
 export type GeneralFn = (...args: any[]) => any;
@@ -181,3 +182,14 @@ export const walkObject = (
 		}
 	}
 };
+
+/**
+ * 创建类实例
+ * @param cls 构造函数
+ * @param args 构造函数参数
+ * @returns 类实例
+ */
+export const newInstance = <T extends { new (...args: any[]): InstanceType<T> }>(
+	cls: T,
+	...args: ConstructorParameters<T>
+) => new cls(...args);

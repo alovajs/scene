@@ -1,4 +1,3 @@
-import { isObject } from '../../../helper';
 import { undefinedValue } from '../../../helper/variables';
 import { symbolVirtualTag } from './variables';
 
@@ -8,6 +7,6 @@ import { symbolVirtualTag } from './variables';
  * @returns 虚拟标签id或原数据
  */
 export default (target: any) => {
-	const virtualTagId = isObject(target) ? `[vtag:${target[symbolVirtualTag]}]` : undefinedValue;
+	const virtualTagId = target?.[symbolVirtualTag] ? `[vtag:${target[symbolVirtualTag]}]` : undefinedValue;
 	return virtualTagId || target;
 };

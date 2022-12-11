@@ -1,7 +1,7 @@
 import { DataSerializer } from '../../../../typings';
-import { instanceOf } from '../../../helper';
+import { instanceOf, newInstance } from '../../../helper';
 
 export default {
 	forward: data => (instanceOf(data, RegExp) ? data.source : undefined),
-	backward: source => new RegExp(source)
+	backward: source => newInstance(RegExp, source)
 } as DataSerializer;

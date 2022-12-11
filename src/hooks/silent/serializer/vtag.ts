@@ -1,14 +1,15 @@
 import { DataSerializer } from '../../../../typings';
-import { instanceOf } from '../../../helper';
-import { nullValue, ObjectCls, trueValue, undefinedValue } from '../../../helper/variables';
-import { createNullWrapper, Null } from '../virtualTag/Null';
-import stringifyVtag from '../virtualTag/stringifyVtag';
-import { createUndefinedWrapper, Undefined } from '../virtualTag/Undefined';
+import { instanceOf, newInstance } from '../../../helper';
+import { nullValue, ObjectCls, undefinedValue } from '../../../helper/variables';
+import createVirtualResponse from '../virtualTag/createVirtualResponse';
+import Null from '../virtualTag/Null';
+import Undefined from '../virtualTag/Undefined';
+import { symbolVirtualTag } from '../virtualTag/variables';
 
 const undefinedFlag = '__$$undef__';
 export default {
 	forward: data => {
-		const virtualTagId = stringifyVtag(data);
+		const virtualTagId = data?.[symbolVirtualTag];
 
 		// 如果是undefined或null的包装类，则需要自行指定标识值
 		return virtualTagId
@@ -16,9 +17,11 @@ export default {
 			: undefinedValue;
 	},
 	backward: ([virtualTagId, raw]) =>
-		raw === undefinedFlag
-			? createUndefinedWrapper({ v: trueValue }, virtualTagId)
-			: raw === nullValue
-			? createNullWrapper({ v: trueValue }, virtualTagId)
-			: new ObjectCls(raw)
+		createVirtualResponse(
+			raw === undefinedFlag
+				? newInstance(Undefined, virtualTagId)
+				: raw === nullValue
+				? newInstance(Null, virtualTagId)
+				: newInstance(ObjectCls, raw)
+		)
 } as DataSerializer;

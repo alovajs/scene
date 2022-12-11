@@ -5,13 +5,14 @@ import {
 	SilentSubmitErrorHandler,
 	SilentSubmitSuccessHandler
 } from '../../../typings';
+import { trueValue } from '../../helper/variables';
 
 /**
  * 全局的虚拟标签收集数组
  * 它只会在method创建时为数组，其他时间为undefined
  */
-export let vtagIdCollectBasket: string[] | undefined;
-export const setVtagIdCollectBasket = (value: string[] | undefined) => (vtagIdCollectBasket = value);
+export let vtagIdCollectBasket: Record<string, undefined> | undefined;
+export const setVtagIdCollectBasket = (value: typeof vtagIdCollectBasket) => (vtagIdCollectBasket = value);
 
 /** 依赖的alova实例，它的存储适配器、请求适配器等将用于存取SilentMethod实例，以及发送静默提交 */
 export let dependentAlovaInstance: Alova<any, any, any, any, any>;
@@ -31,3 +32,6 @@ export const bootHandlers = [] as SilentSubmitBootHandler[];
 export const successHandlers = [] as SilentSubmitSuccessHandler[];
 export const errorHandlers = [] as SilentSubmitErrorHandler[];
 export const completeHandlers = [] as SilentSubmitCompleteHandler[];
+
+/** 使用全局唯一的虚拟响应锁，开锁后虚拟响应可以访问任意层级并生成它的层级结构 */
+export const globalVirtualResponseLock = { v: trueValue };

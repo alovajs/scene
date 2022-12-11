@@ -1,5 +1,5 @@
 import { Method } from 'alova';
-import { isArray, JSONParse, len } from '../../../helper';
+import { isArray, JSONParse, len, newInstance } from '../../../helper';
 import { trueValue } from '../../../helper/variables';
 import { dependentAlovaInstance } from '../globalVariables';
 import { serializers } from '../serializer';
@@ -25,9 +25,10 @@ export default (serializedSilentMethodString: string) => {
 	// method类实例化
 	const deserializeMethod = (methodPayload: SerializedSilentMethod['entity']) => {
 		const { type, url, config, requestBody } = methodPayload;
-		return new Method(type, dependentAlovaInstance, url, config, requestBody);
+		return newInstance(Method, type, dependentAlovaInstance, url, config, requestBody);
 	};
-	const silentMethodInstance = new SilentMethod(
+	const silentMethodInstance = newInstance(
+		SilentMethod,
 		deserializeMethod(entity),
 		trueValue,
 		behavior,

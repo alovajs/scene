@@ -1,5 +1,5 @@
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
-import { createAssert, createSyncOnceRunner, getUniqueReferenceId, isArray, map } from '../../helper';
+import { createAssert, createSyncOnceRunner, getUniqueReferenceId, isArray, map, newInstance } from '../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 
 const paginationAssert = createAssert('hooks/usePagination');
@@ -81,8 +81,8 @@ export default function (
 		const exceedPageCount = pageCountVal
 			? preloadPage > pageCountVal
 			: isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-			? listDataGetter(_$(states.data)).length < _$(pageSize)
-			: falseValue;
+				? listDataGetter(_$(states.data)).length < _$(pageSize)
+				: falseValue;
 		return preloadPage > 0 && !exceedPageCount;
 	};
 
@@ -175,7 +175,7 @@ export default function (
 	// 删除除此usehook当前页和下一页的所有相关缓存
 	const invalidatePaginationCache = (all = falseValue) => {
 		invalidateCache({
-			name: new RegExp('^' + nameHookPrefix),
+			name: newInstance(RegExp, '^' + nameHookPrefix),
 			filter: method => {
 				if (all) {
 					return all;

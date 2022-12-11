@@ -167,7 +167,8 @@ export default {
 
 	testMatch: [
 		// '**/?(*.)+(spec|test).[tj]s?(x)',
-		'**/test/utils/silentQueue/virtualResponse.spec.ts(x)?'
+		// '**/test/utils/virtualResponse.spec.ts(x)?',
+		'**/test/utils/serializers.spec.ts(x)?'
 	],
 
 	// An array of regexp pattern strings that are matched against all test paths, matched tests are skipped

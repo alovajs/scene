@@ -1,14 +1,26 @@
 import { AlovaMethodHandler, AlovaMiddleware, Method } from 'alova';
 import { BeforePushQueueHandler, FallbackHandler, PushedQueueHandler, SQHookConfig } from '../../../typings';
-import { GeneralFn, isFn, len, promiseResolve, promiseThen, pushItem, runArgsHandler, walkObject } from '../../helper';
+import {
+	GeneralFn,
+	isFn,
+	len,
+	newInstance,
+	objectKeys,
+	promiseResolve,
+	promiseThen,
+	pushItem,
+	runArgsHandler,
+	walkObject
+} from '../../helper';
 import { falseValue, PromiseCls, trueValue, undefinedValue } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import { setVtagIdCollectBasket, vtagIdCollectBasket } from './globalVariables';
+import { globalVirtualResponseLock, setVtagIdCollectBasket, vtagIdCollectBasket } from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';
 import { pushNewSilentMethod2Queue } from './silentQueue';
 import createVirtualResponse from './virtualTag/createVirtualResponse';
-import stringifyVtag from './virtualTag/stringifyVtag';
+import Undefined from './virtualTag/Undefined';
 import { regVirtualTag } from './virtualTag/variables';
+import vtagStringify from './virtualTag/vtagStringify';
 
 /**
  * 全局的silentMethod实例，它将在第一个成功事件触发前到最后一个成功事件触发后有值（同步时段）
@@ -38,7 +50,7 @@ export default <S, E, R, T, RC, RE, RH>(
 	 * @returns {Method}
 	 */
 	const createMethod = (...args: any[]) => {
-		setVtagIdCollectBasket([]);
+		setVtagIdCollectBasket({});
 		handlerArgs = args;
 		const methodHandler = isFn(handler) ? handler : () => handler;
 		const methodInstance = methodHandler(...args);
@@ -64,7 +76,7 @@ export default <S, E, R, T, RC, RE, RH>(
 		let hasVirtualTag = falseValue;
 		if (isFn(vTagCaptured)) {
 			walkObject(method, value => {
-				const virtualTagId = stringifyVtag(value);
+				const virtualTagId = vtagStringify(value);
 				if (!hasVirtualTag && (virtualTagId || regVirtualTag.test(value))) {
 					hasVirtualTag = trueValue;
 				}
@@ -78,12 +90,16 @@ export default <S, E, R, T, RC, RE, RH>(
 		}
 
 		// 设置事件回调装饰器
-		const virtualTagLocked = { v: falseValue };
 		let silentMethodInstance: any;
 
 		// 将响应对应的事件实例创建函数暂存到createFinishedEvent中，在complete事件触发时直接调用此函数即可获得对应状态的事件实例
 		let createFinishedEvent: GeneralFn | undefined = undefinedValue;
 		decorateSuccess((handler, args, index, length) => {
+			// 开锁，详情请看globalVirtualResponseLock
+			if (index === 0) {
+				globalVirtualResponseLock.v = falseValue;
+			}
+
 			currentSilentMethod = silentMethodInstance;
 			createFinishedEvent =
 				createFinishedEvent ||
@@ -93,7 +109,8 @@ export default <S, E, R, T, RC, RE, RH>(
 			// 所有成功回调执行完后再锁定虚拟标签，锁定后虚拟响应数据内不能再访问任意层级
 			// 锁定操作只在silent模式下，用于锁定虚拟标签的生成操作
 			if (index === length - 1) {
-				virtualTagLocked.v = trueValue;
+				// 锁定，详情请看globalVirtualResponseLock
+				globalVirtualResponseLock.v = trueValue;
 				currentSilentMethod = undefinedValue;
 			}
 		});
@@ -120,9 +137,10 @@ export default <S, E, R, T, RC, RE, RH>(
 
 		if (behaviorFinally !== 'static') {
 			// 等待队列中的method执行完毕
-			const queueResolvePromise = new PromiseCls((resolveHandler, rejectHandler) => {
-				silentMethodInstance = new SilentMethod(
-					method,
+			const queueResolvePromise = newInstance(PromiseCls, (resolveHandler, rejectHandler) => {
+				silentMethodInstance = newInstance(
+					SilentMethod,
+					method as any,
 					len(fallbackHandlers) <= 0 && behavior === 'silent',
 					behaviorFinally,
 					undefinedValue,
@@ -134,7 +152,7 @@ export default <S, E, R, T, RC, RE, RH>(
 					rejectHandler,
 					collectedMethodHandler,
 					handlerArgs,
-					vtagIdCollectBasket
+					vtagIdCollectBasket && objectKeys(vtagIdCollectBasket)
 				);
 				const createPushEvent = () =>
 					createSQEvent(2, behaviorFinally, method, silentMethodInstance, undefinedValue, sendArgs);
@@ -156,8 +174,7 @@ export default <S, E, R, T, RC, RE, RH>(
 
 			// 在silent模式下创建虚拟响应数据，虚拟响应数据可生成任意的虚拟标签
 			const virtualResponse = ((silentMethodInstance as SilentMethod).virtualResponse = createVirtualResponse(
-				isFn(silentDefaultResponse) ? silentDefaultResponse() : {},
-				virtualTagLocked
+				isFn(silentDefaultResponse) ? silentDefaultResponse() : newInstance(Undefined)
 			));
 			promiseThen(queueResolvePromise, realResponse => {
 				// 获取到真实数据后更新过去

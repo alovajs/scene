@@ -14,11 +14,17 @@ import {
 } from '../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import { completeHandlers, errorHandlers, silentFactoryStatus, successHandlers } from './globalVariables';
+import {
+	completeHandlers,
+	errorHandlers,
+	globalVirtualResponseLock,
+	silentFactoryStatus,
+	successHandlers
+} from './globalVariables';
 import { SilentMethod } from './SilentMethod';
 import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
 import { replaceVTag } from './virtualTag/helper';
-import stringifyVtag from './virtualTag/stringifyVtag';
+import vtagStringify from './virtualTag/vtagStringify';
 
 export type SilentQueueMap = Record<string, SilentMethod[]>;
 /** 静默方法队列集合 */
@@ -74,7 +80,7 @@ const replaceVirtualMethod = (virtualTagReplacedResponseMap: Record<string, any>
  */
 const parseResponseWithVirtualResponse = (response: any, virtualResponse: any) => {
 	let replacedResponseMap = {} as Record<string, any>;
-	const virtualTagId = stringifyVtag(response);
+	const virtualTagId = vtagStringify(response);
 	virtualTagId && (replacedResponseMap[virtualTagId] = response);
 
 	if (isObject(virtualResponse)) {
@@ -136,8 +142,10 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 
 				const { virtualResponse, targetRefMethod, updateStates } = silentMethodInstance;
 				// 替换队列中后面方法实例中的虚拟标签为真实数据
-
+				// 开锁后才能正常访问virtualResponse的层级结构
+				globalVirtualResponseLock.v = trueValue;
 				const virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
+				globalVirtualResponseLock.v = falseValue;
 
 				// 将虚拟标签找出来，并依次替换
 				replaceVirtualMethod(virtualTagReplacedResponseMap);
