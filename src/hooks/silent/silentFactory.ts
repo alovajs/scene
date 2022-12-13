@@ -53,7 +53,7 @@ export const onSilentSubmitComplete = (handler: SilentSubmitCompleteHandler) => 
  */
 export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
 	setDependentAlova(options.alova);
-	mergeSerializer(options.serializer);
+	mergeSerializer(options.serializers);
 	merge2SilentQueueMap(loadSilentQueueMapFromStorage());
 
 	// 循环启动队列静默提交

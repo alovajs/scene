@@ -1,22 +1,16 @@
-import { SilentFactoryBootOptions } from '../../../../typings';
+import { DataSerializer } from '../../../../typings';
 import dateSerializer from './date';
 import regexpSerializer from './regexp';
-import vtag from './vtag';
 
-type SilentMethodSerializerMap = NonNullable<SilentFactoryBootOptions['serializer']>;
-export let serializers: SilentMethodSerializerMap = {
-	date: dateSerializer,
-	regexp: regexpSerializer
-};
-
+export let serializers = {} as Record<string | number, DataSerializer>;
 /**
  * 合并内置序列化器和自定义序列化器
  * @param customSerializers 自定义序列化器
  */
-export const mergeSerializer = (customSerializers: SilentMethodSerializerMap = {}) => {
+export const mergeSerializer = (customSerializers: typeof serializers = {}) => {
 	serializers = {
-		...serializers,
-		...customSerializers,
-		_vtag_: vtag
+		date: dateSerializer,
+		regexp: regexpSerializer,
+		...customSerializers
 	};
 };

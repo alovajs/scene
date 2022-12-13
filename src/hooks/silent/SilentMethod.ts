@@ -1,5 +1,5 @@
 import { Method } from 'alova';
-import { FallbackHandler, SQHookBehavior } from '../../../typings';
+import { FallbackHandler, SilentMethod as SilentMethodInterface, SQHookBehavior } from '../../../typings';
 import { uuid } from '../../helper';
 import { silentQueueMap } from './silentQueue';
 import { persistSilentMethod } from './storage/silentMethodStorage';
@@ -116,12 +116,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 }
 
 type MethodEntityPayload = Omit<Method<any, any, any, any, any, any, any>, 'context' | 'response' | 'send'>;
-export interface SerializedSilentMethod {
-	id: string;
-	behavior: SQHookBehavior;
+export type SerializedSilentMethod = SilentMethodInterface & {
 	entity: MethodEntityPayload;
-	retry?: number;
-	interval?: number;
-	nextRound?: number;
 	targetRefMethod?: MethodEntityPayload;
-}
+};

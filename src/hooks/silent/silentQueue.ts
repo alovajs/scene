@@ -143,9 +143,9 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 				const { virtualResponse, targetRefMethod, updateStates } = silentMethodInstance;
 				// 替换队列中后面方法实例中的虚拟标签为真实数据
 				// 开锁后才能正常访问virtualResponse的层级结构
-				globalVirtualResponseLock.v = trueValue;
+				globalVirtualResponseLock.v = 1;
 				const virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
-				globalVirtualResponseLock.v = falseValue;
+				globalVirtualResponseLock.v = 0;
 
 				// 将虚拟标签找出来，并依次替换
 				replaceVirtualMethod(virtualTagReplacedResponseMap);

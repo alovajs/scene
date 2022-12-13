@@ -15,7 +15,7 @@ export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => v
 export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);
 export const map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn);
 export const includes = <T>(ary: T[], target: T) => ary.includes(target);
-export const len = (data: any[] | Uint8Array | string) => data.length;
+export const len = (data: any[] | Uint8Array | string | String) => data.length;
 export const isArray = (target: any) => Array.isArray(target);
 
 export const getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
@@ -178,9 +178,12 @@ export const walkObject = (
 	parent && key && (target = parent[key] = callback(target, key, parent));
 	if (isObject(target)) {
 		for (const i in target) {
-			walkObject(target[i], callback, i, target);
+			if (!instanceOf(target, String)) {
+				target[i] = walkObject(target[i], callback, i, target);
+			}
 		}
 	}
+	return target;
 };
 
 /**

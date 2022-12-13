@@ -66,13 +66,16 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
 	 * methodHandler的调用参数
 	 * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
 	 */
-	readonly methodHandlerhandlerArgs?: any[];
+	readonly handlerArgs?: any[];
 
 	/** method创建时所使用的虚拟标签id */
 	readonly vTags?: string[];
 
 	/** 虚拟响应数据，通过delayUpdateState保存到此 */
-	vtagResponse?: any;
+	virtualResponse?: any;
+
+	/** 调用updateStateEffect更新了哪些状态 */
+	updateStates?: string[];
 
 	/**
 	 * 静默提交状态更新数据
@@ -222,7 +225,7 @@ interface SilentFactoryBootOptions {
 	 *
 	 * >>> 可以通过设置同名序列化器来覆盖内置序列化器
 	 */
-	serializer?: Record<string | number, DataSerializer>;
+	serializers?: Record<string | number, DataSerializer>;
 }
 
 /** 静默提交事件 */

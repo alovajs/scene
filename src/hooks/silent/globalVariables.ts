@@ -5,7 +5,7 @@ import {
 	SilentSubmitErrorHandler,
 	SilentSubmitSuccessHandler
 } from '../../../typings';
-import { trueValue } from '../../helper/variables';
+import { createAssert } from '../../helper';
 
 /**
  * 全局的虚拟标签收集数组
@@ -33,5 +33,12 @@ export const successHandlers = [] as SilentSubmitSuccessHandler[];
 export const errorHandlers = [] as SilentSubmitErrorHandler[];
 export const completeHandlers = [] as SilentSubmitCompleteHandler[];
 
-/** 使用全局唯一的虚拟响应锁，开锁后虚拟响应可以访问任意层级并生成它的层级结构 */
-export const globalVirtualResponseLock = { v: trueValue };
+/**
+ * 使用全局唯一的虚拟响应锁
+ * 0表示锁定：层级访问时只返回对应值的原始值，而非proxy实例
+ * 1表示半锁定：层级访问时将返回proxy实例，但不能随意访问任意层级了
+ * 2表示完全开锁：完全开锁后虚拟响应可以访问任意层级并生成它的层级结构
+ */
+export const globalVirtualResponseLock = { v: 0 as 0 | 1 | 2 };
+
+export const silentAssert = createAssert('hooks/silent');

@@ -97,7 +97,7 @@ export default <S, E, R, T, RC, RE, RH>(
 		decorateSuccess((handler, args, index, length) => {
 			// 开锁，详情请看globalVirtualResponseLock
 			if (index === 0) {
-				globalVirtualResponseLock.v = falseValue;
+				globalVirtualResponseLock.v = 0;
 			}
 
 			currentSilentMethod = silentMethodInstance;
@@ -110,7 +110,7 @@ export default <S, E, R, T, RC, RE, RH>(
 			// 锁定操作只在silent模式下，用于锁定虚拟标签的生成操作
 			if (index === length - 1) {
 				// 锁定，详情请看globalVirtualResponseLock
-				globalVirtualResponseLock.v = trueValue;
+				globalVirtualResponseLock.v = 2;
 				currentSilentMethod = undefinedValue;
 			}
 		});

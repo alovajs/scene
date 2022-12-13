@@ -10,7 +10,7 @@ import valueOf from '../../src/hooks/silent/virtualTag/valueOf';
 import { regVirtualTag } from '../../src/hooks/silent/virtualTag/variables';
 import vtagStringify from '../../src/hooks/silent/virtualTag/vtagStringify';
 
-beforeEach(() => (globalVirtualResponseLock.v = false));
+beforeEach(() => (globalVirtualResponseLock.v = 0));
 
 // 虚拟响应测试
 describe('virtual response', () => {
@@ -27,7 +27,7 @@ describe('virtual response', () => {
 		expect((undef as any) <= 0).toBeFalsy();
 
 		let defProxy = createVirtualResponse(undef);
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		expect(() => {
 			defProxy.toString;
 		}).toThrow();
@@ -46,7 +46,7 @@ describe('virtual response', () => {
 		expect((nil as any) <= 0).toBeTruthy();
 
 		let defProxy = createVirtualResponse(nil);
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		expect(() => {
 			defProxy.toString;
 		}).toThrow();
@@ -58,7 +58,7 @@ describe('virtual response', () => {
 		const a = virtualResponse.a;
 		const b1 = virtualResponse.b.b1;
 		const c0 = virtualResponse.c[0];
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		expect(a).toBeInstanceOf(Undefined);
 		expect(b1).toBeInstanceOf(Undefined);
 		expect(c0).toBeInstanceOf(Undefined);
@@ -79,7 +79,7 @@ describe('virtual response', () => {
 		const a = virtualResponse.a;
 		const b1 = virtualResponse.b.b1;
 		const c0 = virtualResponse.c[0];
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		expect(a).toBeInstanceOf(Undefined);
 		expect(b1).toBeInstanceOf(Undefined);
 		expect(c0).toBeInstanceOf(Undefined);
@@ -108,7 +108,7 @@ describe('virtual response', () => {
 		const a = virtualResponse.a;
 		const b = virtualResponse.b;
 		const c0 = virtualResponse.c[0];
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		setVtagIdCollectBasket({});
 		expect(a).toBeInstanceOf(Number);
 		expect(a.toFixed(1)).toBe('1.0');
@@ -145,18 +145,18 @@ describe('virtual response', () => {
 		let virtualResponse = createVirtualResponse(100);
 		let a = virtualResponse.a;
 		let b = virtualResponse.b;
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		setVtagIdCollectBasket({});
 		expect(a).toBeInstanceOf(Undefined);
 		expect(b).toBeInstanceOf(Undefined);
 		expect(virtualResponse.a).toBeUndefined();
 		expect(virtualResponse.c).toBeUndefined();
 
-		globalVirtualResponseLock.v = false;
+		globalVirtualResponseLock.v = 0;
 		virtualResponse = createVirtualResponse(true);
 		a = virtualResponse.a;
 		b = virtualResponse.b;
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		setVtagIdCollectBasket({});
 		expect(a).toBeInstanceOf(Undefined);
 		expect(b).toBeInstanceOf(Undefined);
@@ -177,7 +177,7 @@ describe('virtual response', () => {
 		const c = virtualResponse.c;
 		const d = virtualResponse.d;
 		const f = virtualResponse.e.f;
-		globalVirtualResponseLock.v = true;
+		globalVirtualResponseLock.v = 2;
 		expect(valueOf(a)).toBe(1);
 		expect(typeof valueOf(a)).toBe('number');
 		expect(valueOf(b)).toBe('bb');
