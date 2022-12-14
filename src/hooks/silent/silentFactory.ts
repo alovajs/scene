@@ -5,7 +5,7 @@ import {
 	SilentSubmitErrorHandler,
 	SilentSubmitSuccessHandler
 } from '../../../typings';
-import { forEach, objectKeys, pushItem, runArgsHandler } from '../../helper';
+import { forEach, objectKeys, pushItem, runArgsHandler, setTimeoutFn } from '../../helper';
 import {
 	bootHandlers,
 	completeHandlers,
@@ -56,11 +56,13 @@ export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
 	mergeSerializer(options.serializers);
 	merge2SilentQueueMap(loadSilentQueueMapFromStorage());
 
-	// 循环启动队列静默提交
-	// 多条队列是并行执行的
-	forEach(objectKeys(silentQueueMap), queueName => {
-		bootSilentQueue(silentQueueMap[queueName], queueName);
-	});
-	setSilentFactoryStatus(1); // 设置状态为已启动
-	runArgsHandler(bootHandlers);
+	setTimeoutFn(() => {
+		// 循环启动队列静默提交
+		// 多条队列是并行执行的
+		forEach(objectKeys(silentQueueMap), queueName => {
+			bootSilentQueue(silentQueueMap[queueName], queueName);
+		});
+		setSilentFactoryStatus(1); // 设置状态为已启动
+		runArgsHandler(bootHandlers);
+	}, options.delay ?? 2000);
 };

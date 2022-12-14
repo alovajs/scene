@@ -35,11 +35,15 @@ export const replaceVTag = (target: any, vtagResponse: Record<string, any>) => {
 	let replaced = falseValue;
 	const replaceCallback = (value: any) => {
 		const virtualTagId = vtagStringify(value);
-		const newValue = virtualTagId
-			? vtagResponse[virtualTagId]
-			: isString(value)
-			? value.replace(regVirtualTag, (_, rep) => vtagResponse[rep])
-			: value;
+
+		// 这边的判断是，如果直接是虚拟标签对象则在vtagResponse中寻找实际值替换
+		// 否则，如果是字符串，则里面可能包含虚拟标签id，也需将它替换为实际值
+		const newValue =
+			virtualTagId !== value
+				? vtagResponse[virtualTagId]
+				: isString(value)
+				? value.replace(regVirtualTag, mat => vtagResponse[mat])
+				: value;
 		if (!replaced && newValue !== value) {
 			replaced = trueValue;
 		}

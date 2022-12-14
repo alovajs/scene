@@ -1,4 +1,4 @@
-import { JSONParse, JSONStringify, len, pushItem } from '../../../helper';
+import { JSONParse, JSONStringify, pushItem } from '../../../helper';
 import { SilentMethod } from '../SilentMethod';
 import {
 	SerializedSilentMethodIdQueueMap,
@@ -44,18 +44,21 @@ export const push2PersistentSilentQueue = <S, E, R, T, RC, RE, RH>(
 
 /**
  * 移除静默方法实例
- * @param index 移除的索引
+ * @param targetSilentMethodId 目标silentMethod实例id
  * @param queue 操作的队列名
  */
-export const removeSilentMethod = (index: number, queueName: string) => {
+export const removeSilentMethod = (targetSilentMethodId: string, queueName: string) => {
 	// 将silentMethod实例id从queue中移除
 	const silentMethodIdQueueMap = JSONParse(
 		storageGetItem(silentMethodIdQueueMapStorageKey) || '{}'
 	) as SerializedSilentMethodIdQueueMap;
 	const currentQueue = silentMethodIdQueueMap[queueName];
-	if (currentQueue && index >= 0 && index < len(currentQueue)) {
-		const removedId = currentQueue.splice(index, 1);
-		storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
-		len(removedId) > 0 && storageRemoveItem(removedId[0]);
+	if (currentQueue) {
+		const index = currentQueue.findIndex(id => id === targetSilentMethodId);
+		if (index >= 0) {
+			currentQueue.splice(index, 1);
+			storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
+			storageRemoveItem(targetSilentMethodId[0]);
+		}
 	}
 };

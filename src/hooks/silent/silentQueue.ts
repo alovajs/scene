@@ -80,14 +80,14 @@ const replaceVirtualMethod = (virtualTagReplacedResponseMap: Record<string, any>
  */
 const parseResponseWithVirtualResponse = (response: any, virtualResponse: any) => {
 	let replacedResponseMap = {} as Record<string, any>;
-	const virtualTagId = vtagStringify(response);
-	virtualTagId && (replacedResponseMap[virtualTagId] = response);
+	const virtualTagId = vtagStringify(virtualResponse);
+	virtualTagId !== virtualResponse && (replacedResponseMap[virtualTagId] = response);
 
 	if (isObject(virtualResponse)) {
 		for (const i in virtualResponse) {
 			replacedResponseMap = {
 				...replacedResponseMap,
-				...parseResponseWithVirtualResponse(response ?? response[i], virtualResponse[i])
+				...parseResponseWithVirtualResponse(response ? response[i] : undefinedValue, virtualResponse[i])
 			};
 		}
 	}
@@ -106,6 +106,8 @@ const parseResponseWithVirtualResponse = (response: any, virtualResponse: any) =
 export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 	const silentMethodRequest = (silentMethodInstance: SilentMethod, retriedTimes = 0) => {
 		const {
+			cache,
+			id,
 			behavior,
 			entity,
 			retry = 0,
@@ -135,29 +137,31 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 			data => {
 				// 请求成功，移除成功的silentMethod实力，并继续下一个请求
 				queue.shift();
-				removeSilentMethod(0, queueName);
-				silentMethodRequest(queue[0]);
+				cache && removeSilentMethod(id, queueName);
 				// 如果有resolveHandler则调用它通知外部
 				resolveHandler(data);
 
-				const { virtualResponse, targetRefMethod, updateStates } = silentMethodInstance;
-				// 替换队列中后面方法实例中的虚拟标签为真实数据
-				// 开锁后才能正常访问virtualResponse的层级结构
-				globalVirtualResponseLock.v = 1;
-				const virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
-				globalVirtualResponseLock.v = 0;
+				let virtualTagReplacedResponseMap: Record<string, any> = {};
+				if (data) {
+					const { virtualResponse, targetRefMethod, updateStates } = silentMethodInstance;
+					// 替换队列中后面方法实例中的虚拟标签为真实数据
+					// 开锁后才能正常访问virtualResponse的层级结构
+					globalVirtualResponseLock.v = 1;
+					virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
+					globalVirtualResponseLock.v = 0;
 
-				// 将虚拟标签找出来，并依次替换
-				replaceVirtualMethod(virtualTagReplacedResponseMap);
+					// 将虚拟标签找出来，并依次替换
+					replaceVirtualMethod(virtualTagReplacedResponseMap);
 
-				// 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据
-				// 此为延迟数据更新的实现
-				if (instanceOf(targetRefMethod, Method) && updateStates && len(updateStates) > 0) {
-					const updateStateCollection: UpdateStateCollection<any> = {};
-					forEach(updateStates, stateName => {
-						updateStateCollection[stateName] = dataRaw => replaceVTag(dataRaw, virtualTagReplacedResponseMap).d;
-					});
-					updateState(targetRefMethod, updateStateCollection);
+					// 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据
+					// 此为延迟数据更新的实现
+					if (instanceOf(targetRefMethod, Method) && updateStates && len(updateStates) > 0) {
+						const updateStateCollection: UpdateStateCollection<any> = {};
+						forEach(updateStates, stateName => {
+							updateStateCollection[stateName] = dataRaw => replaceVTag(dataRaw, virtualTagReplacedResponseMap).d;
+						});
+						updateState(targetRefMethod, updateStateCollection);
+					}
 				}
 
 				// 触发全局的成功事件和完成事件
@@ -174,6 +178,9 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 					);
 				runArgsHandler(successHandlers, createGlobalSuccessEvent());
 				runArgsHandler(completeHandlers, createGlobalSuccessEvent());
+
+				// 继续下一个silentMethod的处理
+				silentMethodRequest(queue[0]);
 			},
 			reason => {
 				// 请求失败，暂时根据失败信息中断请求
@@ -215,7 +222,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
 	silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,
 	targetQueueName = defaultQueueName,
-	onBeforePush: () => void
+	onBeforePush = noop
 ) => {
 	const currentQueue = (silentQueueMap[targetQueueName] = silentQueueMap[targetQueueName] || []);
 	const isNewQueue = len(currentQueue) <= 0;
