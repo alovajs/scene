@@ -1,3 +1,4 @@
+import { Method } from 'alova';
 import { SilentMethod } from '../../../../typings';
 import { instanceOf, isArray, JSONStringify, len, objectKeys, walkObject } from '../../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../../helper/variables';
@@ -14,17 +15,17 @@ import { vtagKey, vtagValueKey } from './helper';
  * @returns 请求方法的序列化实例
  */
 export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>) => {
-	const { entity, targetRefMethod } = silentMethodInstance;
-	// 不需要序列化alova实例
-	entity.context = undefinedValue as any;
-	targetRefMethod && (targetRefMethod.context = undefinedValue as any);
-
 	// 序列化时需要解锁，否则将访问不到虚拟响应数据内的虚拟标签id
 	const prevResponseLockValue = globalVirtualResponseLock.v;
 	globalVirtualResponseLock.v = 1;
 	const transformedData = walkObject({ ...silentMethodInstance }, (value, key, parent) => {
 		if (key === vtagValueKey && parent[vtagKey]) {
 			return value;
+		}
+
+		// 不需要序列化alova实例
+		if (key === 'context' && instanceOf(parent, Method)) {
+			return undefinedValue;
 		}
 
 		const virtualTagId = value?.[symbolVirtualTag];

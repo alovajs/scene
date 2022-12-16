@@ -7,6 +7,7 @@ import { SerializedSilentMethod, SilentMethod } from '../../src/hooks/silent/Sil
 import deserializeSilentMethod from '../../src/hooks/silent/storage/deserializeSilentMethod';
 import serializeSilentMethod from '../../src/hooks/silent/storage/serializeSilentMethod';
 import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
+import Undefined from '../../src/hooks/silent/virtualTag/Undefined';
 import valueOf from '../../src/hooks/silent/virtualTag/valueOf';
 import { symbolVirtualTag } from '../../src/hooks/silent/virtualTag/variables';
 
@@ -144,7 +145,6 @@ describe('serializers', () => {
 		const serializedString = serializeSilentMethod(silentMethodInstance);
 
 		const deserizlizedSilentMethodInstance = deserializeSilentMethod(serializedString);
-		console.log(deserizlizedSilentMethodInstance);
 
 		expect(deserizlizedSilentMethodInstance.id).toBe(silentMethodInstance.id);
 		expect(deserizlizedSilentMethodInstance.behavior).toBe(silentMethodInstance.behavior);
@@ -164,6 +164,16 @@ describe('serializers', () => {
 		expect(deserizlizedSilentMethodInstance.nextRound).toBe(300000);
 		expect(deserizlizedSilentMethodInstance.retry).toBe(5);
 
+		expect(deserizlizedSilentMethodInstance.handlerArgs?.[0]).toBeInstanceOf(Undefined);
+		expect(deserizlizedSilentMethodInstance.handlerArgs?.[0][symbolVirtualTag]).toBe(
+			virtualResponse.extra.other2[symbolVirtualTag]
+		);
+		expect(deserizlizedSilentMethodInstance.virtualResponse?.text[symbolVirtualTag]).toBe(
+			virtualResponse.text[symbolVirtualTag]
+		);
+		expect(deserizlizedSilentMethodInstance.virtualResponse?.time[symbolVirtualTag]).toBe(
+			virtualResponse.time[symbolVirtualTag]
+		);
 		globalVirtualResponseLock.v = 2;
 	});
 });

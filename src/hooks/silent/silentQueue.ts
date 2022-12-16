@@ -23,7 +23,7 @@ import {
 } from './globalVariables';
 import { SilentMethod } from './SilentMethod';
 import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
-import { replaceVTag } from './virtualTag/helper';
+import { replaceObjectVTag, vtagReplace } from './virtualTag/helper';
 import vtagStringify from './virtualTag/vtagStringify';
 
 export type SilentQueueMap = Record<string, SilentMethod[]>;
@@ -44,17 +44,15 @@ export const merge2SilentQueueMap = (queueMap: SilentQueueMap) => {
 /**
  * 替换带有虚拟标签的method实例
  * 当它有methodHandler时调用它重新生成
- * @param virtualTagReplacedResponseMap 虚拟id和对应真实数据的集合
+ * @param vtagResponse 虚拟id和对应真实数据的集合
  */
-const replaceVirtualMethod = (virtualTagReplacedResponseMap: Record<string, any>) => {
+const replaceVirtualMethod = (vtagResponse: Record<string, any>) => {
 	forEach(objectKeys(silentQueueMap), queueName => {
 		const currentQueue = silentQueueMap[queueName];
 		forEach(currentQueue, silentMethodItem => {
 			const handlerArgs = silentMethodItem.handlerArgs || [];
 			forEach(handlerArgs, (arg, i) => {
-				if (virtualTagReplacedResponseMap[arg]) {
-					handlerArgs[i] = virtualTagReplacedResponseMap[arg];
-				}
+				handlerArgs[i] = vtagReplace(arg, vtagResponse);
 			});
 			// 重新生成一个method实例并替换
 			let methodUpdated = falseValue;
@@ -63,10 +61,11 @@ const replaceVirtualMethod = (virtualTagReplacedResponseMap: Record<string, any>
 				methodUpdated = trueValue;
 			} else {
 				// 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
-				methodUpdated = replaceVTag(silentMethodItem.entity, virtualTagReplacedResponseMap).r;
+				methodUpdated = replaceObjectVTag(silentMethodItem.entity, vtagResponse).r;
 			}
 
 			// 如果method实例有更新，则重新持久化此silentMethod实例
+			// methodUpdated && silentMethodItem.cache && persistSilentMethod(silentMethodItem);
 			methodUpdated && persistSilentMethod(silentMethodItem);
 		});
 	});
@@ -118,6 +117,8 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 			fallbackHandlers = []
 		} = silentMethodInstance;
 
+		console.log(retriedTimes, 'retriedTimes');
+
 		// 重试只有在未响应时且超时时间大于0才触发，在服务端响应错误或断网情况下，不会重试
 		// 达到重试次数将认为网络不畅通而停止后续的请求
 		let retryTimer: NodeJS.Timeout;
@@ -142,26 +143,24 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 				resolveHandler(data);
 
 				let virtualTagReplacedResponseMap: Record<string, any> = {};
-				if (data) {
-					const { virtualResponse, targetRefMethod, updateStates } = silentMethodInstance;
-					// 替换队列中后面方法实例中的虚拟标签为真实数据
-					// 开锁后才能正常访问virtualResponse的层级结构
-					globalVirtualResponseLock.v = 1;
-					virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
-					globalVirtualResponseLock.v = 0;
+				const { virtualResponse, targetRefMethod, updateStates } = silentMethodInstance;
+				// 替换队列中后面方法实例中的虚拟标签为真实数据
+				// 开锁后才能正常访问virtualResponse的层级结构
+				globalVirtualResponseLock.v = 1;
+				virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
+				globalVirtualResponseLock.v = 0;
 
-					// 将虚拟标签找出来，并依次替换
-					replaceVirtualMethod(virtualTagReplacedResponseMap);
+				// 将虚拟标签找出来，并依次替换
+				replaceVirtualMethod(virtualTagReplacedResponseMap);
 
-					// 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据
-					// 此为延迟数据更新的实现
-					if (instanceOf(targetRefMethod, Method) && updateStates && len(updateStates) > 0) {
-						const updateStateCollection: UpdateStateCollection<any> = {};
-						forEach(updateStates, stateName => {
-							updateStateCollection[stateName] = dataRaw => replaceVTag(dataRaw, virtualTagReplacedResponseMap).d;
-						});
-						updateState(targetRefMethod, updateStateCollection);
-					}
+				// 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据
+				// 此为延迟数据更新的实现
+				if (instanceOf(targetRefMethod, Method) && updateStates && len(updateStates) > 0) {
+					const updateStateCollection: UpdateStateCollection<any> = {};
+					forEach(updateStates, stateName => {
+						updateStateCollection[stateName] = dataRaw => replaceObjectVTag(dataRaw, virtualTagReplacedResponseMap).d;
+					});
+					updateState(targetRefMethod, updateStateCollection);
 				}
 
 				// 触发全局的成功事件和完成事件
@@ -180,7 +179,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 				runArgsHandler(completeHandlers, createGlobalSuccessEvent());
 
 				// 继续下一个silentMethod的处理
-				silentMethodRequest(queue[0]);
+				len(queue) > 0 && silentMethodRequest(queue[0]);
 			},
 			reason => {
 				// 请求失败，暂时根据失败信息中断请求
