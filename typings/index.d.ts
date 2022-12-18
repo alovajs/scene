@@ -23,6 +23,68 @@ interface PaginationConfig<R, LD, WS> {
 }
 
 // =========================
+/** 静默提交事件 */
+// 事件：
+// 全局的：
+//  [GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retriedTimes、响应数据、虚拟标签和实际值的集合
+//  [GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retriedTimes、错误对象
+//  [GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retriedTimes、[?]响应数据、[?]错误对象
+
+// 局部的：
+//  [ScopedSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retriedTimes、send参数、响应数据
+//  [ScopedSQErrorEvent]失败：behavior、silentMethod实例、method实例、retriedTimes、send参数、错误对象
+//  [ScopedSQErrorEvent]回退：behavior、silentMethod实例、method实例、retriedTimes、send参数、错误对象
+//  [ScopedSQSuccessEvent | ScopedSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retriedTimes、send参数、[?]错误对象
+//  [ScopedSQEvent]入队列前：behavior、silentMethod实例、method实例、send参数
+//  [ScopedSQEvent]入队列后：behavior、silentMethod实例、method实例、send参数
+/** 顶层事件 */
+interface SQEvent<S, E, R, T, RC, RE, RH> {
+	/** 事件对应的请求行为 */
+	behavior: SQHookBehavior;
+	/** 当前的method实例 */
+	method: Method<S, E, R, T, RC, RE, RH>;
+	/** 当前的silentMethod实例，当behavior为static时没有值 */
+	silentMethod?: SilentMethod<S, E, R, T, RC, RE, RH>;
+}
+/** 全局事件 */
+interface GlobalSQEvent extends SQEvent<any, any, any, any, any, any, any> {
+	/** 已重试的次数，在beforePush和pushed事件中没有值 */
+	retriedTimes: number;
+}
+/** 全局成功事件 */
+interface GlobalSQSuccessEvent extends GlobalSQEvent {
+	/** 响应数据 */
+	data: any;
+	/**
+	 * 虚拟标签和实际值的集合
+	 * 里面只包含你已用到的虚拟标签的实际值
+	 */
+	vtagResponse: Record<string, any>;
+}
+/** 全局失败事件 */
+interface GlobalSQErrorEvent extends GlobalSQEvent {
+	/** 失败时抛出的错误 */
+	error: any;
+}
+
+/** 局部事件 */
+interface ScopedSQEvent<S, E, R, T, RC, RE, RH> extends SQEvent<S, E, R, T, RC, RE, RH> {
+	/** 已重试的次数，在beforePush和pushed事件中没有值 */
+	retriedTimes: number;
+	/** 通过send触发请求时传入的参数 */
+	sendArgs: any[];
+}
+/** 局部成功事件 */
+interface ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
+	/** 响应数据 */
+	data: any;
+}
+/** 局部失败事件 */
+interface ScopedSQErrorEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
+	/** 失败时抛出的错误 */
+	error: any;
+}
+
 interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
 	/** silentMethod实例id */
 	readonly id: string;
@@ -32,20 +94,38 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
 	readonly behavior: SQHookBehavior;
 	/** method实例 */
 	readonly entity: Method<S, E, R, T, RC, RE, RH>;
+	/** 判断是否需要触发重试 */
+	readonly retryError?:
+		| RegExp
+		| {
+				name?: RegExp;
+				message?: RegExp;
+		  };
 	/** 重试次数 */
 	readonly retry?: number;
-	/**
-	 * 请求超时时间
-	 * 当达到超时时间后仍未响应则再次发送请求
-	 * 单位毫秒
-	 */
-	readonly timeout?: number;
+	/** 避让策略 */
+	readonly backoff?: {
+		/** 再次请求的延迟时间，单位毫秒，默认为1000 */
+		delay: number;
+		/** 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒，默认为0 */
+		multiplier?: number;
 
-	/**
-	 * 失败后下一轮重试的时间，单位毫秒
-	 * 如果不指定，则在下次刷新时再次触发
-	 */
-	readonly nextRound?: number;
+		/**
+		 * 延迟请求的抖动起始百分比值，范围为0-1
+		 * 当只设置了startQuiver时，endQuiver默认为1
+		 * 例如设置为0.5，它将在当前延迟时间上增加50%到100%的随机时间
+		 * 如果endQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
+		 */
+		startQuiver?: number;
+
+		/**
+		 * 延迟请求的抖动结束百分比值，范围为0-1
+		 * 当只设置了endQuiver时，startQuiver默认为0
+		 * 例如设置为0.5，它将在当前延迟时间上增加0%到50%的随机时间
+		 * 如果startQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
+		 */
+		endQuiver?: number;
+	};
 
 	/** 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用 */
 	readonly fallbackHandlers?: FallbackHandler[];
@@ -103,6 +183,9 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
 	 */
 	targetRefMethod?: Method;
 
+	/** 重试回调函数 */
+	retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[];
+
 	/**
 	 * 允许缓存时持久化更新当前实例
 	 */
@@ -132,18 +215,7 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
 	/** 重试次数 */
 	retry?: number;
 
-	/**
-	 * 请求超时时间
-	 * 当达到超时时间后仍未响应则再次发送请求
-	 * 单位毫秒
-	 */
-	timeout?: number;
-
-	/**
-	 * 失败后下一轮重试的时间，单位毫秒
-	 * 如果不指定，则在下次刷新时再次触发
-	 */
-	nextRound?: number;
+	backoff?: NonNullable<SilentMethod['backoff']>;
 
 	/** 队列名，不传时选择默认队列 */
 	queue?: string;
@@ -165,9 +237,10 @@ type SQWatcherHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, 
 	Omit<WatcherHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
 
 type FallbackHandler = (...args: any[]) => void;
-type BeforePushQueueHandler = (...args: any[]) => void;
-type PushedQueueHandler = (...args: any[]) => void;
-type SQHookReturnType<R, S> = UseHookReturnType<R, S> & {
+type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQErrorEvent<S, E, R, T, RC, RE, RH>) => void;
+type BeforePushQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
+type PushedQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
+type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<R, S> & {
 	/**
 	 * 回退事件绑定函数，它将在以下情况触发：
 	 * 1. 重试指定次数都无响应而停止继续请求后
@@ -183,10 +256,21 @@ type SQHookReturnType<R, S> = UseHookReturnType<R, S> & {
 	onFallback: (handler: FallbackHandler) => void;
 
 	/** 在入队列前调用，在此可以过滤队列中重复的SilentMethod，在static行为下无效 */
-	onBeforePushQueue: (handler: BeforePushQueueHandler) => void;
+	onBeforePushQueue: (handler: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>) => void;
 
 	/** 在入队列后调用，在static行为下无效 */
-	onPushedQueue: (handler: PushedQueueHandler) => void;
+	onPushedQueue: (handler: PushedQueueHandler<S, E, R, T, RC, RE, RH>) => void;
+
+	/** @override 重写alova的onSuccess事件 */
+	onSuccess: (handler: (event: ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH>) => void) => void;
+
+	/** @override 重写alova的onError事件 */
+	onError: (handler: (event: ScopedSQErrorEvent<S, E, R, T, RC, RE, RH>) => void) => void;
+
+	/** @override 重写alova的onComplete事件 */
+	onComplete: (
+		handler: (event: ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH> | ScopedSQErrorEvent<S, E, R, T, RC, RE, RH>) => void
+	) => void;
 };
 
 /** 静默方法实例匹配器 */
@@ -226,70 +310,6 @@ interface SilentFactoryBootOptions {
 	 * >>> 可以通过设置同名序列化器来覆盖内置序列化器
 	 */
 	serializers?: Record<string | number, DataSerializer>;
-}
-
-/** 静默提交事件 */
-
-// 事件：
-// 全局的：
-//  [GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retriedTimes、响应数据、虚拟标签和实际值的集合
-//  [GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retriedTimes、错误对象
-//  [GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retriedTimes、[?]响应数据、[?]错误对象
-
-// 局部的：
-//  [ScopedSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retriedTimes、send参数、响应数据
-//  [ScopedSQErrorEvent]失败：behavior、silentMethod实例、method实例、retriedTimes、send参数、错误对象
-//  [ScopedSQErrorEvent]回退：behavior、silentMethod实例、method实例、retriedTimes、send参数、错误对象
-//  [ScopedSQSuccessEvent | ScopedSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retriedTimes、send参数、[?]错误对象
-//  [ScopedSQEvent]入队列前：behavior、silentMethod实例、method实例、send参数
-//  [ScopedSQEvent]入队列后：behavior、silentMethod实例、method实例、send参数
-
-/** 顶层事件 */
-interface SQEvent<S, E, R, T, RC, RE, RH> {
-	/** 事件对应的请求行为 */
-	behavior: SQHookBehavior;
-	/** 当前的method实例 */
-	method: Method<S, E, R, T, RC, RE, RH>;
-	/** 当前的silentMethod实例，当behavior为static时没有值 */
-	silentMethod?: SilentMethod<S, E, R, T, RC, RE, RH>;
-}
-/** 全局事件 */
-interface GlobalSQEvent extends SQEvent<any, any, any, any, any, any, any> {
-	/** 已重试的次数，在beforePush和pushed事件中没有值 */
-	retriedTimes: number;
-}
-/** 全局成功事件 */
-interface GlobalSQSuccessEvent extends GlobalSQEvent {
-	/** 响应数据 */
-	data: any;
-	/**
-	 * 虚拟标签和实际值的集合
-	 * 里面只包含你已用到的虚拟标签的实际值
-	 */
-	vtagResponse: Record<string, any>;
-}
-/** 全局失败事件 */
-interface GlobalSQErrorEvent extends GlobalSQEvent {
-	/** 失败时抛出的错误 */
-	error: any;
-}
-
-/** 局部事件 */
-interface ScopedSQEvent<S, E, R, T, RC, RE, RH> extends SQEvent<S, E, R, T, RC, RE, RH> {
-	/** 已重试的次数，在beforePush和pushed事件中没有值 */
-	retriedTimes: number;
-	/** 通过send触发请求时传入的参数 */
-	sendArgs: any[];
-}
-/** 局部成功事件 */
-interface ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
-	/** 响应数据 */
-	data: any;
-}
-/** 局部失败事件 */
-interface ScopedSQErrorEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
-	/** 失败时抛出的错误 */
-	error: any;
 }
 
 type SilentSubmitBootHandler = () => void;

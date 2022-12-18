@@ -103,35 +103,46 @@ const parseResponseWithVirtualResponse = (response: any, virtualResponse: any) =
  * @param queue SilentMethod队列
  */
 export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
-	const silentMethodRequest = (silentMethodInstance: SilentMethod, retriedTimes = 0) => {
-		const {
+	const silentMethodRequest = (silentMethodInstance: SilentMethod, retriedTimes = 0, retriedRound = 0) => {
+		let {
 			cache,
 			id,
 			behavior,
 			entity,
 			retry = 0,
-			timeout = 2000,
-			nextRound = 0,
+			backoff,
 			resolveHandler = noop,
 			rejectHandler = noop,
-			fallbackHandlers = []
+			fallbackHandlers = [],
+			retryHandlers = [],
+			handlerArgs = []
 		} = silentMethodInstance;
-
-		console.log(retriedTimes, 'retriedTimes');
+		const hasFallbackHandler = len(fallbackHandlers) > 0;
+		nextRound = hasFallbackHandler ? 0 : nextRound; // 有fallback事件回调时不再进行下一轮
 
 		// 重试只有在未响应时且超时时间大于0才触发，在服务端响应错误或断网情况下，不会重试
 		// 达到重试次数将认为网络不畅通而停止后续的请求
-		let retryTimer: NodeJS.Timeout;
-		if (timeout > 0 && (retriedTimes < retry || nextRound > 0)) {
-			retryTimer = setTimeoutFn(
-				() => silentMethodRequest(silentMethodInstance, ++retriedTimes),
-				// 还有重试次数时使用timeout作为下次请求时间，否则是否nextRound
-				retriedTimes < retry ? timeout : nextRound
-			);
-			if (retriedTimes >= retry) {
-				runArgsHandler(fallbackHandlers);
-			}
-		}
+		let retryTimer = setTimeoutFn(
+			() => {
+				retriedTimes++;
+				if (timeout > 0 && (retriedTimes <= retry || nextRound > 0)) {
+					silentMethodRequest(silentMethodInstance, retriedTimes, retriedRound);
+					runArgsHandler(
+						retryHandlers,
+						createSQEvent(4, behavior, entity, silentMethodInstance, retriedTimes, handlerArgs)
+					);
+				} else if (retriedTimes >= retry) {
+					runArgsHandler(fallbackHandlers);
+					// 如果有绑定fallback事件，则会调用fallback回调，也就不再需要下一轮的尝试了
+					if (!hasFallbackHandler) {
+						retriedTimes = 0;
+						retriedRound++;
+					}
+				}
+			},
+			// 还有重试次数时使用timeout作为下次请求时间，否则是否nextRound
+			retriedTimes < retry ? timeout : nextRound
+		);
 
 		promiseThen(
 			entity.send(),
@@ -197,6 +208,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
 						reason
 					);
 				runArgsHandler(errorHandlers, createGlobalErrorEvent());
+				runArgsHandler(fallbackHandlers); // 如果直接失败了也需要调用fallback回调
 				runArgsHandler(completeHandlers, createGlobalErrorEvent());
 			}
 		).finally(() => {

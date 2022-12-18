@@ -12,12 +12,12 @@ export const setMockListWithSearchData = cb => {
 		typeof cb === 'function'
 			? cb(mockListWithSearchData)
 			: Array.from({ length: total }).map((_, i) => {
-					let n = i % 3;
-					return {
-						id: i,
-						word: ['aaa', 'bbb', 'ccc'][n]
-					};
-			  });
+				let n = i % 3;
+				return {
+					id: i,
+					word: ['aaa', 'bbb', 'ccc'][n]
+				};
+			});
 };
 
 const shortTotal = 10;
@@ -78,7 +78,7 @@ const mocks = defineMock({
 	},
 	'[POST]/detail-delay': () => {
 		return new Promise(resolve => {
-			setTimeout(() => resolve({ id: 10 }), 2000);
+			setTimeout(() => resolve({ id: 10 }), 1000);
 		});
 	}
 });

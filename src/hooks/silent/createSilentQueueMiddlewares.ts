@@ -37,10 +37,10 @@ export default <S, E, R, T, RC, RE, RH>(
 	handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
 	config?: SQHookConfig<S, E, R, T, RC, RE, RH>
 ) => {
-	const { behavior = 'queue', queue, retry, timeout, nextRound } = config || {};
+	const { behavior = 'queue', queue, retry, backoff } = config || {};
 	const fallbackHandlers: FallbackHandler[] = [];
-	const beforePushQueueHandlers: BeforePushQueueHandler[] = [];
-	const pushedQueueHandlers: PushedQueueHandler[] = [];
+	const beforePushQueueHandlers: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>[] = [];
+	const pushedQueueHandlers: PushedQueueHandler<S, E, R, T, RC, RE, RH>[] = [];
 	let collectedMethodHandler: MethodHandler<any, any, any, any, any, any, any> | undefined;
 	let handlerArgs: any[] | undefined;
 
@@ -145,8 +145,7 @@ export default <S, E, R, T, RC, RE, RH>(
 					behaviorFinally,
 					undefinedValue,
 					retry,
-					timeout,
-					nextRound,
+					backoff,
 					fallbackHandlers,
 					resolveHandler,
 					rejectHandler,
@@ -207,7 +206,7 @@ export default <S, E, R, T, RC, RE, RH>(
 			 * 绑定入队列前事件
 			 * @param handler 入队列前的事件回调
 			 */
-			onBeforePushQueue: (handler: BeforePushQueueHandler) => {
+			onBeforePushQueue: (handler: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>) => {
 				pushItem(beforePushQueueHandlers, handler);
 			},
 
@@ -215,7 +214,7 @@ export default <S, E, R, T, RC, RE, RH>(
 			 * 绑定入队列后事件
 			 * @param handler 入队列后的事件回调
 			 */
-			onPushedQueue: (handler: PushedQueueHandler) => {
+			onPushedQueue: (handler: PushedQueueHandler<S, E, R, T, RC, RE, RH>) => {
 				pushItem(pushedQueueHandlers, handler);
 			}
 		}

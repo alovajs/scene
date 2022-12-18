@@ -1,11 +1,12 @@
 import { Method } from 'alova';
-import { FallbackHandler, SilentMethod as SilentMethodInterface, SQHookBehavior } from '../../../typings';
+import { FallbackHandler, RetryHandler, SilentMethod as SilentMethodInterface, SQHookBehavior } from '../../../typings';
 import { uuid } from '../../helper';
 import { silentQueueMap } from './silentQueue';
 import { persistSilentMethod } from './storage/silentMethodStorage';
 
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
 export type MethodHandler<S, E, R, T, RC, RE, RH> = (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
+export type BackoffPolicy = NonNullable<SilentMethodInterface['backoff']>;
 export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
 	public id: string;
 	/** 是否为持久化实例 */
@@ -15,18 +16,8 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 	public entity: Method<S, E, R, T, RC, RE, RH>;
 	/** 重试次数 */
 	public retry?: number;
-	/**
-	 * 请求超时时间
-	 * 当达到超时时间后仍未响应则再次发送请求
-	 * 单位毫秒
-	 */
-	public timeout?: number;
-
-	/**
-	 * 失败后下一轮重试的时间，单位毫秒
-	 * 如果不指定，则在下次刷新时再次触发
-	 */
-	public nextRound?: number;
+	/** 避让策略 */
+	public backoff?: BackoffPolicy;
 
 	/** 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用 */
 	public fallbackHandlers?: FallbackHandler[];
@@ -64,34 +55,37 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 
 	/** 调用updateStateEffect更新了哪些状态 */
 	public updateStates?: string[];
+
+	/** 重试回调函数 */
+	public retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[];
 	constructor(
 		entity: Method<S, E, R, T, RC, RE, RH>,
 		cache: boolean,
 		behavior: SQHookBehavior,
 		id = uuid(),
 		retry?: number,
-		timeout?: number,
-		nextRound?: number,
+		backoff?: BackoffPolicy,
 		fallbackHandlers?: FallbackHandler[],
 		resolveHandler?: PromiseExecuteParameter['0'],
 		rejectHandler?: PromiseExecuteParameter['1'],
 		methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
 		handlerArgs?: any[],
-		vTag?: string[]
+		vTag?: string[],
+		retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[]
 	) {
 		this.entity = entity;
 		this.cache = cache;
 		this.behavior = behavior;
 		this.id = id;
 		this.retry = retry;
-		this.timeout = timeout;
-		this.nextRound = nextRound;
+		this.backoff = backoff;
 		this.fallbackHandlers = fallbackHandlers;
 		this.resolveHandler = resolveHandler;
 		this.rejectHandler = rejectHandler;
 		this.methodHandler = methodHandler;
 		this.handlerArgs = handlerArgs;
 		this.vTags = vTag;
+		this.retryHandlers = retryHandlers;
 	}
 
 	/**
