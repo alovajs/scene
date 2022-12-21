@@ -58,32 +58,7 @@ export default {
 	// globalTeardown: undefined,
 
 	// A set of global variables that need to be available in all test environments
-	// globals: {
-	// 	// mock import.meta, see https://www.npmjs.com/package/ts-jest-mock-import-meta
-	// 	'ts-jest': {
-	// 		diagnostics: {
-	// 			ignoreCodes: [1343]
-	// 		},
-	// 		astTransformers: {
-	// 			// 转换import.meta
-	// 			before: [
-	// 				{
-	// 					path: 'node_modules/ts-jest-mock-import-meta',
-	// 					options: {
-	// 						metaObjectReplacement: {
-	// 							url: 'https://xxx',
-	// 							env: {
-	// 								PROD: false,
-	// 								DEV: true
-	// 							},
-	// 							status: 2
-	// 						}
-	// 					}
-	// 				}
-	// 			]
-	// 		}
-	// 	}
-	// },
+	// globals: {},
 
 	// The maximum amount of workers used to run your tests. Can be specified as % or a number. E.g. maxWorkers: 10% will use 10% of your CPU amount + 1 as the maximum worker number. maxWorkers: 2 will use a maximum of 2 workers.
 	// maxWorkers: "50%",
@@ -166,11 +141,15 @@ export default {
 	testEnvironment: 'jsdom',
 
 	testMatch: [
-		// '**/?(*.)+(spec|test).[tj]s?(x)',
-		// '**/test/modules/virtualResponse.spec.ts(x)?',
-		// '**/test/modules/serializers.spec.ts(x)?',
+		// '**/?(*.)+(spec|test).[tj]s?(x)'
+		// '**/test/vue/usePagination.spec.js(x)?',
+		// '**/test/silent/virtualResponse.spec.ts(x)?',
+		// '**/test/silent/serializers.spec.ts(x)?',
 		// '**/test/silent/bootSilentQueue.spec.ts(x)?',
-		'**/test/silent/silentMethodRequest.spec.ts(x)?'
+		// '**/test/silent/methodQueue-silent-request.spec.ts(x)?',
+		// '**/test/silent/silentMethod-storage.spec.ts(x)?',
+		// '**/test/silent/methodQueue-queue-request.spec.ts(x)?',
+		'**/test/vue/useSQRequest.spec.ts(x)?'
 	],
 
 	// An array of regexp pattern strings that are matched against all test paths, matched tests are skipped

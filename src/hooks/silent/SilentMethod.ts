@@ -1,21 +1,27 @@
 import { Method } from 'alova';
 import { FallbackHandler, RetryHandler, SilentMethod as SilentMethodInterface, SQHookBehavior } from '../../../typings';
-import { uuid } from '../../helper';
+import { splice, uuid } from '../../helper';
 import { silentQueueMap } from './silentQueue';
-import { persistSilentMethod } from './storage/silentMethodStorage';
+import { persistSilentMethod, removeSilentMethod } from './storage/silentMethodStorage';
 
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
 export type MethodHandler<S, E, R, T, RC, RE, RH> = (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
 export type BackoffPolicy = NonNullable<SilentMethodInterface['backoff']>;
+export type MaxRetryTimes = NonNullable<SilentMethodInterface['maxRetryTimes']>;
+export type RetryError = NonNullable<SilentMethodInterface['retryError']>;
+
 export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
 	public id: string;
 	/** 是否为持久化实例 */
 	public cache: boolean;
 	/** 实例的行为，queue或silent */
 	public behavior: SQHookBehavior;
+	/** method实例 */
 	public entity: Method<S, E, R, T, RC, RE, RH>;
+	/** 重试错误规则 */
+	public retryError?: RetryError;
 	/** 重试次数 */
-	public retry?: number;
+	public maxRetryTimes?: MaxRetryTimes;
 	/** 避让策略 */
 	public backoff?: BackoffPolicy;
 
@@ -63,7 +69,8 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 		cache: boolean,
 		behavior: SQHookBehavior,
 		id = uuid(),
-		retry?: number,
+		retryError?: RetryError,
+		maxRetryTimes?: MaxRetryTimes,
 		backoff?: BackoffPolicy,
 		fallbackHandlers?: FallbackHandler[],
 		resolveHandler?: PromiseExecuteParameter['0'],
@@ -77,7 +84,8 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 		this.cache = cache;
 		this.behavior = behavior;
 		this.id = id;
-		this.retry = retry;
+		this.retryError = retryError;
+		this.maxRetryTimes = maxRetryTimes;
 		this.backoff = backoff;
 		this.fallbackHandlers = fallbackHandlers;
 		this.resolveHandler = resolveHandler;
@@ -102,7 +110,9 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 		for (const queueName in silentQueueMap) {
 			const index = silentQueueMap[queueName].indexOf(this);
 			if (index >= 0) {
-				silentQueueMap[queueName].splice(index, 1);
+				const targetSilentMethod = silentQueueMap[queueName][index];
+				splice(silentQueueMap[queueName], index, 1);
+				this.cache && targetSilentMethod && removeSilentMethod(targetSilentMethod.id, queueName);
 				break;
 			}
 		}

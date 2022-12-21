@@ -12,7 +12,14 @@ import {
 	runArgsHandler,
 	walkObject
 } from '../../helper';
-import { falseValue, PromiseCls, trueValue, undefinedValue } from '../../helper/variables';
+import {
+	behaviorSilent,
+	behaviorStatic,
+	falseValue,
+	PromiseCls,
+	trueValue,
+	undefinedValue
+} from '../../helper/variables';
 import createSQEvent from './createSQEvent';
 import { globalVirtualResponseLock, setVtagIdCollectBasket, vtagIdCollectBasket } from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';
@@ -37,7 +44,7 @@ export default <S, E, R, T, RC, RE, RH>(
 	handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
 	config?: SQHookConfig<S, E, R, T, RC, RE, RH>
 ) => {
-	const { behavior = 'queue', queue, retry, backoff } = config || {};
+	const { behavior = 'queue', queue, retryError, maxRetryTimes, backoff } = config || {};
 	const fallbackHandlers: FallbackHandler[] = [];
 	const beforePushQueueHandlers: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>[] = [];
 	const pushedQueueHandlers: PushedQueueHandler<S, E, R, T, RC, RE, RH>[] = [];
@@ -103,7 +110,17 @@ export default <S, E, R, T, RC, RE, RH>(
 			currentSilentMethod = silentMethodInstance;
 			createFinishedEvent =
 				createFinishedEvent ||
-				(() => createSQEvent(3, behaviorFinally, method, silentMethodInstance, undefinedValue, sendArgs, args[0]));
+				(() =>
+					createSQEvent(
+						3,
+						behaviorFinally,
+						method,
+						silentMethodInstance,
+						undefinedValue,
+						undefinedValue,
+						sendArgs,
+						args[0]
+					));
 			handler(createFinishedEvent() as any);
 
 			// 所有成功回调执行完后再锁定虚拟标签，锁定后虚拟响应数据内不能再访问任意层级
@@ -124,6 +141,7 @@ export default <S, E, R, T, RC, RE, RH>(
 						method,
 						silentMethodInstance,
 						undefinedValue,
+						undefinedValue,
 						sendArgs,
 						undefinedValue,
 						undefinedValue,
@@ -135,16 +153,17 @@ export default <S, E, R, T, RC, RE, RH>(
 			handler(createFinishedEvent?.() as any);
 		});
 
-		if (behaviorFinally !== 'static') {
+		if (behaviorFinally !== behaviorStatic) {
 			// 等待队列中的method执行完毕
 			const queueResolvePromise = newInstance(PromiseCls, (resolveHandler, rejectHandler) => {
 				silentMethodInstance = newInstance(
 					SilentMethod,
 					method as any,
-					len(fallbackHandlers) <= 0 && behavior === 'silent',
+					len(fallbackHandlers) <= 0 && behavior === behaviorSilent,
 					behaviorFinally,
 					undefinedValue,
-					retry,
+					retryError,
+					maxRetryTimes,
 					backoff,
 					fallbackHandlers,
 					resolveHandler,
@@ -154,7 +173,7 @@ export default <S, E, R, T, RC, RE, RH>(
 					vtagIdCollectBasket && objectKeys(vtagIdCollectBasket)
 				);
 				const createPushEvent = () =>
-					createSQEvent(2, behaviorFinally, method, silentMethodInstance, undefinedValue, sendArgs);
+					createSQEvent(2, behaviorFinally, method, silentMethodInstance, undefinedValue, undefinedValue, sendArgs);
 
 				// 将silentMethod放入队列并持久化
 				pushNewSilentMethod2Queue(silentMethodInstance, queue, () => {

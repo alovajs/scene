@@ -1,6 +1,7 @@
 import { getConfig, instanceOf } from '../../../helper';
+import { defaultQueueName } from '../../../helper/variables';
 import { SilentMethod } from '../SilentMethod';
-import { defaultQueueName, silentQueueMap } from '../silentQueue';
+import { silentQueueMap } from '../silentQueue';
 
 /**
  * 按method名称或正则表达式筛选满足条件的所有silentMethod实例

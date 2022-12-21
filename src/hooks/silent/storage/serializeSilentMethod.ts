@@ -1,4 +1,3 @@
-import { Method } from 'alova';
 import { SilentMethod } from '../../../../typings';
 import { instanceOf, isArray, JSONStringify, len, objectKeys, walkObject } from '../../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../../helper/variables';
@@ -24,13 +23,14 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
 		}
 
 		// 不需要序列化alova实例
-		if (key === 'context' && instanceOf(parent, Method)) {
+		if (key === 'context' && value?.constructor?.name === 'Alova') {
 			return undefinedValue;
 		}
 
 		const virtualTagId = value?.[symbolVirtualTag];
 		let primitiveValue = valueOf(value);
 		let finallyApplySerializer = undefinedValue as string | undefined;
+		// 找到匹配的序列化器并进行值的序列化，未找到则返回原值
 		primitiveValue = objectKeys(serializers).reduce((currentValue, serializerName) => {
 			if (!finallyApplySerializer) {
 				const serializedValue = serializers[serializerName].forward(currentValue);

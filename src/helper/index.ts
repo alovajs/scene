@@ -17,6 +17,9 @@ export const map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R)
 export const includes = <T>(ary: T[], target: T) => ary.includes(target);
 export const len = (data: any[] | Uint8Array | string | String) => data.length;
 export const isArray = (target: any) => Array.isArray(target);
+export const shift = <T>(ary: T[]) => ary.shift();
+export const splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) =>
+	ary.splice(start, deleteCount, ...items);
 
 export const getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
 	methodInstance.context;

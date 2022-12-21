@@ -102,9 +102,9 @@ describe('boot silent queue', () => {
 				false,
 				'silent',
 				'abcdef',
-				0,
-				100,
-				0,
+				undefined,
+				2,
+				undefined,
 				[
 					() => {
 						methodFallbackFn();
@@ -135,9 +135,9 @@ describe('boot silent queue', () => {
 				false,
 				'silent',
 				'abcdef',
-				0,
-				100,
-				0,
+				undefined,
+				2,
+				undefined,
 				[
 					() => {
 						methodFallbackFn();
@@ -259,7 +259,10 @@ describe('boot silent queue', () => {
 			const methodInstance = new Method('POST', alovaInst, '/detail', {
 				transformData: () => undefined
 			});
-			const silentMethodInstance = new SilentMethod(methodInstance, false, 'silent', 'abcdef', 0, 100, 0);
+			const silentMethodInstance = new SilentMethod(methodInstance, false, 'silent', 'abcdef', /.*/, 2, {
+				delay: 2000,
+				multiplier: 1.5
+			});
 			silentMethodInstance.virtualResponse = virtualResponse;
 
 			const vid = virtualResponse.id;
@@ -272,9 +275,12 @@ describe('boot silent queue', () => {
 				false,
 				'silent',
 				'abcdef',
-				0,
-				100,
-				0,
+				/.*/,
+				2,
+				{
+					delay: 2000,
+					multiplier: 1.5
+				},
 				undefined,
 				value => {
 					expect(value).toStrictEqual({
@@ -319,7 +325,10 @@ describe('boot silent queue', () => {
 			const methodInstance = new Method('POST', alovaInst, '/detail', {
 				transformData: () => true
 			});
-			const silentMethodInstance = new SilentMethod(methodInstance, false, 'silent', 'abcdef', 0, 100, 0);
+			const silentMethodInstance = new SilentMethod(methodInstance, false, 'silent', 'abcdef', /.*/, 2, {
+				delay: 2000,
+				multiplier: 1.5
+			});
 			silentMethodInstance.virtualResponse = virtualResponse;
 			const methodInstance2 = new Method('DELETE', alovaInst, `/detail/${vtagStringify(virtualResponse)}`, undefined, {
 				whole: virtualResponse
@@ -329,9 +338,12 @@ describe('boot silent queue', () => {
 				false,
 				'silent',
 				'abcdef',
-				0,
-				100,
-				0,
+				/.*/,
+				2,
+				{
+					delay: 2000,
+					multiplier: 1.5
+				},
 				undefined,
 				value => {
 					resolve(0);
@@ -374,7 +386,10 @@ describe('boot silent queue', () => {
 				id: ''
 			});
 			const methodInstance = new Method('POST', alovaInst, '/detail');
-			const silentMethodInstance = new SilentMethod(methodInstance, false, 'silent', 'abcdef', 0, 100, 0);
+			const silentMethodInstance = new SilentMethod(methodInstance, false, 'silent', 'abcdef', /.*/, 2, {
+				delay: 2000,
+				multiplier: 1.5
+			});
 			silentMethodInstance.virtualResponse = virtualResponse;
 
 			const methodHandler = (id: string, text: string, textWithId: string) =>
@@ -388,9 +403,12 @@ describe('boot silent queue', () => {
 				false,
 				'silent',
 				'abcdef',
-				0,
-				100,
-				0,
+				/.*/,
+				2,
+				{
+					delay: 2000,
+					multiplier: 1.5
+				},
 				undefined,
 				value => {
 					resolve(0);

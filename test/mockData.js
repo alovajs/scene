@@ -12,12 +12,12 @@ export const setMockListWithSearchData = cb => {
 		typeof cb === 'function'
 			? cb(mockListWithSearchData)
 			: Array.from({ length: total }).map((_, i) => {
-				let n = i % 3;
-				return {
-					id: i,
-					word: ['aaa', 'bbb', 'ccc'][n]
-				};
-			});
+					let n = i % 3;
+					return {
+						id: i,
+						word: ['aaa', 'bbb', 'ccc'][n]
+					};
+			  });
 };
 
 const shortTotal = 10;
@@ -30,6 +30,8 @@ setMockListData();
 setMockListWithSearchData();
 setMockShortListData();
 
+let detailErrorId = '';
+let detailErrorTimes = 0;
 const mocks = defineMock({
 	'/list': ({ query }) => {
 		let { page = 1, pageSize = 10 } = query;
@@ -76,16 +78,48 @@ const mocks = defineMock({
 			data
 		};
 	},
-	'[POST]/detail-delay': () => {
-		return new Promise(resolve => {
-			setTimeout(() => resolve({ id: 10 }), 1000);
-		});
+	'[POST]/detail-error': ({ data = {} }) => {
+		const { id, failTimes = 3 } = data;
+		// 根据id判断是否需要重置detailErrorTimes
+		if (id !== detailErrorId) {
+			detailErrorTimes = 0;
+			detailErrorId = id;
+		}
+
+		if (detailErrorTimes < failTimes) {
+			detailErrorTimes++;
+			return {
+				status: 403,
+				statusText: 'no permission'
+			};
+		} else {
+			detailErrorTimes = 0;
+			return {
+				id: 1
+			};
+		}
 	}
 });
 
 // 模拟数据请求适配器
 export const mockRequestAdapter = createAlovaMockAdapter([mocks], {
 	delay: 50,
-	onMockResponse: data => data,
+	onMockResponse: ({ status, statusText, body }) => {
+		if (status >= 300) {
+			const err = new Error(statusText);
+			err.name = status.toString();
+			throw err;
+		}
+		return body;
+	},
 	mockRequestLogger: false
 });
+
+// 防止Vue warn打印
+const warn = console.warn;
+console.warn = (...args) => {
+	args = args.filter(a => !/vue warn/i.test(a));
+	if (args.length > 0) {
+		warn.apply(console, args);
+	}
+};

@@ -26,15 +26,15 @@ interface PaginationConfig<R, LD, WS> {
 /** 静默提交事件 */
 // 事件：
 // 全局的：
-//  [GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retriedTimes、响应数据、虚拟标签和实际值的集合
-//  [GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retriedTimes、错误对象
-//  [GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retriedTimes、[?]响应数据、[?]错误对象
+//  [GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、响应数据、虚拟标签和实际值的集合
+//  [GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retryTimes、错误对象
+//  [GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retryTimes、[?]响应数据、[?]错误对象
 
 // 局部的：
-//  [ScopedSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retriedTimes、send参数、响应数据
-//  [ScopedSQErrorEvent]失败：behavior、silentMethod实例、method实例、retriedTimes、send参数、错误对象
-//  [ScopedSQErrorEvent]回退：behavior、silentMethod实例、method实例、retriedTimes、send参数、错误对象
-//  [ScopedSQSuccessEvent | ScopedSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retriedTimes、send参数、[?]错误对象
+//  [ScopedSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、send参数、响应数据
+//  [ScopedSQErrorEvent]失败：behavior、silentMethod实例、method实例、retryTimes、send参数、错误对象
+//  [ScopedSQErrorEvent]回退：behavior、silentMethod实例、method实例、retryTimes、send参数、错误对象
+//  [ScopedSQSuccessEvent | ScopedSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retryTimes、send参数、[?]错误对象
 //  [ScopedSQEvent]入队列前：behavior、silentMethod实例、method实例、send参数
 //  [ScopedSQEvent]入队列后：behavior、silentMethod实例、method实例、send参数
 /** 顶层事件 */
@@ -48,8 +48,8 @@ interface SQEvent<S, E, R, T, RC, RE, RH> {
 }
 /** 全局事件 */
 interface GlobalSQEvent extends SQEvent<any, any, any, any, any, any, any> {
-	/** 已重试的次数，在beforePush和pushed事件中没有值 */
-	retriedTimes: number;
+	/** 重试次数，在beforePush和pushed事件中没有值 */
+	retryTimes: number;
 }
 /** 全局成功事件 */
 interface GlobalSQSuccessEvent extends GlobalSQEvent {
@@ -70,7 +70,7 @@ interface GlobalSQErrorEvent extends GlobalSQEvent {
 /** 局部事件 */
 interface ScopedSQEvent<S, E, R, T, RC, RE, RH> extends SQEvent<S, E, R, T, RC, RE, RH> {
 	/** 已重试的次数，在beforePush和pushed事件中没有值 */
-	retriedTimes: number;
+	retryTimes: number;
 	/** 通过send触发请求时传入的参数 */
 	sendArgs: any[];
 }
@@ -84,7 +84,16 @@ interface ScopedSQErrorEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E,
 	/** 失败时抛出的错误 */
 	error: any;
 }
+/** 局部失败事件 */
+interface ScopedSQRetryEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
+	/** 失败时抛出的错误 */
+	retryDelay: number;
+}
 
+interface RetryErrorDetailed {
+	name?: RegExp;
+	message?: RegExp;
+}
 interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
 	/** silentMethod实例id */
 	readonly id: string;
@@ -94,15 +103,17 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
 	readonly behavior: SQHookBehavior;
 	/** method实例 */
 	readonly entity: Method<S, E, R, T, RC, RE, RH>;
-	/** 判断是否需要触发重试 */
-	readonly retryError?:
-		| RegExp
-		| {
-				name?: RegExp;
-				message?: RegExp;
-		  };
+
+	/** 重试错误规则
+	 * 当错误符合以下表达式时才进行重试
+	 * 当值为正则表达式时，它将匹配错误对象的message
+	 * 当值为对象时，可设定匹配的是错误对象的name、或者message，如果两者都有设定，将以或的形式匹配
+	 *
+	 * 未设置时，默认所有错误都进行重试
+	 */
+	readonly retryError?: RegExp | RetryErrorDetailed;
 	/** 重试次数 */
-	readonly retry?: number;
+	readonly maxRetryTimes?: number;
 	/** 避让策略 */
 	readonly backoff?: {
 		/** 再次请求的延迟时间，单位毫秒，默认为1000 */
@@ -212,9 +223,17 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
 	 */
 	behavior?: SQHookBehavior | (() => SQHookBehavior);
 
-	/** 重试次数 */
-	retry?: number;
+	/** 重试错误规则
+	 * 当错误符合以下表达式时才进行重试
+	 * 当值为正则表达式时，它将匹配错误对象的message
+	 * 当值为对象时，可设定匹配的是错误对象的name、或者message，如果两者都有设定，将以或的形式匹配
+	 */
+	retryError?: NonNullable<SilentMethod['retryError']>;
 
+	/** 重试最大次数 */
+	maxRetryTimes?: NonNullable<SilentMethod['maxRetryTimes']>;
+
+	/** 避让策略 */
 	backoff?: NonNullable<SilentMethod['backoff']>;
 
 	/** 队列名，不传时选择默认队列 */
@@ -237,7 +256,7 @@ type SQWatcherHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, 
 	Omit<WatcherHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
 
 type FallbackHandler = (...args: any[]) => void;
-type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQErrorEvent<S, E, R, T, RC, RE, RH>) => void;
+type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, T, RC, RE, RH>) => void;
 type BeforePushQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type PushedQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<R, S> & {
@@ -322,4 +341,10 @@ declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): void;
 declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): void;
 declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): void;
 declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): void;
+
+declare function offSilentSubmitBoot(handler: SilentSubmitBootHandler): void;
+declare function offSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): void;
+declare function offSilentSubmitError(handler: SilentSubmitErrorHandler): void;
+declare function offSilentSubmitComplete(handler: SilentSubmitCompleteHandler): void;
+
 declare var updateStateEffect: typeof updateState;

@@ -1,5 +1,14 @@
 import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
-import { createAssert, createSyncOnceRunner, getUniqueReferenceId, isArray, map, newInstance } from '../../helper';
+import {
+	createAssert,
+	createSyncOnceRunner,
+	getUniqueReferenceId,
+	isArray,
+	map,
+	newInstance,
+	shift,
+	splice
+} from '../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 
 const paginationAssert = createAssert('hooks/usePagination');
@@ -81,8 +90,8 @@ export default function (
 		const exceedPageCount = pageCountVal
 			? preloadPage > pageCountVal
 			: isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-				? listDataGetter(_$(states.data)).length < _$(pageSize)
-				: falseValue;
+			? listDataGetter(_$(states.data)).length < _$(pageSize)
+			: falseValue;
 		return preloadPage > 0 && !exceedPageCount;
 	};
 
@@ -113,7 +122,7 @@ export default function (
 	const updateCurrentPageCache = () => {
 		setCacheData(buildMethodName(_$(page)), rawData => {
 			const cachedListData = listDataGetter(rawData) || [];
-			cachedListData.splice(0, cachedListData.length, ..._$(data));
+			splice(cachedListData, 0, cachedListData.length, ..._$(data));
 			return rawData;
 		});
 	};
@@ -141,7 +150,7 @@ export default function (
 			} else if (refreshPage) {
 				// 如果是刷新页面，则是替换那一页的数据
 				upd$(data, rawd => {
-					rawd.splice((refreshPage - 1) * pageSizeVal, pageSizeVal, ...listData);
+					splice(rawd, (refreshPage - 1) * pageSizeVal, pageSizeVal, ...listData);
 					return rawd;
 				});
 			}
@@ -219,7 +228,7 @@ export default function (
 			// 先从末尾去掉一项数据，保证操作页的数量为pageSize
 			popItem = rawd.pop();
 			// 插入位置为空默认插到最前面
-			index >= 0 ? rawd.splice(index, 0, item) : rawd.unshift(item);
+			index >= 0 ? splice(rawd, index, 0, item) : rawd.unshift(item);
 			return rawd;
 		});
 		const totalVal = _$(total);
@@ -251,7 +260,7 @@ export default function (
 		setCacheData(buildMethodName(nextPage), data => {
 			const cachedListData = listDataGetter(data);
 			// 从下一页列表的头部开始取补位数据
-			fillingItem = (cachedListData || []).shift();
+			fillingItem = shift(cachedListData || []);
 			return data;
 		});
 
@@ -263,7 +272,7 @@ export default function (
 			}
 			if (index >= 0) {
 				upd$(data, rawd => {
-					rawd.splice(index, 1);
+					splice(rawd, index, 1);
 					// 如果有下一页的补位数据才去补位，因为有可能是最后一页才进入删除的
 					fillingItem && rawd.push(fillingItem);
 					return rawd;
@@ -304,7 +313,7 @@ export default function (
 			'index must be a number that less than list length'
 		);
 		upd$(data, rawd => {
-			rawd.splice(index, 1, item);
+			splice(rawd, index, 1, item);
 			return rawd;
 		});
 		// 当前页的缓存同步更新

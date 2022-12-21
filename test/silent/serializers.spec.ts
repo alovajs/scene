@@ -53,7 +53,10 @@ describe('serializers', () => {
 			},
 			{ text: virtualResponse.text, time: virtualResponse.time, others: virtualResponse.e[0] }
 		);
-		const silentMethodInstance = new SilentMethod(methodInstance, true, 'silent', undefined, 5, 1000);
+		const silentMethodInstance = new SilentMethod(methodInstance, true, 'silent', undefined, /.*/, 2, {
+			delay: 2000,
+			multiplier: 1.5
+		});
 		silentMethodInstance.virtualResponse = virtualResponse;
 		const serializedString = serializeSilentMethod(silentMethodInstance);
 		expect(typeof serializedString).toBe('string');
@@ -75,11 +78,15 @@ describe('serializers', () => {
 			others: { __$k: virtualResponse.e[0][symbolVirtualTag] }
 		});
 		expect(serializedObj.entity.url).toBe(methodInstance.url);
+		expect(serializedObj.entity.context).toBeUndefined();
 		expect(serializedObj.entity.type).toBe(methodInstance.type);
 		expect(serializedObj.entity.baseURL).toBe(methodInstance.baseURL);
-		expect(serializedObj.timeout).toBe(1000);
-		expect(serializedObj.nextRound).toBeUndefined();
-		expect(serializedObj.retry).toBe(5);
+		expect(serializedObj.retryError).toStrictEqual(['regexp', '.*']);
+		expect(serializedObj.maxRetryTimes).toBe(2);
+		expect(serializedObj.backoff).toStrictEqual({
+			delay: 2000,
+			multiplier: 1.5
+		});
 		expect(serializedObj.virtualResponse).toEqual({
 			__$k: virtualResponse[symbolVirtualTag],
 			__$v: {},
@@ -132,9 +139,12 @@ describe('serializers', () => {
 			true,
 			'silent',
 			'abcdef',
-			5,
-			1000,
-			300000,
+			/.*/,
+			2,
+			{
+				delay: 2000,
+				multiplier: 1.5
+			},
 			undefined,
 			undefined,
 			undefined,
@@ -160,9 +170,12 @@ describe('serializers', () => {
 		expect(params.other[symbolVirtualTag]).toBe(virtualResponse.extra.other1[symbolVirtualTag]);
 		expect(valueOf(params.other)).toBe(valueOf(virtualResponse.extra.other1));
 
-		expect(deserizlizedSilentMethodInstance.timeout).toBe(1000);
-		expect(deserizlizedSilentMethodInstance.nextRound).toBe(300000);
-		expect(deserizlizedSilentMethodInstance.retry).toBe(5);
+		expect((deserizlizedSilentMethodInstance.retryError as RegExp).source).toBe('.*');
+		expect(deserizlizedSilentMethodInstance.maxRetryTimes).toBe(2);
+		expect(deserizlizedSilentMethodInstance.backoff).toStrictEqual({
+			delay: 2000,
+			multiplier: 1.5
+		});
 
 		expect(deserizlizedSilentMethodInstance.handlerArgs?.[0]).toBeInstanceOf(Undefined);
 		expect(deserizlizedSilentMethodInstance.handlerArgs?.[0][symbolVirtualTag]).toBe(
