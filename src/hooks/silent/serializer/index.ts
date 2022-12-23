@@ -8,9 +8,9 @@ export let serializers = {} as Record<string | number, DataSerializer>;
  * @param customSerializers 自定义序列化器
  */
 export const mergeSerializer = (customSerializers: typeof serializers = {}) => {
-	serializers = {
-		date: dateSerializer,
-		regexp: regexpSerializer,
-		...customSerializers
-	};
+  serializers = {
+    date: dateSerializer,
+    regexp: regexpSerializer,
+    ...customSerializers
+  };
 };

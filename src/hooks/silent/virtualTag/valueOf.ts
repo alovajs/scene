@@ -15,17 +15,17 @@ import { symbolVirtualTag } from './variables';
  * @returns 具有原始类型的目标值
  */
 export default (target: any) => {
-	vTagCollectUnified(target);
-	if (instanceOf(target, Undefined)) {
-		target = undefinedValue;
-	} else if (instanceOf(target, Null)) {
-		target = nullValue;
-	} else if (
-		target &&
-		target[symbolVirtualTag] &&
-		(instanceOf(target, Number) || instanceOf(target, String) || instanceOf(target, Boolean))
-	) {
-		target = target.valueOf();
-	}
-	return target;
+  vTagCollectUnified(target);
+  if (instanceOf(target, Undefined)) {
+    target = undefinedValue;
+  } else if (instanceOf(target, Null)) {
+    target = nullValue;
+  } else if (
+    target &&
+    target[symbolVirtualTag] &&
+    (instanceOf(target, Number) || instanceOf(target, String) || instanceOf(target, Boolean))
+  ) {
+    target = target.valueOf();
+  }
+  return target;
 };

@@ -10,16 +10,16 @@ import { currentSilentMethod } from '../createSilentQueueMiddlewares';
  * @param handleUpdate 更新回调
  */
 const updateStateEffect: typeof updateState = (matcher, handleUpdate, options = {}) => {
-	const onMatch = options.onMatch;
-	options.onMatch = method => {
-		// 将目标method实例保存到当前的silentMethod实例
-		if (currentSilentMethod) {
-			currentSilentMethod.targetRefMethod = method;
-			currentSilentMethod.updateStates = isFn(updateState) ? ['data'] : objectKeys(updateState);
-		}
-		(onMatch || noop)(method);
-	};
-	return updateState(matcher, handleUpdate, options);
+  const onMatch = options.onMatch;
+  options.onMatch = method => {
+    // 将目标method实例保存到当前的silentMethod实例
+    if (currentSilentMethod) {
+      currentSilentMethod.targetRefMethod = method;
+      currentSilentMethod.updateStates = isFn(updateState) ? ['data'] : objectKeys(updateState);
+    }
+    (onMatch || noop)(method);
+  };
+  return updateState(matcher, handleUpdate, options);
 };
 
 export default updateStateEffect;

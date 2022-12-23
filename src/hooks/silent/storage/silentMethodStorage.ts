@@ -1,12 +1,12 @@
 import { JSONParse, JSONStringify, len, pushItem, splice } from '../../../helper';
 import { SilentMethod } from '../SilentMethod';
 import {
-	SerializedSilentMethodIdQueueMap,
-	silentMethodIdQueueMapStorageKey,
-	silentMethodStorageKeyPrefix,
-	storageGetItem,
-	storageRemoveItem,
-	storageSetItem
+  SerializedSilentMethodIdQueueMap,
+  silentMethodIdQueueMapStorageKey,
+  silentMethodStorageKeyPrefix,
+  storageGetItem,
+  storageRemoveItem,
+  storageSetItem
 } from './helper';
 import serializeSilentMethod from './serializeSilentMethod';
 
@@ -15,11 +15,11 @@ import serializeSilentMethod from './serializeSilentMethod';
  * @param silentMethodInstance silentMethod实例
  */
 export const persistSilentMethod = <S, E, R, T, RC, RE, RH>(
-	silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>
+  silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>
 ) => {
-	const silentMethodId = silentMethodInstance.id;
-	const silentMethodStorageKey = silentMethodStorageKeyPrefix + silentMethodId;
-	storageSetItem(silentMethodStorageKey, serializeSilentMethod(silentMethodInstance));
+  const silentMethodId = silentMethodInstance.id;
+  const silentMethodStorageKey = silentMethodStorageKeyPrefix + silentMethodId;
+  storageSetItem(silentMethodStorageKey, serializeSilentMethod(silentMethodInstance));
 };
 
 /**
@@ -29,17 +29,17 @@ export const persistSilentMethod = <S, E, R, T, RC, RE, RH>(
  * @param queue 操作的队列名
  */
 export const push2PersistentSilentQueue = <S, E, R, T, RC, RE, RH>(
-	silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,
-	queueName: string
+  silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,
+  queueName: string
 ) => {
-	persistSilentMethod(silentMethodInstance);
-	// 将silentMethod实例id保存到queue存储中
-	const silentMethodIdQueueMap = JSONParse(
-		storageGetItem(silentMethodIdQueueMapStorageKey) || '{}'
-	) as SerializedSilentMethodIdQueueMap;
-	const currentQueue = (silentMethodIdQueueMap[queueName] = silentMethodIdQueueMap[queueName] || []);
-	pushItem(currentQueue, silentMethodInstance.id);
-	storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
+  persistSilentMethod(silentMethodInstance);
+  // 将silentMethod实例id保存到queue存储中
+  const silentMethodIdQueueMap = JSONParse(
+    storageGetItem(silentMethodIdQueueMapStorageKey) || '{}'
+  ) as SerializedSilentMethodIdQueueMap;
+  const currentQueue = (silentMethodIdQueueMap[queueName] = silentMethodIdQueueMap[queueName] || []);
+  pushItem(currentQueue, silentMethodInstance.id);
+  storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
 };
 
 /**
@@ -48,18 +48,18 @@ export const push2PersistentSilentQueue = <S, E, R, T, RC, RE, RH>(
  * @param queue 操作的队列名
  */
 export const removeSilentMethod = (targetSilentMethodId: string, queueName: string) => {
-	// 将silentMethod实例id从queue中移除
-	const silentMethodIdQueueMap = JSONParse(
-		storageGetItem(silentMethodIdQueueMapStorageKey) || '{}'
-	) as SerializedSilentMethodIdQueueMap;
-	const currentQueue = silentMethodIdQueueMap[queueName];
-	if (currentQueue) {
-		const index = currentQueue.findIndex(id => id === targetSilentMethodId);
-		if (index >= 0) {
-			splice(currentQueue, index, 1);
-			len(currentQueue) <= 0 && delete silentMethodIdQueueMap[queueName]; // 队列为空时删除此队列
-			storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
-			storageRemoveItem(silentMethodStorageKeyPrefix + targetSilentMethodId);
-		}
-	}
+  // 将silentMethod实例id从queue中移除
+  const silentMethodIdQueueMap = JSONParse(
+    storageGetItem(silentMethodIdQueueMapStorageKey) || '{}'
+  ) as SerializedSilentMethodIdQueueMap;
+  const currentQueue = silentMethodIdQueueMap[queueName];
+  if (currentQueue) {
+    const index = currentQueue.findIndex(id => id === targetSilentMethodId);
+    if (index >= 0) {
+      splice(currentQueue, index, 1);
+      len(currentQueue) <= 0 && delete silentMethodIdQueueMap[queueName]; // 队列为空时删除此队列
+      storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
+      storageRemoveItem(silentMethodStorageKeyPrefix + targetSilentMethodId);
+    }
+  }
 };

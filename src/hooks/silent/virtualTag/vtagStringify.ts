@@ -7,6 +7,6 @@ import { symbolVirtualTag } from './variables';
  * @returns 虚拟标签id或原数据
  */
 export default (target: any) => {
-	const virtualTagId = target?.[symbolVirtualTag] ? `[vtag:${target[symbolVirtualTag]}]` : undefinedValue;
-	return virtualTagId || target;
+  const virtualTagId = target?.[symbolVirtualTag] ? `[vtag:${target[symbolVirtualTag]}]` : undefinedValue;
+  return virtualTagId || target;
 };

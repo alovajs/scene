@@ -4,22 +4,22 @@ import { vTagCollectGetter } from './helper';
 import { symbolVirtualTag } from './variables';
 
 interface UndefinedConstructor {
-	new (vTagId?: string): UndefinedInterface;
+  new (vTagId?: string): UndefinedInterface;
 }
 interface UndefinedInterface {
-	[x: string | symbol]: any;
+  [x: string | symbol]: any;
 }
 
 /**
  * Undefined包装类实现
  */
 const Undefined = function (this: UndefinedInterface, vTagId = uuid()) {
-	defineProperties(this, {
-		[symbolVirtualTag]: vTagId
-	});
+  defineProperties(this, {
+    [symbolVirtualTag]: vTagId
+  });
 } as unknown as UndefinedConstructor;
 Undefined.prototype = Object.create(nullValue, {
-	[symbolToPrimitive]: valueObject(vTagCollectGetter(undefinedValue))
+  [symbolToPrimitive]: valueObject(vTagCollectGetter(undefinedValue))
 });
 
 export default Undefined;

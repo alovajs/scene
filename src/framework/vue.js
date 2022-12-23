@@ -43,7 +43,7 @@ export const _expBatch$ = (...states) => map(states, s => _exp$(s));
  * @param newData 新状态值
  */
 export const upd$ = (state, newData) => {
-	state.value = typeof newData === 'function' ? newData(state.value) : newData;
+  state.value = typeof newData === 'function' ? newData(state.value) : newData;
 };
 
 /**
@@ -52,8 +52,8 @@ export const upd$ = (state, newData) => {
  * @param {Function} cb 回调函数
  */
 export const watch = (states, cb) => {
-	vueWatch(states, cb, {
-		flush: 'sync',
-		deep: trueValue
-	});
+  vueWatch(states, cb, {
+    flush: 'sync',
+    deep: trueValue
+  });
 };

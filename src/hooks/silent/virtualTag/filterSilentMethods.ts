@@ -10,10 +10,10 @@ import { silentQueueMap } from '../silentQueue';
  * @returns silentMethod实例数组
  */
 export const filterSilentMethods = (methodNameMatcher: string | RegExp, queueName = defaultQueueName) =>
-	(silentQueueMap[queueName] || []).filter(silentMethodItem => {
-		const name = getConfig(silentMethodItem.entity).name || '';
-		return instanceOf(methodNameMatcher, RegExp) ? methodNameMatcher.test(name) : name === methodNameMatcher;
-	});
+  (silentQueueMap[queueName] || []).filter(silentMethodItem => {
+    const name = getConfig(silentMethodItem.entity).name || '';
+    return instanceOf(methodNameMatcher, RegExp) ? methodNameMatcher.test(name) : name === methodNameMatcher;
+  });
 
 /**
  * 按method名称或正则表达式查找第一个满足条件的silentMethod实例
@@ -22,6 +22,6 @@ export const filterSilentMethods = (methodNameMatcher: string | RegExp, queueNam
  * @returns silentMethod实例，未找到时为undefined
  */
 export const getSilentMethod = (
-	methodNameMatcher: string | RegExp,
-	queueName = defaultQueueName
+  methodNameMatcher: string | RegExp,
+  queueName = defaultQueueName
 ): SilentMethod | undefined => filterSilentMethods(methodNameMatcher, queueName)[0];

@@ -46,9 +46,9 @@ export const upd$ = (state, newData) => state[1](newData);
  * @param {Function} cb 回调函数
  */
 export const watch = (states, cb) => {
-	// 当有监听状态时，状态变化再触发
-	const needEmit = useRef(falseValue);
-	useLayoutEffect(() => {
-		needEmit.current ? cb() : (needEmit.current = true);
-	}, states);
+  // 当有监听状态时，状态变化再触发
+  const needEmit = useRef(falseValue);
+  useLayoutEffect(() => {
+    needEmit.current ? cb() : (needEmit.current = true);
+  }, states);
 };

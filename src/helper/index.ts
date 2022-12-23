@@ -4,9 +4,9 @@ import { falseValue, ObjectCls, PromiseCls } from './variables';
 export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
 export const promiseReject = <T>(value: T) => PromiseCls.reject(value);
 export const promiseThen = <T, TResult1 = T, TResult2 = never>(
-	promise: Promise<T>,
-	onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
-	onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+  promise: Promise<T>,
+  onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+  onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
 ): Promise<TResult1 | TResult2> => promise.then(onFulfilled, onrejected);
 export const promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
 export const promiseFinally = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
@@ -15,26 +15,26 @@ export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => v
 export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);
 export const map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn);
 export const includes = <T>(ary: T[], target: T) => ary.includes(target);
-export const len = (data: any[] | Uint8Array | string | String) => data.length;
+export const len = (data: any[] | Uint8Array | string | string) => data.length;
 export const isArray = (target: any) => Array.isArray(target);
 export const shift = <T>(ary: T[]) => ary.shift();
 export const splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) =>
-	ary.splice(start, deleteCount, ...items);
+  ary.splice(start, deleteCount, ...items);
 
 export const getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-	methodInstance.context;
+  methodInstance.context;
 export const getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-	methodInstance.config;
+  methodInstance.config;
 export const getContextOptions = <S, E, RC, RE, RH>(alovaInstance: Alova<S, E, RC, RE, RH>) => alovaInstance.options;
 export const getOptions = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-	getContextOptions(getContext(methodInstance));
+  getContextOptions(getContext(methodInstance));
 export const JSONStringify = (
-	value: any,
-	replacer?: ((this: any, key: string, value: any) => any) | undefined,
-	space?: string | number | undefined
+  value: any,
+  replacer?: ((this: any, key: string, value: any) => any) | undefined,
+  space?: string | number | undefined
 ) => JSON.stringify(value, replacer, space);
 export const JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
-	JSON.parse(text, reviver);
+  JSON.parse(text, reviver);
 export const objectKeys = (obj: any) => Object.keys(obj);
 export const objectValues = <T>(obj: Record<any, T>) => Object.values(obj);
 export const setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay);
@@ -44,17 +44,17 @@ export const clearTimeoutTimer = (timer: NodeJS.Timeout) => clearTimeout(timer);
  * 创建同步多次调用只在异步执行一次的执行器
  */
 export const createSyncOnceRunner = (delay = 0) => {
-	let timer: NodeJS.Timer;
+  let timer: NodeJS.Timer;
 
-	/**
-	 * 执行多次调用此函数将异步执行一次
-	 */
-	return (fn: () => void) => {
-		if (timer) {
-			clearTimeout(timer);
-		}
-		timer = setTimeout(fn, delay);
-	};
+  /**
+   * 执行多次调用此函数将异步执行一次
+   */
+  return (fn: () => void) => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(fn, delay);
+  };
 };
 
 /**
@@ -62,8 +62,8 @@ export const createSyncOnceRunner = (delay = 0) => {
  * @returns uuid
  */
 export const uuid = () => {
-	const timestamp = new Date().getTime();
-	return Math.floor(Math.random() * timestamp).toString(36);
+  const timestamp = new Date().getTime();
+  return Math.floor(Math.random() * timestamp).toString(36);
 };
 
 const referenceList = [] as { id: string; ref: any }[];
@@ -73,21 +73,21 @@ const referenceList = [] as { id: string; ref: any }[];
  * @returns uniqueId
  */
 export const getUniqueReferenceId = (reference: any) => {
-	const refType = typeof reference;
-	if (!['object', 'function', 'symbol'].includes(refType)) {
-		return reference;
-	}
+  const refType = typeof reference;
+  if (!['object', 'function', 'symbol'].includes(refType)) {
+    return reference;
+  }
 
-	let existedRef = referenceList.find(({ ref }) => ref === reference);
-	if (!existedRef) {
-		const uniqueId = uuid();
-		existedRef = {
-			id: uniqueId,
-			ref: reference
-		};
-		referenceList.push(existedRef);
-	}
-	return existedRef.id;
+  let existedRef = referenceList.find(({ ref }) => ref === reference);
+  if (!existedRef) {
+    const uniqueId = uuid();
+    existedRef = {
+      id: uniqueId,
+      ref: reference
+    };
+    referenceList.push(existedRef);
+  }
+  return existedRef.id;
 };
 
 export const noop = () => {};
@@ -101,16 +101,16 @@ export const instanceOf = <T>(arg: any, cls: new (...args: any[]) => T): arg is 
  * @param msg 断言消息
  */
 export const createAssert = (prefix: string) => {
-	return (expression: boolean, msg: string) => {
-		if (!expression) {
-			throw newInstance(Error, `[alova/${prefix}:Error]${msg}`);
-		}
-	};
+  return (expression: boolean, msg: string) => {
+    if (!expression) {
+      throw newInstance(Error, `[alova/${prefix}:Error]${msg}`);
+    }
+  };
 };
 
 export const valueObject = <T>(value: T, writable = false) => ({
-	value,
-	writable
+  value,
+  writable
 });
 
 /**
@@ -119,9 +119,9 @@ export const valueObject = <T>(value: T, writable = false) => ({
  * @param attrs 值对象
  */
 export const defineProperties = (o: object, attrs: Record<string, any>, writable = falseValue) => {
-	forEach([...objectKeys(attrs), ...ObjectCls.getOwnPropertySymbols(attrs)], key => {
-		ObjectCls.defineProperty(o, key, valueObject(attrs[key as keyof typeof attrs], writable));
-	});
+  forEach([...objectKeys(attrs), ...ObjectCls.getOwnPropertySymbols(attrs)], key => {
+    ObjectCls.defineProperty(o, key, valueObject(attrs[key as keyof typeof attrs], writable));
+  });
 };
 
 export type GeneralFn = (...args: any[]) => any;
@@ -173,20 +173,20 @@ export const isObject = (arg: any) => typeOf(arg) === 'object';
  */
 type AttrKey = string | number | symbol;
 export const walkObject = (
-	target: any,
-	callback: (value: any, key: string | number | symbol, parent: any) => void,
-	key?: AttrKey,
-	parent?: any
+  target: any,
+  callback: (value: any, key: string | number | symbol, parent: any) => void,
+  key?: AttrKey,
+  parent?: any
 ) => {
-	parent && key && (target = parent[key] = callback(target, key, parent));
-	if (isObject(target)) {
-		for (const i in target) {
-			if (!instanceOf(target, String)) {
-				target[i] = walkObject(target[i], callback, i, target);
-			}
-		}
-	}
-	return target;
+  parent && key && (target = parent[key] = callback(target, key, parent));
+  if (isObject(target)) {
+    for (const i in target) {
+      if (!instanceOf(target, String)) {
+        target[i] = walkObject(target[i], callback, i, target);
+      }
+    }
+  }
+  return target;
 };
 
 /**
@@ -196,6 +196,6 @@ export const walkObject = (
  * @returns 类实例
  */
 export const newInstance = <T extends { new (...args: any[]): InstanceType<T> }>(
-	cls: T,
-	...args: ConstructorParameters<T>
+  cls: T,
+  ...args: ConstructorParameters<T>
 ) => new cls(...args);

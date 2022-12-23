@@ -1,9 +1,9 @@
 import { Alova } from 'alova';
 import {
-	SilentSubmitBootHandler,
-	SilentSubmitCompleteHandler,
-	SilentSubmitErrorHandler,
-	SilentSubmitSuccessHandler
+  SilentSubmitBootHandler,
+  SilentSubmitCompleteHandler,
+  SilentSubmitErrorHandler,
+  SilentSubmitSuccessHandler
 } from '../../../typings';
 import { createAssert } from '../../helper';
 
@@ -39,6 +39,6 @@ export const completeHandlers = [] as SilentSubmitCompleteHandler[];
  * 1表示半锁定：层级访问时将返回proxy实例，但不能随意访问任意层级了
  * 2表示完全开锁：完全开锁后虚拟响应可以访问任意层级并生成它的层级结构
  */
-export const globalVirtualResponseLock = { v: 0 as 0 | 1 | 2 };
+export const globalVirtualResponseLock = { v: 2 as 0 | 1 | 2 };
 
 export const silentAssert = createAssert('hooks/silent');

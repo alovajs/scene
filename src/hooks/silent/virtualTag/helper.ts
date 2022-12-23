@@ -10,8 +10,8 @@ import vtagStringify from './vtagStringify';
  * @returns 收集函数
  */
 export const vTagCollectUnified = (target: any) => {
-	const virtualTagId = target?.[symbolVirtualTag];
-	virtualTagId && vtagIdCollectBasket && (vtagIdCollectBasket[virtualTagId] = undefinedValue);
+  const virtualTagId = target?.[symbolVirtualTag];
+  virtualTagId && vtagIdCollectBasket && (vtagIdCollectBasket[virtualTagId] = undefinedValue);
 };
 
 /**
@@ -20,10 +20,10 @@ export const vTagCollectUnified = (target: any) => {
  * @returns getter函数
  */
 export const vTagCollectGetter = (returnValue: any) =>
-	function (this: any, arg?: any) {
-		vTagCollectUnified(this);
-		return isFn(returnValue) ? returnValue(this, arg) : returnValue;
-	};
+  function (this: any, arg?: any) {
+    vTagCollectUnified(this);
+    return isFn(returnValue) ? returnValue(this, arg) : returnValue;
+  };
 
 /**
  * 搜索单一值并将虚拟标签或标签id替换为实际值
@@ -32,14 +32,14 @@ export const vTagCollectGetter = (returnValue: any) =>
  * @returns 替换后的值
  */
 export const vtagReplace = (value: any, vtagResponse: Record<string, any>) => {
-	const virtualTagId = vtagStringify(value);
-	// 这边的判断是，如果直接是虚拟标签对象则在vtagResponse中寻找实际值替换
-	// 否则，如果是字符串，则里面可能包含虚拟标签id，也需将它替换为实际值
-	return virtualTagId !== value
-		? vtagResponse[virtualTagId]
-		: isString(value)
-		? value.replace(regVirtualTag, mat => vtagResponse[mat])
-		: value;
+  const virtualTagId = vtagStringify(value);
+  // 这边的判断是，如果直接是虚拟标签对象则在vtagResponse中寻找实际值替换
+  // 否则，如果是字符串，则里面可能包含虚拟标签id，也需将它替换为实际值
+  return virtualTagId !== value
+    ? vtagResponse[virtualTagId]
+    : isString(value)
+    ? value.replace(regVirtualTag, mat => vtagResponse[mat])
+    : value;
 };
 
 /**
@@ -49,22 +49,22 @@ export const vtagReplace = (value: any, vtagResponse: Record<string, any>) => {
  * @returns 是否有替换数据
  */
 export const replaceObjectVTag = (target: any, vtagResponse: Record<string, any>) => {
-	let replaced = falseValue;
-	const replaceCallback = (value: any) => {
-		const newValue = vtagReplace(value, vtagResponse);
-		if (!replaced && newValue !== value) {
-			replaced = trueValue;
-		}
-		return newValue;
-	};
+  let replaced = falseValue;
+  const replaceCallback = (value: any) => {
+    const newValue = vtagReplace(value, vtagResponse);
+    if (!replaced && newValue !== value) {
+      replaced = trueValue;
+    }
+    return newValue;
+  };
 
-	if (isObject(target)) {
-		walkObject(target, replaceCallback);
-	} else {
-		target = replaceCallback(target);
-	}
-	return {
-		r: replaced,
-		d: target
-	};
+  if (isObject(target)) {
+    walkObject(target, replaceCallback);
+  } else {
+    target = replaceCallback(target);
+  }
+  return {
+    r: replaced,
+    d: target
+  };
 };

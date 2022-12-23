@@ -22,10 +22,10 @@ export const $$ = (getter, depList) => derived(depList, getter);
  * @returns 状态原始值，即状态对应的数据
  */
 export const _$ = state => {
-	let raw = undefinedValue;
-	// 订阅时会立即执行一次函数，获取到值后立即调用解除订阅函数
-	state.subscribe(value => (raw = value))();
-	return raw;
+  let raw = undefinedValue;
+  // 订阅时会立即执行一次函数，获取到值后立即调用解除订阅函数
+  state.subscribe(value => (raw = value))();
+  return raw;
 };
 
 /**
@@ -48,7 +48,7 @@ export const _expBatch$ = (...states) => map(states, s => _exp$(s));
  * @param newData 新状态值
  */
 export const upd$ = (state, newData) => {
-	typeof newData === 'function' ? state.update(newData) : state.set(newData);
+  typeof newData === 'function' ? state.update(newData) : state.set(newData);
 };
 
 /**
@@ -57,19 +57,19 @@ export const upd$ = (state, newData) => {
  * @param {Function} cb 回调函数
  */
 export const watch = (states, cb) => {
-	let emited = falseValue;
-	let subscribeStage = trueValue;
-	const syncRunner = createSyncOnceRunner();
-	const subscribeCb = () => {
-		if (!emited && !subscribeStage) {
-			cb();
-			emited = trueValue;
-		}
-		syncRunner(() => {
-			emited = subscribeStage = falseValue;
-		});
-	};
-	states.forEach(state => {
-		state.subscribe(subscribeCb);
-	});
+  let emited = falseValue;
+  let subscribeStage = trueValue;
+  const syncRunner = createSyncOnceRunner();
+  const subscribeCb = () => {
+    if (!emited && !subscribeStage) {
+      cb();
+      emited = trueValue;
+    }
+    syncRunner(() => {
+      emited = subscribeStage = falseValue;
+    });
+  };
+  states.forEach(state => {
+    state.subscribe(subscribeCb);
+  });
 };
