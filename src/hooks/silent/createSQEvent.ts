@@ -1,6 +1,7 @@
 import { Method } from 'alova';
 import { SilentMethod, SQHookBehavior } from '../../../typings';
 import { defineProperties } from '../../helper';
+import { symbolToStringTag } from '../../helper/variables';
 
 /**
  * 创建统一的事件对象，它将承载以下事件
@@ -72,7 +73,7 @@ export default <S, E, R, T, RC, RE, RH>(
   ][eventType];
   typeName &&
     defineProperties(sqEvent, {
-      [Symbol.toStringTag]: typeName
+      [symbolToStringTag]: typeName
     });
   return sqEvent;
 };

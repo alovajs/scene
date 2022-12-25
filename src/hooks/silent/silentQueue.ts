@@ -50,29 +50,27 @@ export const clearSilentQueueMap = () => (silentQueueMap = {});
  * 替换带有虚拟标签的method实例
  * 当它有methodHandler时调用它重新生成
  * @param vtagResponse 虚拟id和对应真实数据的集合
+ * @param targetQueue 目标队列
  */
-const replaceVirtualMethod = (vtagResponse: Record<string, any>) => {
-  forEach(objectKeys(silentQueueMap), queueName => {
-    const currentQueue = silentQueueMap[queueName];
-    forEach(currentQueue, silentMethodItem => {
-      const handlerArgs = silentMethodItem.handlerArgs || [];
-      forEach(handlerArgs, (arg, i) => {
-        handlerArgs[i] = vtagReplace(arg, vtagResponse);
-      });
-      // 重新生成一个method实例并替换
-      let methodUpdated = falseValue;
-      if (silentMethodItem.methodHandler) {
-        silentMethodItem.entity = silentMethodItem.methodHandler(...handlerArgs);
-        methodUpdated = trueValue;
-      } else {
-        // 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
-        methodUpdated = replaceObjectVTag(silentMethodItem.entity, vtagResponse).r;
-      }
-
-      // 如果method实例有更新，则重新持久化此silentMethod实例
-      // methodUpdated && silentMethodItem.cache && persistSilentMethod(silentMethodItem);
-      methodUpdated && persistSilentMethod(silentMethodItem);
+const replaceVirtualMethod = (vtagResponse: Record<string, any>, targetQueue: SilentQueueMap[string]) => {
+  forEach(targetQueue, silentMethodItem => {
+    const handlerArgs = silentMethodItem.handlerArgs || [];
+    forEach(handlerArgs, (arg, i) => {
+      handlerArgs[i] = vtagReplace(arg, vtagResponse);
     });
+    // 重新生成一个method实例并替换
+    let methodUpdated = falseValue;
+    if (silentMethodItem.methodHandler) {
+      silentMethodItem.entity = silentMethodItem.methodHandler(...handlerArgs);
+      methodUpdated = trueValue;
+    } else {
+      // 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
+      methodUpdated = replaceObjectVTag(silentMethodItem.entity, vtagResponse).r;
+    }
+
+    // 如果method实例有更新，则重新持久化此silentMethod实例
+    // methodUpdated && silentMethodItem.cache && persistSilentMethod(silentMethodItem);
+    methodUpdated && persistSilentMethod(silentMethodItem);
   });
 };
 
@@ -122,9 +120,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
       fallbackHandlers = [],
       retryHandlers = [],
       handlerArgs = [],
-      virtualResponse,
-      updateStates,
-      targetRefMethod
+      virtualResponse
     } = silentMethodInstance;
 
     promiseThen(
@@ -147,14 +143,16 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
           virtualTagReplacedResponseMap = parseResponseWithVirtualResponse(data, virtualResponse);
           globalVirtualResponseLock.v = 2;
 
-          // 将虚拟标签找出来，并依次替换
-          replaceVirtualMethod(virtualTagReplacedResponseMap);
+          // 对当前队列的后续silentMethod实例中，将虚拟标签找出来并依次替换
+          replaceVirtualMethod(virtualTagReplacedResponseMap, queue);
 
+          const { targetRefMethod, updateStates } = silentMethodInstance; // 实时获取才准确
           // 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据
           // 此为延迟数据更新的实现
           if (instanceOf(targetRefMethod, Method) && updateStates && len(updateStates) > 0) {
             const updateStateCollection: UpdateStateCollection<any> = {};
             forEach(updateStates, stateName => {
+              // 请求成功后，将带有虚拟标签的数据替换为实际数据
               updateStateCollection[stateName] = dataRaw => replaceObjectVTag(dataRaw, virtualTagReplacedResponseMap).d;
             });
             updateState(targetRefMethod, updateStateCollection);
@@ -269,8 +267,8 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
  */
 export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
   silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,
-  targetQueueName = defaultQueueName,
   cache: boolean,
+  targetQueueName = defaultQueueName,
   onBeforePush = noop
 ) => {
   silentMethodInstance.cache = cache;

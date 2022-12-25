@@ -3,8 +3,8 @@ import { instanceOf, isArray, JSONStringify, len, objectKeys, walkObject } from 
 import { falseValue, trueValue, undefinedValue } from '../../../helper/variables';
 import { globalVirtualResponseLock } from '../globalVariables';
 import { serializers } from '../serializer';
-import valueOf from '../virtualTag/valueOf';
 import { symbolVirtualTag } from '../virtualTag/variables';
+import vtagDhy from '../virtualTag/vtagDhy';
 import { vtagKey, vtagValueKey } from './helper';
 
 /**
@@ -28,7 +28,7 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
     }
 
     const virtualTagId = value?.[symbolVirtualTag];
-    let primitiveValue = valueOf(value);
+    let primitiveValue = vtagDhy(value);
     let finallyApplySerializer = undefinedValue as string | undefined;
     // 找到匹配的序列化器并进行值的序列化，未找到则返回原值
     primitiveValue = objectKeys(serializers).reduce((currentValue, serializerName) => {

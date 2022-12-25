@@ -84,6 +84,7 @@ interface ScopedSQErrorEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E,
 }
 /** 局部失败事件 */
 interface ScopedSQRetryEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
+  retryTimes: number;
   /** 失败时抛出的错误 */
   retryDelay: number;
 }
@@ -241,13 +242,22 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
   silentDefaultResponse?: () => any;
 
   /**
+   * 外部作用域引用的变量记录
+   * methodHandler内的参数可能不仅来自于此函数的参数，还有可能来自于外部作用域的变量
+   * 当持久化的silentMethod实例被重新读取时，methodHandler函数就会失去它原有的作用域而调用报错
+   * 此时就使用此参数用于记录methodHandler中引用的外部作用域变量，并在methodHandler调用时以参数形式传入其中
+   */
+  closure?: Record<string | number, any>;
+
+  /**
    * 它将在捕获到method中带有虚拟标签时调用
    * 当此捕获回调返回了数据时将会以此数据作为响应数据处理，而不再发送请求
    * @param {Method} method method实例
    * @returns {R} 与响应数据相同格式的数据
    */
-  vTagCaptured?: (method: Method<S, E, R, T, RC, RE, RH>) => R | undefined | void;
+  vtagCaptured?: (method: Method<S, E, R, T, RC, RE, RH>) => R | undefined | void;
 }
+
 type SQRequestHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
   Omit<RequestHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
 type SQWatcherHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &

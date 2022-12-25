@@ -11,7 +11,7 @@ import {
 } from '../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 
-const paginationAssert = createAssert('hooks/usePagination');
+const paginationAssert = createAssert('usePagination');
 let counter = 0;
 export default function (
   handler,

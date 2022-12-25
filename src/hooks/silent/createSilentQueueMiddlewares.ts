@@ -9,26 +9,27 @@ import {
   promiseResolve,
   promiseThen,
   pushItem,
-  runArgsHandler,
-  walkObject
+  runArgsHandler
 } from '../../helper';
 import {
   behaviorQueue,
   behaviorSilent,
   behaviorStatic,
-  falseValue,
   PromiseCls,
   trueValue,
   undefinedValue
 } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import { globalVirtualResponseLock, setVtagIdCollectBasket, vtagIdCollectBasket } from './globalVariables';
+import {
+  globalVirtualResponseLock,
+  setVtagIdCollectBasket,
+  silentAssert,
+  vtagIdCollectBasket
+} from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';
 import { pushNewSilentMethod2Queue } from './silentQueue';
 import createVirtualResponse from './virtualTag/createVirtualResponse';
 import Undefined from './virtualTag/Undefined';
-import { regVirtualTag } from './virtualTag/variables';
-import vtagStringify from './virtualTag/vtagStringify';
 
 /**
  * 全局的silentMethod实例，它将在第一个成功事件触发前到最后一个成功事件触发后有值（同步时段）
@@ -58,12 +59,11 @@ export default <S, E, R, T, RC, RE, RH>(
    * @returns {Method}
    */
   const createMethod = (...args: any[]) => {
+    silentAssert(isFn(handler), 'method handler must be a function. eg. useSQRequest(() => method)');
     setVtagIdCollectBasket({});
     handlerArgs = args;
-    const methodHandler = isFn(handler) ? handler : () => handler;
-    const methodInstance = methodHandler(...args);
-    collectedMethodHandler = methodHandler;
-    return methodInstance;
+    collectedMethodHandler = handler as MethodHandler<S, E, R, T, RC, RE, RH>;
+    return (handler as MethodHandler<S, E, R, T, RC, RE, RH>)(...args);
   };
 
   /**
@@ -78,28 +78,10 @@ export default <S, E, R, T, RC, RE, RH>(
   ) => {
     // 因为behavior返回值可能会变化，因此每次请求都应该调用它重新获取返回值
     const behaviorFinally = isFn(behavior) ? behavior() : behavior;
-    const { silentDefaultResponse, vTagCaptured } = config;
-
-    // 如果设置了vTagCaptured，则先判断是否带有method
-    let hasVirtualTag = falseValue;
-    if (isFn(vTagCaptured)) {
-      walkObject(method, value => {
-        const virtualTagId = vtagStringify(value);
-        if (!hasVirtualTag && (virtualTagId || regVirtualTag.test(value))) {
-          hasVirtualTag = trueValue;
-        }
-        return value;
-      });
-      // 如果vTagCaptured有返回数据，则使用它作为响应数据，否则继续请求
-      const customResponse = hasVirtualTag ? vTagCaptured(method) : undefinedValue;
-      if (customResponse !== undefinedValue) {
-        return promiseResolve(customResponse);
-      }
-    }
-
-    // 设置事件回调装饰器
+    const { silentDefaultResponse, vtagCaptured } = config;
     let silentMethodInstance: any;
 
+    // 首先设置事件回调装饰器
     // 将响应对应的事件实例创建函数暂存到createFinishedEvent中，在complete事件触发时直接调用此函数即可获得对应状态的事件实例
     let createFinishedEvent: GeneralFn | undefined = undefinedValue;
     decorateSuccess((handler, args, index, length) => {
@@ -154,6 +136,23 @@ export default <S, E, R, T, RC, RE, RH>(
       handler(createFinishedEvent?.() as any);
     });
 
+    // 置空临时收集变量
+    // 返回前都需要置空它们
+    const resetCollectBasket = () => {
+      setVtagIdCollectBasket((collectedMethodHandler = handlerArgs = undefinedValue));
+    };
+
+    // 如果设置了vtagCaptured，则先判断内是否包含虚拟标签
+    // TODO: 如果包含vtag id需要如何判断，场景：从url中获取id并请求
+    if (isFn(vtagCaptured) && vtagIdCollectBasket && len(objectKeys(vtagIdCollectBasket)) > 0) {
+      // 如果vtagCaptured有返回数据，则使用它作为响应数据，否则继续请求
+      const customResponse = vtagCaptured(method);
+      if (customResponse !== undefinedValue) {
+        resetCollectBasket(); // 被vtagCaptured捕获时的重置
+        return promiseResolve(customResponse);
+      }
+    }
+
     if (behaviorFinally !== behaviorStatic) {
       // 等待队列中的method执行完毕
       const queueResolvePromise = newInstance(PromiseCls, (resolveHandler, rejectHandler) => {
@@ -172,8 +171,7 @@ export default <S, E, R, T, RC, RE, RH>(
           handlerArgs,
           vtagIdCollectBasket && objectKeys(vtagIdCollectBasket)
         );
-        // 置空临时收集变量
-        setVtagIdCollectBasket((collectedMethodHandler = handlerArgs = undefinedValue));
+        resetCollectBasket(); // behavior为queue和silent时的重置
       });
 
       // onBeforePush和onPushed事件是同步绑定的，因此需要异步执行入队列才能正常触发事件
@@ -184,11 +182,10 @@ export default <S, E, R, T, RC, RE, RH>(
         // 将silentMethod放入队列并持久化
         pushNewSilentMethod2Queue(
           silentMethodInstance,
-          queue,
-
           // onFallback绑定了事件后，即使是silent行为模式也不再存储
           // onFallback会同步调用，因此需要异步判断是否存在fallbackHandlers
           len(fallbackHandlers) <= 0 && behaviorFinally === behaviorSilent,
+          queue,
           () => {
             // 执行放入队列前回调
             runArgsHandler(beforePushQueueHandlers, createPushEvent());
@@ -220,6 +217,7 @@ export default <S, E, R, T, RC, RE, RH>(
       // silent模式下，先立即返回虚拟响应值，然后当真实数据返回时再更新
       return promiseResolve(virtualResponse);
     }
+    resetCollectBasket(); // behavior为static时的重置
     return next();
   };
 

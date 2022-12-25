@@ -10,6 +10,28 @@ import { createAssert } from '../../helper';
 /**
  * 全局的虚拟标签收集数组
  * 它只会在method创建时为数组，其他时间为undefined
+ *
+ * 解释：收集虚拟标签的目的为了判断某个method实例内是否使用了虚拟标签
+ * 包括以下形式：
+ * useSQRequest((vtagId) => createMethod({ vtagId }) // 引用函数参数
+ * useSQRequest(() => createMethod({ vtagId }) // 直接引用作用域参数
+ *
+ * 甚至是：
+ * function createMethod(obj) {
+ *   return alovaInst.Get('/list', {
+ *     params: { status: obj.vtagId ? 1 : 0 }
+ *   })
+ * }
+ * useSQRequest(() => createMethod(obj) // 直接引用作用域参数
+ *
+ * 使用虚拟标签的方式包含：
+ * 1. 直接作为参数赋值
+ * 2. 使用虚拟标签id
+ * 3. 间接使用虚拟标签，如
+ *    vtag ? 1 : 0
+ *    !!vtag
+ *    vtag + 1
+ *    等作为计算参数参与的形式
  */
 export let vtagIdCollectBasket: Record<string, undefined> | undefined;
 export const setVtagIdCollectBasket = (value: typeof vtagIdCollectBasket) => (vtagIdCollectBasket = value);
@@ -41,4 +63,5 @@ export const completeHandlers = [] as SilentSubmitCompleteHandler[];
  */
 export const globalVirtualResponseLock = { v: 2 as 0 | 1 | 2 };
 
-export const silentAssert = createAssert('hooks/silent');
+/** silentAssert */
+export const silentAssert = createAssert('useSQHook');
