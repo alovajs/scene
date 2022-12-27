@@ -1,9 +1,20 @@
 import { Method } from 'alova';
-import { forEach, includes, isArray, isObject, JSONParse, len, newInstance, objectKeys } from '../../../helper';
+import {
+  forEach,
+  includes,
+  isArray,
+  isObject,
+  JSONParse,
+  len,
+  newInstance,
+  objectKeys,
+  parseFunctionBody,
+  parseFunctionParams
+} from '../../../helper';
 import { nullValue, ObjectCls, trueValue, undefinedValue } from '../../../helper/variables';
 import { dependentAlovaInstance } from '../globalVariables';
 import { serializers } from '../serializer';
-import { SerializedSilentMethod, SilentMethod } from '../SilentMethod';
+import { MethodHandler, SerializedSilentMethod, SilentMethod } from '../SilentMethod';
 import createVirtualResponse from '../virtualTag/createVirtualResponse';
 import Null from '../virtualTag/Null';
 import Undefined from '../virtualTag/Undefined';
@@ -15,7 +26,7 @@ import { vtagKey, vtagValueKey } from './helper';
  * @returns 请求方法实例
  */
 export default (serializedSilentMethodString: string) => {
-  const payload: SerializedSilentMethod = JSONParse(serializedSilentMethodString, (_, value) => {
+  const payload: SerializedSilentMethod = JSONParse(serializedSilentMethodString, (key, value) => {
     if (isArray(value) && len(value) === 2) {
       const foundSerializer = serializers[value[0]];
       value = foundSerializer ? foundSerializer.backward(value[1]) : value;
@@ -57,10 +68,24 @@ export default (serializedSilentMethodString: string) => {
     virtualResponse,
     methodHandler,
     handlerArgs,
+    closureScope,
     vTags,
     targetRefMethod,
     updateStates
   } = payload;
+
+  // 反序列化methodHandler，需单独处理
+  let deserializeMethodHandler: MethodHandler<any, any, any, any, any, any, any> | undefined = undefinedValue;
+  if (methodHandler) {
+    const fnParams = parseFunctionParams(methodHandler);
+    const fnBody = parseFunctionBody(methodHandler);
+    deserializeMethodHandler = newInstance(
+      Function,
+      ...fnParams,
+      ...objectKeys(closureScope || {}),
+      fnBody
+    ) as MethodHandler<any, any, any, any, any, any, any>;
+  }
 
   // method类实例化
   const deserializeMethod = (methodPayload: SerializedSilentMethod['entity']) => {
@@ -78,8 +103,9 @@ export default (serializedSilentMethodString: string) => {
     fallbackHandlers,
     resolveHandler,
     rejectHandler,
-    methodHandler,
+    deserializeMethodHandler,
     handlerArgs,
+    closureScope,
     vTags
   );
   silentMethodInstance.cache = trueValue;

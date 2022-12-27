@@ -141,8 +141,9 @@ export default {
   testEnvironment: 'jsdom',
 
   testMatch: [
-    '**/?(*.)+(spec|test).[tj]s?(x)'
+    // '**/?(*.)+(spec|test).[tj]s?(x)'
     // '**/test/modules/uuid.spec.ts(x)?'
+    '**/test/modules/parseFunc.spec.ts(x)?'
     // '**/test/vue/usePagination.spec.js(x)?',
     // '**/test/silent/virtualResponse.spec.ts(x)?'
     // '**/test/silent/serializers.spec.ts(x)?'

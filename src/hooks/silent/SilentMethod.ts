@@ -49,6 +49,14 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
    */
   public handlerArgs?: any[];
 
+  /**
+   * 外部作用域引用的变量记录
+   * methodHandler内的参数可能不仅来自于此函数的参数，还有可能来自于外部作用域的变量
+   * 当持久化的silentMethod实例被重新读取时，methodHandler函数就会失去它原有的作用域而调用报错
+   * 此时就使用此参数用于记录methodHandler中引用的外部作用域变量，并在methodHandler调用时以参数形式传入其中
+   */
+  public closureScope?: Record<string | number, any>;
+
   /** method创建时所使用的虚拟标签id */
   public vTags?: string[];
 
@@ -76,6 +84,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     rejectHandler?: PromiseExecuteParameter['1'],
     methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
     handlerArgs?: any[],
+    closureScope?: Record<string | number, any>,
     vTag?: string[],
     retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[]
   ) {
@@ -90,6 +99,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     this.rejectHandler = rejectHandler;
     this.methodHandler = methodHandler;
     this.handlerArgs = handlerArgs;
+    this.closureScope = closureScope;
     this.vTags = vTag;
     this.retryHandlers = retryHandlers;
   }
@@ -118,7 +128,8 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 }
 
 type MethodEntityPayload = Omit<Method<any, any, any, any, any, any, any>, 'context' | 'response' | 'send'>;
-export type SerializedSilentMethod = SilentMethodInterface & {
+export type SerializedSilentMethod = Omit<SilentMethodInterface, 'methodHandler'> & {
   entity: MethodEntityPayload;
   targetRefMethod?: MethodEntityPayload;
+  methodHandler?: string;
 };

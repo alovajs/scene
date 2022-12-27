@@ -1,8 +1,8 @@
-import { SilentMethod } from '../../../../typings';
-import { instanceOf, isArray, JSONStringify, len, objectKeys, walkObject } from '../../../helper';
+import { instanceOf, isArray, isFn, JSONStringify, len, objectKeys, walkObject } from '../../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../../helper/variables';
 import { globalVirtualResponseLock } from '../globalVariables';
 import { serializers } from '../serializer';
+import { SilentMethod } from '../SilentMethod';
 import { symbolVirtualTag } from '../virtualTag/variables';
 import vtagDhy from '../virtualTag/vtagDhy';
 import { vtagKey, vtagValueKey } from './helper';
@@ -18,6 +18,7 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
   const prevResponseLockValue = globalVirtualResponseLock.v;
   globalVirtualResponseLock.v = 1;
   const transformedData = walkObject({ ...silentMethodInstance }, (value, key, parent) => {
+    // 表示已经是被处理成虚拟标签的了，不需要再处理的
     if (key === vtagValueKey && parent[vtagKey]) {
       return value;
     }
@@ -25,6 +26,11 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
     // 不需要序列化alova实例
     if (key === 'context' && value?.constructor?.name === 'Alova') {
       return undefinedValue;
+    }
+
+    // methodHandler序列化
+    if (key === 'methodHandler' && isFn(value) && instanceOf(parent, SilentMethod)) {
+      return value.toString();
     }
 
     const virtualTagId = value?.[symbolVirtualTag];

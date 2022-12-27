@@ -1,44 +1,39 @@
 import { Alova, Method } from 'alova';
 import { falseValue, ObjectCls, PromiseCls } from './variables';
 
-export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
-export const promiseReject = <T>(value: T) => PromiseCls.reject(value);
-export const promiseThen = <T, TResult1 = T, TResult2 = never>(
-  promise: Promise<T>,
-  onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
-  onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
-): Promise<TResult1 | TResult2> => promise.then(onFulfilled, onrejected);
-export const promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
-export const promiseFinally = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
-
-export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn);
-export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);
-export const map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn);
-export const includes = <T>(ary: T[], target: T) => ary.includes(target);
-export const len = (data: any[] | Uint8Array | string | string) => data.length;
-export const isArray = (target: any) => Array.isArray(target);
-export const shift = <T>(ary: T[]) => ary.shift();
-export const splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) =>
-  ary.splice(start, deleteCount, ...items);
-
-export const getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-  methodInstance.context;
-export const getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-  methodInstance.config;
-export const getContextOptions = <S, E, RC, RE, RH>(alovaInstance: Alova<S, E, RC, RE, RH>) => alovaInstance.options;
-export const getOptions = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-  getContextOptions(getContext(methodInstance));
-export const JSONStringify = (
-  value: any,
-  replacer?: ((this: any, key: string, value: any) => any) | undefined,
-  space?: string | number | undefined
-) => JSON.stringify(value, replacer, space);
-export const JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
-  JSON.parse(text, reviver);
-export const objectKeys = (obj: any) => Object.keys(obj);
-export const objectValues = <T>(obj: Record<any, T>) => Object.values(obj);
-export const setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay);
-export const clearTimeoutTimer = (timer: NodeJS.Timeout) => clearTimeout(timer);
+export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value),
+  promiseReject = <T>(value: T) => PromiseCls.reject(value),
+  promiseThen = <T, TResult1 = T, TResult2 = never>(
+    promise: Promise<T>,
+    onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+  ): Promise<TResult1 | TResult2> => promise.then(onFulfilled, onrejected),
+  promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected),
+  promiseFinally = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected),
+  forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn),
+  pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item),
+  map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn),
+  includes = <T>(ary: T[], target: T) => ary.includes(target),
+  len = (data: any[] | Uint8Array | string | string) => data.length,
+  isArray = (target: any) => Array.isArray(target),
+  shift = <T>(ary: T[]) => ary.shift(),
+  splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) => ary.splice(start, deleteCount, ...items),
+  getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.context,
+  getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.config,
+  getContextOptions = <S, E, RC, RE, RH>(alovaInstance: Alova<S, E, RC, RE, RH>) => alovaInstance.options,
+  getOptions = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
+    getContextOptions(getContext(methodInstance)),
+  JSONStringify = (
+    value: any,
+    replacer?: ((this: any, key: string, value: any) => any) | undefined,
+    space?: string | number | undefined
+  ) => JSON.stringify(value, replacer, space),
+  JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
+    JSON.parse(text, reviver),
+  objectKeys = (obj: any) => Object.keys(obj),
+  objectValues = <T>(obj: Record<any, T>) => Object.values(obj),
+  setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
+  clearTimeoutTimer = (timer: NodeJS.Timeout) => clearTimeout(timer);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
@@ -199,3 +194,35 @@ export const newInstance = <T extends { new (...args: any[]): InstanceType<T> }>
   cls: T,
   ...args: ConstructorParameters<T>
 ) => new cls(...args);
+
+/**
+ * 解析函数参数
+ * @param fn 目标函数
+ * @returns 此函数的参数数组
+ */
+export const parseFunctionParams = (fn: GeneralFn | string) => {
+  const fnStr = fn + '';
+  const isCommonFn = fnStr.startsWith('function');
+  return fnStr
+    .replace(/\/\/.*$/gm, '') // strip single-line comments
+    .replace(/\s+/g, '') // strip white space
+    .replace(/\/\*[\s\S]+?\*\//g, '') // strip multi-line comments
+    .split(isCommonFn ? '){' : /\)?=>/, 1)?.[0]
+    .replace(/^[^(]*[(]/, '') // extract the parameters
+    .replace(/=[^,]+/g, '') // strip any ES6 defaults
+    .split(',')
+    .filter(item => (item ? /^(\.\.\.)?[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(item) : falseValue)); // 过滤没有值的和不符合变量名的
+};
+
+/**
+ * 解析函数体
+ * @param fn 目标函数
+ * @returns 此函数的函数体
+ */
+export const parseFunctionBody = (fn: GeneralFn | string) => {
+  let fnStr = fn + '';
+  fnStr = fnStr.replace(/\/\/.*$/gm, ''); // strip single-line comments
+  fnStr = fnStr.replace(/\/\*[\s\S]+?\*\//g, ''); // strip multi-line comments
+  fnStr = fnStr.replace(/^(function\s*(.*)\)\s*{|\(?.*?\)?\s*=>\s*{?\s*)/, '');
+  return fnStr.endsWith('}') ? fnStr.substring(0, len(fnStr) - 1) : `return ${fnStr}`;
+};

@@ -51,6 +51,7 @@ describe('silent method request in queue with silent behavior', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         [
           () => {
             retryMockFn();
@@ -139,6 +140,7 @@ describe('silent method request in queue with silent behavior', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         [
           () => {
             retryMockFn();
@@ -157,11 +159,11 @@ describe('silent method request in queue with silent behavior', () => {
     });
 
     const completeMockFn = jest.fn();
-    onSilentSubmitComplete(ev => {
+    onSilentSubmitComplete(() => {
       completeMockFn();
     });
     const successMockFn = jest.fn();
-    onSilentSubmitSuccess(event => {
+    onSilentSubmitSuccess(() => {
       successMockFn();
     });
 
@@ -208,6 +210,7 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -327,7 +330,7 @@ describe('silent method request in queue with silent behavior', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
-      responsed: data => {
+      responsed: () => {
         throw new Error('custom error');
       }
     });
@@ -355,6 +358,7 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -413,6 +417,7 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -479,6 +484,7 @@ describe('silent method request in queue with silent behavior', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         [
           event => {
             retryMockFn();
@@ -529,6 +535,7 @@ describe('silent method request in queue with silent behavior', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         [
           event => {
             retryMockFn();
@@ -571,6 +578,7 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
+        undefined,
         undefined,
         undefined,
         undefined,

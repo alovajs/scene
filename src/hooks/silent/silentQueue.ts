@@ -3,17 +3,28 @@ import { RetryErrorDetailed } from '../../../typings';
 import {
   forEach,
   instanceOf,
+  isFn,
   isObject,
   len,
+  map,
   noop,
   objectKeys,
+  objectValues,
+  promiseResolve,
   promiseThen,
   pushItem,
   runArgsHandler,
   setTimeoutFn,
   shift
 } from '../../helper';
-import { behaviorSilent, defaultQueueName, falseValue, trueValue, undefinedValue } from '../../helper/variables';
+import {
+  behaviorSilent,
+  defaultQueueName,
+  falseValue,
+  PromiseCls,
+  trueValue,
+  undefinedValue
+} from '../../helper/variables';
 import createSQEvent from './createSQEvent';
 import {
   completeHandlers,
@@ -25,6 +36,7 @@ import {
 import { SilentMethod } from './SilentMethod';
 import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
 import { replaceObjectVTag, vtagReplace } from './virtualTag/helper';
+import Undefined from './virtualTag/Undefined';
 import vtagStringify from './virtualTag/vtagStringify';
 
 export type SilentQueueMap = Record<string, SilentMethod[]>;
@@ -47,31 +59,52 @@ export const merge2SilentQueueMap = (queueMap: SilentQueueMap) => {
 export const clearSilentQueueMap = () => (silentQueueMap = {});
 
 /**
+ * 读取外部作用域引用的变量，如果是一个模块则动态加载它
+ * @param closureScope 引用的外部数据集合
+ * @returns 闭包内引用的实际数据集合
+ */
+export const readClosureScope = (closureScope: SilentMethod['closureScope'] = {}) => {
+  const scopedValuePromises = map(objectValues(closureScope), scopeArgItem => {
+    if (isObject(scopeArgItem) && len(objectKeys(scopeArgItem)) <= 2 && scopeArgItem.path) {
+      const { path, module = 'default' } = scopeArgItem;
+      return promiseThen(import(`../../../../${path}`), loadedModule => loadedModule[module]);
+    }
+    return promiseResolve(scopeArgItem);
+  });
+  return PromiseCls.all(scopedValuePromises);
+};
+
+/**
  * 替换带有虚拟标签的method实例
  * 当它有methodHandler时调用它重新生成
  * @param vtagResponse 虚拟id和对应真实数据的集合
  * @param targetQueue 目标队列
  */
 const replaceVirtualMethod = (vtagResponse: Record<string, any>, targetQueue: SilentQueueMap[string]) => {
-  forEach(targetQueue, silentMethodItem => {
-    const handlerArgs = silentMethodItem.handlerArgs || [];
+  const replacePromises = map(targetQueue, silentMethodItem => {
+    const { handlerArgs = [], closureScope } = silentMethodItem;
     forEach(handlerArgs, (arg, i) => {
-      handlerArgs[i] = vtagReplace(arg, vtagResponse);
+      // 因为undefined无法被序列化，因此handlerArgs中以undefined包装类替代undefined
+      handlerArgs[i] = instanceOf(handlerArgs[i], Undefined) ? undefinedValue : vtagReplace(arg, vtagResponse);
     });
-    // 重新生成一个method实例并替换
-    let methodUpdated = falseValue;
-    if (silentMethodItem.methodHandler) {
-      silentMethodItem.entity = silentMethodItem.methodHandler(...handlerArgs);
-      methodUpdated = trueValue;
-    } else {
-      // 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
-      methodUpdated = replaceObjectVTag(silentMethodItem.entity, vtagResponse).r;
-    }
 
-    // 如果method实例有更新，则重新持久化此silentMethod实例
-    // methodUpdated && silentMethodItem.cache && persistSilentMethod(silentMethodItem);
-    methodUpdated && persistSilentMethod(silentMethodItem);
+    return promiseThen(readClosureScope(closureScope), closureScopeArgs => {
+      // 重新生成一个method实例并替换
+      let methodUpdated = falseValue;
+      if (isFn(silentMethodItem.methodHandler)) {
+        silentMethodItem.entity = silentMethodItem.methodHandler(...handlerArgs, ...closureScopeArgs);
+        methodUpdated = trueValue;
+      } else {
+        // 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
+        methodUpdated = replaceObjectVTag(silentMethodItem.entity, vtagResponse).r;
+      }
+
+      // 如果method实例有更新，则重新持久化此silentMethod实例
+      // methodUpdated && silentMethodItem.cache && persistSilentMethod(silentMethodItem);
+      methodUpdated && persistSilentMethod(silentMethodItem);
+    });
   });
+  return PromiseCls.all(replacePromises);
 };
 
 /**
@@ -144,6 +177,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
           globalVirtualResponseLock.v = 2;
 
           // 对当前队列的后续silentMethod实例中，将虚拟标签找出来并依次替换
+          // 内部是异步替换的，不影响正常流程
           replaceVirtualMethod(virtualTagReplacedResponseMap, queue);
 
           const { targetRefMethod, updateStates } = silentMethodInstance; // 实时获取才准确

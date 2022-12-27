@@ -6,6 +6,7 @@ import {
   len,
   newInstance,
   objectKeys,
+  parseFunctionParams,
   promiseResolve,
   promiseThen,
   pushItem,
@@ -61,9 +62,17 @@ export default <S, E, R, T, RC, RE, RH>(
   const createMethod = (...args: any[]) => {
     silentAssert(isFn(handler), 'method handler must be a function. eg. useSQRequest(() => method)');
     setVtagIdCollectBasket({});
-    handlerArgs = args;
+
+    // 有可能handler函数形参的个数，和调用handler时传入的实参个数不一致
+    // 因此将handlerArgs内的实参个数设为和handler形参相同
+    // 以免后续在合并closureScope参数时，参数可以一一对应上
+    const params = parseFunctionParams(handler as AlovaMethodHandler<S, E, R, T, RC, RE, RH>);
+    handlerArgs = Array.from({ length: params.length }).map((_, index) =>
+      // 因为undefined无法被序列化，因此handlerArgs中以undefined包装类替代undefined
+      args[index] === undefinedValue ? newInstance(Undefined, '') : args[index]
+    );
     collectedMethodHandler = handler as MethodHandler<S, E, R, T, RC, RE, RH>;
-    return (handler as MethodHandler<S, E, R, T, RC, RE, RH>)(...args);
+    return (handler as MethodHandler<S, E, R, T, RC, RE, RH>)(...handlerArgs);
   };
 
   /**
@@ -78,7 +87,7 @@ export default <S, E, R, T, RC, RE, RH>(
   ) => {
     // 因为behavior返回值可能会变化，因此每次请求都应该调用它重新获取返回值
     const behaviorFinally = isFn(behavior) ? behavior() : behavior;
-    const { silentDefaultResponse, vtagCaptured } = config;
+    const { silentDefaultResponse, vtagCaptured, closureScope } = config;
     let silentMethodInstance: any;
 
     // 首先设置事件回调装饰器
@@ -169,6 +178,7 @@ export default <S, E, R, T, RC, RE, RH>(
           rejectHandler,
           collectedMethodHandler,
           handlerArgs,
+          closureScope,
           vtagIdCollectBasket && objectKeys(vtagIdCollectBasket)
         );
         resetCollectBasket(); // behavior为queue和silent时的重置

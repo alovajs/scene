@@ -158,6 +158,14 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
    */
   readonly handlerArgs?: any[];
 
+  /**
+   * 外部作用域引用的变量记录
+   * methodHandler内的参数可能不仅来自于此函数的参数，还有可能来自于外部作用域的变量
+   * 当持久化的silentMethod实例被重新读取时，methodHandler函数就会失去它原有的作用域而调用报错
+   * 此时就使用此参数用于记录methodHandler中引用的外部作用域变量，并在methodHandler调用时以参数形式传入其中
+   */
+  readonly closureScope?: Record<string | number, any>;
+
   /** method创建时所使用的虚拟标签id */
   readonly vTags?: string[];
 
@@ -247,7 +255,7 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
    * 当持久化的silentMethod实例被重新读取时，methodHandler函数就会失去它原有的作用域而调用报错
    * 此时就使用此参数用于记录methodHandler中引用的外部作用域变量，并在methodHandler调用时以参数形式传入其中
    */
-  closure?: Record<string | number, any>;
+  closureScope?: Record<string | number, any>;
 
   /**
    * 它将在捕获到method中带有虚拟标签时调用
