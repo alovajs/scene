@@ -31,6 +31,7 @@ import { MethodHandler, SilentMethod } from './SilentMethod';
 import { pushNewSilentMethod2Queue } from './silentQueue';
 import createVirtualResponse from './virtualTag/createVirtualResponse';
 import Undefined from './virtualTag/Undefined';
+import { serializeUndefFlag } from './virtualTag/variables';
 
 /**
  * 全局的silentMethod实例，它将在第一个成功事件触发前到最后一个成功事件触发后有值（同步时段）
@@ -69,7 +70,7 @@ export default <S, E, R, T, RC, RE, RH>(
     const params = parseFunctionParams(handler as AlovaMethodHandler<S, E, R, T, RC, RE, RH>);
     handlerArgs = Array.from({ length: params.length }).map((_, index) =>
       // 因为undefined无法被序列化，因此handlerArgs中以undefined包装类替代undefined
-      args[index] === undefinedValue ? newInstance(Undefined, '') : args[index]
+      args[index] === undefinedValue ? serializeUndefFlag : args[index]
     );
     collectedMethodHandler = handler as MethodHandler<S, E, R, T, RC, RE, RH>;
     return (handler as MethodHandler<S, E, R, T, RC, RE, RH>)(...handlerArgs);
@@ -169,6 +170,7 @@ export default <S, E, R, T, RC, RE, RH>(
           SilentMethod,
           method as Method<any, any, any, any, any, any, any>,
           behaviorFinally,
+          collectedMethodHandler as NonNullable<typeof collectedMethodHandler>,
           undefinedValue,
           retryError,
           maxRetryTimes,
@@ -176,7 +178,6 @@ export default <S, E, R, T, RC, RE, RH>(
           fallbackHandlers as any[],
           resolveHandler,
           rejectHandler,
-          collectedMethodHandler,
           handlerArgs,
           closureScope,
           vtagIdCollectBasket && objectKeys(vtagIdCollectBasket)

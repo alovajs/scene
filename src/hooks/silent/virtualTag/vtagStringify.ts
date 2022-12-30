@@ -1,6 +1,6 @@
 import { undefinedValue } from '../../../helper/variables';
 import { vTagCollectUnified } from './helper';
-import { symbolVirtualTag } from './variables';
+import { symbolVTagId } from './variables';
 
 /**
  * 虚拟标签字符串化，如果参数不是虚拟标签则返回原数据
@@ -10,7 +10,7 @@ import { symbolVirtualTag } from './variables';
  */
 export default (target: any, returnOriginalIfNotVtag = true) => {
   vTagCollectUnified(target);
-  const virtualTagIdRaw = target?.[symbolVirtualTag];
+  const virtualTagIdRaw = target?.[symbolVTagId];
   const virtualTagId = virtualTagIdRaw ? `[vtag:${virtualTagIdRaw}]` : undefinedValue;
   return virtualTagId || (returnOriginalIfNotVtag ? target : undefinedValue);
 };

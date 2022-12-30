@@ -33,7 +33,8 @@ export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value),
   objectKeys = (obj: any) => Object.keys(obj),
   objectValues = <T>(obj: Record<any, T>) => Object.values(obj),
   setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
-  clearTimeoutTimer = (timer: NodeJS.Timeout) => clearTimeout(timer);
+  clearTimeoutTimer = (timer: NodeJS.Timeout) => clearTimeout(timer),
+  strReplace = (str: string, searchValue: any, replaceValue: string) => str.replace(searchValue, replaceValue);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
@@ -113,10 +114,8 @@ export const valueObject = <T>(value: T, writable = false) => ({
  * @param o 对象
  * @param attrs 值对象
  */
-export const defineProperties = (o: object, attrs: Record<string, any>, writable = falseValue) => {
-  forEach([...objectKeys(attrs), ...ObjectCls.getOwnPropertySymbols(attrs)], key => {
-    ObjectCls.defineProperty(o, key, valueObject(attrs[key as keyof typeof attrs], writable));
-  });
+export const defineProperty = (o: object, key: string | symbol, value: any, writable = falseValue) => {
+  ObjectCls.defineProperty(o, key, valueObject(value, writable));
 };
 
 export type GeneralFn = (...args: any[]) => any;
@@ -176,6 +175,7 @@ export const walkObject = (
   parent && key && (target = parent[key] = callback(target, key, parent));
   if (isObject(target)) {
     for (const i in target) {
+      // TODO: 这层判断现在是否可以去掉了？
       if (!instanceOf(target, String)) {
         target[i] = walkObject(target[i], callback, i, target);
       }
@@ -201,15 +201,14 @@ export const newInstance = <T extends { new (...args: any[]): InstanceType<T> }>
  * @returns 此函数的参数数组
  */
 export const parseFunctionParams = (fn: GeneralFn | string) => {
-  const fnStr = fn + '';
+  let fnStr = fn + '';
   const isCommonFn = fnStr.startsWith('function');
-  return fnStr
-    .replace(/\/\/.*$/gm, '') // strip single-line comments
-    .replace(/\s+/g, '') // strip white space
-    .replace(/\/\*[\s\S]+?\*\//g, '') // strip multi-line comments
-    .split(isCommonFn ? '){' : /\)?=>/, 1)?.[0]
-    .replace(/^[^(]*[(]/, '') // extract the parameters
-    .replace(/=[^,]+/g, '') // strip any ES6 defaults
+  fnStr = strReplace(fnStr, /\/\/.*$/gm, ''); // strip single-line comments
+  fnStr = strReplace(fnStr, /\s+/g, ''); // strip white space
+  fnStr = strReplace(fnStr, /\/\*[\s\S]+?\*\//g, '') // strip multi-line comments
+    .split(isCommonFn ? '){' : /\)?=>/, 1)?.[0];
+  fnStr = strReplace(fnStr, /^[^(]*[(]/, ''); // extract the parameters
+  return strReplace(fnStr, /=[^,]+/g, '') // strip any ES6 defaults
     .split(',')
     .filter(item => (item ? /^(\.\.\.)?[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(item) : falseValue)); // 过滤没有值的和不符合变量名的
 };
@@ -221,8 +220,9 @@ export const parseFunctionParams = (fn: GeneralFn | string) => {
  */
 export const parseFunctionBody = (fn: GeneralFn | string) => {
   let fnStr = fn + '';
-  fnStr = fnStr.replace(/\/\/.*$/gm, ''); // strip single-line comments
-  fnStr = fnStr.replace(/\/\*[\s\S]+?\*\//g, ''); // strip multi-line comments
-  fnStr = fnStr.replace(/^(function\s*(.*)\)\s*{|\(?.*?\)?\s*=>\s*{?\s*)/, '');
-  return fnStr.endsWith('}') ? fnStr.substring(0, len(fnStr) - 1) : `return ${fnStr}`;
+  fnStr = strReplace(fnStr, /\/\/.*$/gm, ''); // strip single-line comments
+  fnStr = strReplace(fnStr, /\/\*[\s\S]+?\*\//g, ''); // strip multi-line comments
+  fnStr = strReplace(fnStr, /^(function\s*([\s\S]*?)\)\s*{|\(?([\s\S]*?)\)?\s*=>\s*{?\s*)/, '');
+  fnStr = fnStr.endsWith('}') ? fnStr.substring(0, len(fnStr) - 1) : `return ${fnStr}`;
+  return fnStr.trim();
 };

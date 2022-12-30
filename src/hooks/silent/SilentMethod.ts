@@ -1,7 +1,17 @@
 import { Method } from 'alova';
 import { FallbackHandler, RetryHandler, SilentMethod as SilentMethodInterface, SQHookBehavior } from '../../../typings';
-import { splice, uuid } from '../../helper';
+import {
+  newInstance,
+  objectKeys,
+  objectValues,
+  parseFunctionBody,
+  parseFunctionParams,
+  splice,
+  uuid
+} from '../../helper';
 import { silentQueueMap } from './silentQueue';
+import deserialize from './storage/deserialize';
+import serialize from './storage/serialize';
 import { persistSilentMethod, removeSilentMethod } from './storage/silentMethodStorage';
 
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
@@ -18,6 +28,13 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
   public behavior: SQHookBehavior;
   /** method实例 */
   public entity: Method<S, E, R, T, RC, RE, RH>;
+
+  /**
+   * method实例生成函数，由虚拟标签内的Symbol.toPrimitive函数保存至此
+   * 当虚拟响应数据被替换为实际响应数据时，将调用此函数重新创建method，达到替换虚拟标签的目的
+   */
+  public methodHandler: MethodHandler<S, E, R, T, RC, RE, RH>;
+
   /** 重试错误规则 */
   public retryError?: RetryError;
   /** 重试次数 */
@@ -38,24 +55,16 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
   public virtualResponse?: any;
 
   /**
-   * method实例生成函数，由虚拟标签内的Symbol.toPrimitive函数保存至此
-   * 当虚拟响应数据被替换为实际响应数据时，将调用此函数重新创建method，达到替换虚拟标签的目的
+   * 虚拟标签和真实数据的映射集合
+   * 它包含当前队列内已完成的silentMethod实例的所有vtagResponse集合
    */
-  public methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>;
+  public previousVTagResponse?: Record<string, any>;
 
   /**
    * methodHandler的调用参数
    * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
    */
-  public handlerArgs?: any[];
-
-  /**
-   * 外部作用域引用的变量记录
-   * methodHandler内的参数可能不仅来自于此函数的参数，还有可能来自于外部作用域的变量
-   * 当持久化的silentMethod实例被重新读取时，methodHandler函数就会失去它原有的作用域而调用报错
-   * 此时就使用此参数用于记录methodHandler中引用的外部作用域变量，并在methodHandler调用时以参数形式传入其中
-   */
-  public closureScope?: Record<string | number, any>;
+  public handlerArgs: any[];
 
   /** method创建时所使用的虚拟标签id */
   public vTags?: string[];
@@ -75,6 +84,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
   constructor(
     entity: Method<S, E, R, T, RC, RE, RH>,
     behavior: SQHookBehavior,
+    methodHandler: MethodHandler<S, E, R, T, RC, RE, RH> | string,
     id = uuid(),
     retryError?: RetryError,
     maxRetryTimes?: MaxRetryTimes,
@@ -82,26 +92,44 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     fallbackHandlers?: FallbackHandler<S, E, R, T, RC, RE, RH>[],
     resolveHandler?: PromiseExecuteParameter['0'],
     rejectHandler?: PromiseExecuteParameter['1'],
-    methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
     handlerArgs?: any[],
-    closureScope?: Record<string | number, any>,
+    closureScope: Record<string | number, any> = {},
     vTag?: string[],
     retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[]
   ) {
-    this.entity = entity;
-    this.behavior = behavior;
-    this.id = id;
-    this.retryError = retryError;
-    this.maxRetryTimes = maxRetryTimes;
-    this.backoff = backoff;
-    this.fallbackHandlers = fallbackHandlers;
-    this.resolveHandler = resolveHandler;
-    this.rejectHandler = rejectHandler;
-    this.methodHandler = methodHandler;
-    this.handlerArgs = handlerArgs;
-    this.closureScope = closureScope;
-    this.vTags = vTag;
-    this.retryHandlers = retryHandlers;
+    const thisObj = this;
+
+    // 将closureScope深拷贝一份，以免在后续调用handlerMethod时因外部作用域的值变化而导致不一致的问题
+    // 通过序列化和反序列化的形式进行深拷贝
+    // 同时还能使用到序列化器
+    closureScope = deserialize(serialize(closureScope));
+
+    // 将methodHandler解析为统一的函数
+    const fnParams = parseFunctionParams(methodHandler);
+    const fnBody = parseFunctionBody(methodHandler);
+    methodHandler = newInstance(Function, ...fnParams, ...objectKeys(closureScope), fnBody) as MethodHandler<
+      S,
+      E,
+      R,
+      T,
+      RC,
+      RE,
+      RH
+    >;
+
+    thisObj.entity = entity;
+    thisObj.behavior = behavior;
+    thisObj.methodHandler = methodHandler;
+    thisObj.id = id;
+    thisObj.retryError = retryError;
+    thisObj.maxRetryTimes = maxRetryTimes;
+    thisObj.backoff = backoff;
+    thisObj.fallbackHandlers = fallbackHandlers;
+    thisObj.resolveHandler = resolveHandler;
+    thisObj.rejectHandler = rejectHandler;
+    thisObj.handlerArgs = [...(handlerArgs || []), ...objectValues(closureScope)];
+    thisObj.vTags = vTag;
+    thisObj.retryHandlers = retryHandlers;
   }
 
   /**
@@ -131,5 +159,5 @@ type MethodEntityPayload = Omit<Method<any, any, any, any, any, any, any>, 'cont
 export type SerializedSilentMethod = Omit<SilentMethodInterface, 'methodHandler'> & {
   entity: MethodEntityPayload;
   targetRefMethod?: MethodEntityPayload;
-  methodHandler?: string;
+  methodHandler: string;
 };

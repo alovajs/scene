@@ -150,27 +150,25 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
    * method实例生成函数，由虚拟标签内的Symbol.toPrimitive函数保存至此
    * 当虚拟响应数据被替换为实际响应数据时，将调用此函数重新创建method，达到替换虚拟标签的目的
    */
-  readonly methodHandler?: (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
+  readonly methodHandler: (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
 
   /**
    * methodHandler的调用参数
    * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
    */
-  readonly handlerArgs?: any[];
-
-  /**
-   * 外部作用域引用的变量记录
-   * methodHandler内的参数可能不仅来自于此函数的参数，还有可能来自于外部作用域的变量
-   * 当持久化的silentMethod实例被重新读取时，methodHandler函数就会失去它原有的作用域而调用报错
-   * 此时就使用此参数用于记录methodHandler中引用的外部作用域变量，并在methodHandler调用时以参数形式传入其中
-   */
-  readonly closureScope?: Record<string | number, any>;
+  readonly handlerArgs: any[];
 
   /** method创建时所使用的虚拟标签id */
   readonly vTags?: string[];
 
   /** 虚拟响应数据，通过delayUpdateState保存到此 */
   virtualResponse?: any;
+
+  /**
+   * 虚拟标签和真实数据的映射集合
+   * 它包含当前队列内已完成的silentMethod实例的所有vtagResponse集合
+   */
+  previousVTagResponse?: Record<string, any>;
 
   /** 调用updateStateEffect更新了哪些状态 */
   updateStates?: string[];

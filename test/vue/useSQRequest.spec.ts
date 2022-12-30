@@ -8,7 +8,7 @@ import loadSilentQueueMapFromStorage from '../../src/hooks/silent/storage/loadSi
 import useSQRequest from '../../src/hooks/silent/useSQRequest';
 import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
 import updateStateEffect from '../../src/hooks/silent/virtualTag/updateStateEffect';
-import { symbolIsProxy, symbolVirtualTag } from '../../src/hooks/silent/virtualTag/variables';
+import { symbolIsProxy, symbolVTagId } from '../../src/hooks/silent/virtualTag/variables';
 import vtagDhy from '../../src/hooks/silent/virtualTag/vtagDhy';
 import vtagStringify from '../../src/hooks/silent/virtualTag/vtagStringify';
 import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '../../typings';
@@ -435,7 +435,7 @@ describe('useSQRequest', () => {
       })
     });
     onPostSuccess(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
-      expect(postRes.value[symbolVirtualTag]).toBeTruthy(); // 此时还是虚拟响应数据
+      expect(postRes.value[symbolVTagId]).toBeTruthy(); // 此时还是虚拟响应数据
 
       // 调用updateStateEffect后将首先立即更新虚拟数据到listData中
       // 等到请求响应后再次更新实际数据到listData中

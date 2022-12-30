@@ -2,8 +2,7 @@ import { instanceOf, isArray, isFn, JSONStringify, len, objectKeys, walkObject }
 import { falseValue, trueValue, undefinedValue } from '../../../helper/variables';
 import { globalVirtualResponseLock } from '../globalVariables';
 import { serializers } from '../serializer';
-import { SilentMethod } from '../SilentMethod';
-import { symbolVirtualTag } from '../virtualTag/variables';
+import { symbolVTagId } from '../virtualTag/variables';
 import vtagDhy from '../virtualTag/vtagDhy';
 import { vtagKey, vtagValueKey } from './helper';
 
@@ -13,11 +12,11 @@ import { vtagKey, vtagValueKey } from './helper';
  * @param silentMethodInstance 请求方法实例
  * @returns 请求方法的序列化实例
  */
-export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>) => {
+export default (object: any) => {
   // 序列化时需要解锁，否则将访问不到虚拟响应数据内的虚拟标签id
   const prevResponseLockValue = globalVirtualResponseLock.v;
   globalVirtualResponseLock.v = 1;
-  const transformedData = walkObject({ ...silentMethodInstance }, (value, key, parent) => {
+  const transformedData = walkObject({ ...object }, (value, key, parent) => {
     // 表示已经是被处理成虚拟标签的了，不需要再处理的
     if (key === vtagValueKey && parent[vtagKey]) {
       return value;
@@ -29,11 +28,11 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
     }
 
     // methodHandler序列化
-    if (key === 'methodHandler' && isFn(value) && instanceOf(parent, SilentMethod)) {
+    if (key === 'methodHandler' && isFn(value)) {
       return value.toString();
     }
 
-    const virtualTagId = value?.[symbolVirtualTag];
+    const virtualTagId = value?.[symbolVTagId];
     let primitiveValue = vtagDhy(value);
     let finallyApplySerializer = undefinedValue as string | undefined;
     // 找到匹配的序列化器并进行值的序列化，未找到则返回原值

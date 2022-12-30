@@ -1,23 +1,10 @@
 import { Method } from 'alova';
-import {
-  forEach,
-  includes,
-  isArray,
-  isObject,
-  JSONParse,
-  len,
-  newInstance,
-  objectKeys,
-  parseFunctionBody,
-  parseFunctionParams
-} from '../../../helper';
-import { nullValue, ObjectCls, trueValue, undefinedValue } from '../../../helper/variables';
+import { forEach, includes, isArray, isObject, JSONParse, len, newInstance, objectKeys } from '../../../helper';
+import { trueValue, undefinedValue } from '../../../helper/variables';
 import { dependentAlovaInstance } from '../globalVariables';
 import { serializers } from '../serializer';
-import { MethodHandler, SerializedSilentMethod, SilentMethod } from '../SilentMethod';
+import { SerializedSilentMethod, SilentMethod } from '../SilentMethod';
 import createVirtualResponse from '../virtualTag/createVirtualResponse';
-import Null from '../virtualTag/Null';
-import Undefined from '../virtualTag/Undefined';
 import { vtagKey, vtagValueKey } from './helper';
 
 /**
@@ -25,8 +12,8 @@ import { vtagKey, vtagValueKey } from './helper';
  * @param methodInstance 请求方法实例
  * @returns 请求方法实例
  */
-export default (serializedSilentMethodString: string) => {
-  const payload: SerializedSilentMethod = JSONParse(serializedSilentMethodString, (key, value) => {
+export default (serializedSilentMethodString: string) =>
+  JSONParse(serializedSilentMethodString, (_, value) => {
     if (isArray(value) && len(value) === 2) {
       const foundSerializer = serializers[value[0]];
       value = foundSerializer ? foundSerializer.backward(value[1]) : value;
@@ -35,16 +22,7 @@ export default (serializedSilentMethodString: string) => {
     // 将虚拟标签格式转换回虚拟标签实例
     if (isObject(value) && value?.[vtagKey]) {
       const virtualTagId = value[vtagKey];
-      let virtualTagValue = value[vtagValueKey];
-      virtualTagValue = createVirtualResponse(
-        virtualTagValue === undefinedValue
-          ? newInstance(Undefined, virtualTagId)
-          : virtualTagValue === nullValue
-          ? newInstance(Null, virtualTagId)
-          : newInstance(ObjectCls, virtualTagValue),
-        virtualTagId
-      );
-
+      const virtualTagValue = createVirtualResponse(value[vtagValueKey], virtualTagId);
       forEach(objectKeys(value), key => {
         if (!includes([vtagKey, vtagValueKey], key)) {
           virtualTagValue[key] = value[key];
@@ -55,6 +33,12 @@ export default (serializedSilentMethodString: string) => {
     return value;
   });
 
+/**
+ * 将反序列化的silentMethod载荷数据转换为silentMethod实例
+ * @param payload 反序列化的silentMethod实例载荷数据
+ * @returns silentMethod实例
+ */
+export const deserializedPayload2SilentMethodInstance = (payload: SerializedSilentMethod) => {
   const {
     id,
     behavior,
@@ -68,24 +52,10 @@ export default (serializedSilentMethodString: string) => {
     virtualResponse,
     methodHandler,
     handlerArgs,
-    closureScope,
     vTags,
     targetRefMethod,
     updateStates
   } = payload;
-
-  // 反序列化methodHandler，需单独处理
-  let deserializeMethodHandler: MethodHandler<any, any, any, any, any, any, any> | undefined = undefinedValue;
-  if (methodHandler) {
-    const fnParams = parseFunctionParams(methodHandler);
-    const fnBody = parseFunctionBody(methodHandler);
-    deserializeMethodHandler = newInstance(
-      Function,
-      ...fnParams,
-      ...objectKeys(closureScope || {}),
-      fnBody
-    ) as MethodHandler<any, any, any, any, any, any, any>;
-  }
 
   // method类实例化
   const deserializeMethod = (methodPayload: SerializedSilentMethod['entity']) => {
@@ -96,6 +66,7 @@ export default (serializedSilentMethodString: string) => {
     SilentMethod,
     deserializeMethod(entity),
     behavior,
+    methodHandler,
     id,
     retryError,
     maxRetryTimes,
@@ -103,9 +74,8 @@ export default (serializedSilentMethodString: string) => {
     fallbackHandlers,
     resolveHandler,
     rejectHandler,
-    deserializeMethodHandler,
     handlerArgs,
-    closureScope,
+    undefinedValue,
     vTags
   );
   silentMethodInstance.cache = trueValue;
@@ -116,6 +86,5 @@ export default (serializedSilentMethodString: string) => {
     silentMethodInstance.targetRefMethod = deserializeMethod(targetRefMethod);
     silentMethodInstance.updateStates = updateStates;
   }
-
   return silentMethodInstance;
 };

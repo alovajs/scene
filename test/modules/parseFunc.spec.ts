@@ -204,34 +204,31 @@ describe('parse function', () => {
       new Function(parsedBody);
     }).not.toThrow();
 
-    // TODO: 默认形参里有function的比较复杂，后续处理
     // prettier-ignore
-    // parsedBody = parseFunctionBody(function _982tttjlk( a = function() {
-    //   let dothing = 1;
-    //   console.log(dothing)
-    // } )   {
+    parsedBody = parseFunctionBody(function (a /* fooled you... {
+      */, b,
+      c)   {
 
-    //   function abc() {
-    //     let dothing = false;
-    //     // dothing...
-    //     console.log(dothing);
-    //     dothing = true;
-    //     return Math.random()
-    //   }
-    //   let ddd = abc() + a();
-    //   // 单行注释
-    //   if (ddd > 0) {
-    //     /**
-    //      * 多行注释
-    //      * 随便写....
-    //      */
-    //     console.log(ddd);
-    //   }
-    // })
-    // console.log(parsedBody);
-    // expect(() => {
-    //   new Function(parsedBody);
-    // }).not.toThrow();
+      function abc() {
+        let dothing = false;
+        // dothing...
+        console.log(dothing);
+        dothing = true;
+        return Math.random()
+      }
+      let ddd = abc() + a() + b +   c;
+      // 单行注释
+      if (ddd > 0) {
+        /**
+         * 多行注释
+         * 随便写....
+         */
+        console.log(ddd);
+      }
+    })
+    expect(() => {
+      new Function(parsedBody);
+    }).not.toThrow();
 
     // prettier-ignore
     parsedBody = parseFunctionBody(function (a /* fooled you... {
@@ -255,6 +252,12 @@ describe('parse function', () => {
         console.log(ddd);
       }
     })
+    expect(() => {
+      new Function(parsedBody);
+    }).not.toThrow();
+
+    // prettier-ignore
+    parsedBody = parseFunctionBody('function anonymous(\n) {\nreturn 123\n}')
     expect(() => {
       new Function(parsedBody);
     }).not.toThrow();
@@ -301,35 +304,6 @@ describe('parse function', () => {
     expect(() => {
       new Function(parsedBody);
     }).not.toThrow();
-
-    // TODO: 默认形参里有function的比较复杂，后续处理
-    // prettier-ignore
-    // parsedBody = parseFunctionBody(( a = function() {
-    //   let dothing = 1;
-    //   console.log(dothing)
-    // } )   =>{
-
-    //   function abc() {
-    //     let dothing = false;
-    //     // dothing...
-    //     console.log(dothing);
-    //     dothing = true;
-    //     return Math.random()
-    //   }
-    //   let ddd = abc() + a();
-    //   // 单行注释
-    //   if (ddd > 0) {
-    //     /**
-    //      * 多行注释
-    //      * 随便写....
-    //      */
-    //     console.log(ddd);
-    //   }
-    // })
-    // console.log(parsedBody);
-    // expect(() => {
-    //   new Function(parsedBody);
-    // }).not.toThrow();
 
     // prettier-ignore
     parsedBody = parseFunctionBody((a /* fooled you... {
@@ -389,5 +363,11 @@ describe('parse function', () => {
       new Function(parsedBody);
     }).not.toThrow();
     expect(parsedBody.startsWith('return')).toBeTruthy();
+
+    // prettier-ignore
+    parsedBody = parseFunctionBody('(\n)=> \n {\nreturn 123\n}')
+    expect(() => {
+      new Function(parsedBody);
+    }).not.toThrow();
   });
 });

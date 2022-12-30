@@ -10,13 +10,14 @@ import {
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { pushNewSilentMethod2Queue } from '../../src/hooks/silent/silentQueue';
 import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
-import { replaceObjectVTag } from '../../src/hooks/silent/virtualTag/helper';
+import { deepReplaceVTag } from '../../src/hooks/silent/virtualTag/helper';
 import vtagStringify from '../../src/hooks/silent/virtualTag/vtagStringify';
 import { GlobalSQSuccessEvent } from '../../typings';
 import { mockRequestAdapter } from '../mockData';
 import { untilCbCalled } from '../utils';
 
 beforeEach(() => (globalVirtualResponseLock.v = 0));
+// jest.setTimeout(100000);
 describe('boot silent queue', () => {
   test('replace vtag to real data', () => {
     const virtualResponse = createVirtualResponse({ id: 'loading...' });
@@ -39,8 +40,7 @@ describe('boot silent queue', () => {
       [vtagStringify(virtualResponse.id)]: 1
     };
     globalVirtualResponseLock.v = 2;
-    const { r: replace } = replaceObjectVTag(methodInstance, virtualTagReplacedResponseMap);
-    expect(replace).toBeTruthy();
+    deepReplaceVTag(methodInstance, virtualTagReplacedResponseMap);
     expect(methodInstance.url).toBe('/detail/1');
     expect(methodInstance.requestBody).toEqual({
       whole: { id: 1 },
@@ -61,8 +61,7 @@ describe('boot silent queue', () => {
       },
       { whole: { id: 123 }, text: '' }
     );
-    const { r: replace2 } = replaceObjectVTag(methodInstance2, virtualTagReplacedResponseMap);
-    expect(replace2).toBeFalsy();
+    deepReplaceVTag(methodInstance2, virtualTagReplacedResponseMap);
     expect(methodInstance2.url).toBe('/detail');
     expect(methodInstance2.requestBody).toEqual({
       whole: { id: 123 },
@@ -70,7 +69,7 @@ describe('boot silent queue', () => {
     });
   });
 
-  test('execute single queue with 2 method which connected by vtag', async () => {
+  test.only('execute single queue with 2 method which connected by vtag', async () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
@@ -88,18 +87,20 @@ describe('boot silent queue', () => {
       const virtualResponse = createVirtualResponse({ id: 'loading...' });
 
       // 模拟数据创建
-      const methodInstance = new Method(
-        'POST',
-        alovaInst,
-        '/detail',
-        {
-          transformData: (data: any) => data
-        },
-        { text: 'some content', time: new Date().toLocaleString() }
-      );
+      const methodInstance = () =>
+        new Method(
+          'POST',
+          alovaInst,
+          '/detail',
+          {
+            transformData: (data: any) => data
+          },
+          { text: 'some content', time: new Date().toLocaleString() }
+        );
       const silentMethodInstance = new SilentMethod(
-        methodInstance,
+        methodInstance(),
         'silent',
+        methodInstance,
         'abcdef',
         undefined,
         2,
@@ -120,18 +121,20 @@ describe('boot silent queue', () => {
       silentMethodInstance.virtualResponse = virtualResponse;
 
       // 模拟数据删除
-      const methodInstance2 = new Method(
-        'DELETE',
-        alovaInst,
-        `/detail/${vtagStringify(virtualResponse.id)}`,
-        {
-          transformData: (data: any) => data
-        },
-        { id: virtualResponse.id }
-      );
+      const methodInstance2 = () =>
+        new Method(
+          'DELETE',
+          alovaInst,
+          `/detail/${vtagStringify(virtualResponse.id)}`,
+          {
+            transformData: (data: any) => data
+          },
+          { id: virtualResponse.id }
+        );
       const silentMethodInstance2 = new SilentMethod(
-        methodInstance2,
+        methodInstance2(),
         'silent',
+        methodInstance2,
         'abcdef',
         undefined,
         2,
@@ -181,7 +184,7 @@ describe('boot silent queue', () => {
         expect(event.behavior).toBe('silent');
         if (successCallIndex === 0) {
           expect(event.data).toStrictEqual({ id: 1 });
-          expect(event.method).toBe(methodInstance);
+          expect(event.method).toBeInstanceOf(Method);
           expect(event.silentMethod).toBe(silentMethodInstance);
           expect(event.vtagResponse).toStrictEqual(vtagResponsePayload);
         } else if (successCallIndex === 1) {
@@ -191,7 +194,7 @@ describe('boot silent queue', () => {
             },
             data: { id: 1 }
           });
-          expect(event.method).toBe(methodInstance2);
+          expect(event.method).toBeInstanceOf(Method);
           expect(event.silentMethod).toBe(silentMethodInstance2);
           expect(event.vtagResponse).toStrictEqual({});
         }
@@ -206,7 +209,7 @@ describe('boot silent queue', () => {
         expect(event.behavior).toBe('silent');
         if (completeCallIndex === 0) {
           expect(event.data).toStrictEqual({ id: 1 });
-          expect(event.method).toBe(methodInstance);
+          expect(event.method).toBeInstanceOf(Method);
           expect(event.silentMethod).toBe(silentMethodInstance);
           expect(event.vtagResponse).toStrictEqual(vtagResponsePayload);
         } else if (completeCallIndex === 1) {
@@ -216,7 +219,7 @@ describe('boot silent queue', () => {
             },
             data: { id: 1 }
           });
-          expect(event.method).toBe(methodInstance2);
+          expect(event.method).toBeInstanceOf(Method);
           expect(event.silentMethod).toBe(silentMethodInstance2);
           expect(event.vtagResponse).toStrictEqual({});
         }
@@ -255,7 +258,7 @@ describe('boot silent queue', () => {
       const methodInstance = new Method('POST', alovaInst, '/detail', {
         transformData: () => undefined
       });
-      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', /.*/, 2, {
+      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', () => methodInstance, 'abcdef', /.*/, 2, {
         delay: 2000,
         multiplier: 1.5
       });
@@ -269,6 +272,7 @@ describe('boot silent queue', () => {
       const silentMethodInstance2 = new SilentMethod(
         methodInstance2,
         'silent',
+        () => methodInstance2,
         'abcdef',
         /.*/,
         2,
@@ -319,7 +323,7 @@ describe('boot silent queue', () => {
       const methodInstance = new Method('POST', alovaInst, '/detail', {
         transformData: () => true
       });
-      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', /.*/, 2, {
+      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', () => methodInstance, 'abcdef', /.*/, 2, {
         delay: 2000,
         multiplier: 1.5
       });
@@ -330,6 +334,7 @@ describe('boot silent queue', () => {
       const silentMethodInstance2 = new SilentMethod(
         methodInstance2,
         'silent',
+        () => methodInstance2,
         'abcdef',
         /.*/,
         2,
@@ -378,7 +383,7 @@ describe('boot silent queue', () => {
         id: ''
       });
       const methodInstance = new Method('POST', alovaInst, '/detail');
-      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', /.*/, 2, {
+      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', () => methodInstance, 'abcdef', /.*/, 2, {
         delay: 2000,
         multiplier: 1.5
       });
@@ -393,6 +398,8 @@ describe('boot silent queue', () => {
       const silentMethodInstance2 = new SilentMethod(
         methodHandler(virtualResponse.id, 'text', `text-${vtagStringify(virtualResponse.id)}`),
         'silent',
+        // 传了methodHandler时，将会调用此函数重新生成method实例
+        methodHandler,
         'abcdef',
         /.*/,
         2,
@@ -415,9 +422,6 @@ describe('boot silent queue', () => {
           });
         },
         undefined,
-
-        // 传了methodHandler时，将会调用此函数重新生成method实例
-        methodHandler,
         // 上一个请求完成后，将会把handlerArgs中的虚拟标签或藏在字符串中的虚拟标签id替换为实际值
         [virtualResponse.id, 'text', `text-${vtagStringify(virtualResponse.id)}`],
         [virtualResponse.id]
