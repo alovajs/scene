@@ -3,66 +3,66 @@ import {
   setVtagIdCollectBasket,
   vtagIdCollectBasket
 } from '../../src/hooks/silent/globalVariables';
-import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
-import Null from '../../src/hooks/silent/virtualTag/Null';
-import Undefined from '../../src/hooks/silent/virtualTag/Undefined';
-import { regVirtualTag } from '../../src/hooks/silent/virtualTag/variables';
-import vtagDhy from '../../src/hooks/silent/virtualTag/vtagDhy';
-import vtagStringify from '../../src/hooks/silent/virtualTag/vtagStringify';
+import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import { symbolOriginalValue, symbolVTagId } from '../../src/hooks/silent/virtualResponse/variables';
+import VTag from '../../src/hooks/silent/virtualResponse/VTag';
 
 beforeEach(() => (globalVirtualResponseLock.v = 0));
-
 // 虚拟响应测试
 describe('virtual response', () => {
-  test('undefined wrapper', () => {
-    const undef = new Undefined();
-    expect((undef as any) + 1).toBeNaN();
-    expect((undef as any) - 1).toBeNaN();
-    expect((undef as any) | 1).toBe(1);
-    expect((undef as any) & 1).toBe(0);
-    expect((undef as any) > 0).toBeFalsy();
-    expect((undef as any) < 0).toBeFalsy();
-    expect((undef as any) == 0).toBeFalsy();
-    expect((undef as any) >= 0).toBeFalsy();
-    expect((undef as any) <= 0).toBeFalsy();
-
-    let defProxy = createVirtualResponse(undef);
+  test('undefined vtag', () => {
+    const undef = createVirtualResponse(undefined);
     globalVirtualResponseLock.v = 2;
+    setVtagIdCollectBasket({});
+    expect(undef + 1).toBeNaN();
+    expect(undef - 1).toBeNaN();
+    expect(undef | 1).toBe(1);
+    expect(undef & 1).toBe(0);
+    expect(undef > 0).toBeFalsy();
+    expect(undef < 0).toBeFalsy();
+    expect(undef == 0).toBeFalsy();
+    expect(undef >= 0).toBeFalsy();
+    expect(undef <= 0).toBeFalsy();
+
     expect(() => {
-      defProxy.toString;
+      undef.toString;
     }).toThrow();
+    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(1);
+    setVtagIdCollectBasket(undefined);
   });
 
-  test('null wrapper', () => {
-    const nil = new Null();
-    expect((nil as any) + 1).toBe(1);
-    expect((nil as any) - 1).toBe(-1);
-    expect((nil as any) | 1).toBe(1);
-    expect((nil as any) & 1).toBe(0);
-    expect((nil as any) > 0).toBeFalsy();
-    expect((nil as any) < 0).toBeFalsy();
-    expect((nil as any) == 0).toBeFalsy();
-    expect((nil as any) >= 0).toBeTruthy();
-    expect((nil as any) <= 0).toBeTruthy();
-
-    let defProxy = createVirtualResponse(nil);
+  test('null vtag', () => {
+    const nil = createVirtualResponse(null);
     globalVirtualResponseLock.v = 2;
+    setVtagIdCollectBasket({});
+    expect(nil + 1).toBe(1);
+    expect(nil - 1).toBe(-1);
+    expect(nil | 1).toBe(1);
+    expect(nil & 1).toBe(0);
+    expect(nil > 0).toBeFalsy();
+    expect(nil < 0).toBeFalsy();
+    expect(nil == 0).toBeFalsy();
+    expect(nil >= 0).toBeTruthy();
+    expect(nil <= 0).toBeTruthy();
+
     expect(() => {
-      defProxy.toString;
+      nil.toString;
     }).toThrow();
+    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(1);
+    setVtagIdCollectBasket(undefined);
   });
 
   test('create virtual response with Undefined instance', () => {
-    const virtualResponse = createVirtualResponse(new Undefined());
-
+    const virtualResponse = createVirtualResponse(undefined);
     const a = virtualResponse.a;
     const b1 = virtualResponse.b.b1;
     const c0 = virtualResponse.c[0];
     globalVirtualResponseLock.v = 2;
-    expect(a).toBeInstanceOf(Undefined);
-    expect(b1).toBeInstanceOf(Undefined);
-    expect(c0).toBeInstanceOf(Undefined);
-    expect(virtualResponse).toBeInstanceOf(Undefined);
+    expect(a).toBeInstanceOf(VTag);
+    expect(a[symbolOriginalValue]).toBeUndefined();
+    expect(b1[symbolOriginalValue]).toBeUndefined();
+    expect(c0[symbolOriginalValue]).toBeUndefined();
+    expect(virtualResponse[symbolOriginalValue]).toBeUndefined();
     expect(() => {
       virtualResponse.a;
     }).toThrow();
@@ -80,9 +80,10 @@ describe('virtual response', () => {
     const b1 = virtualResponse.b.b1;
     const c0 = virtualResponse.c[0];
     globalVirtualResponseLock.v = 2;
-    expect(a).toBeInstanceOf(Undefined);
-    expect(b1).toBeInstanceOf(Undefined);
-    expect(c0).toBeInstanceOf(Undefined);
+    expect(a[symbolOriginalValue]).toBeUndefined();
+    expect(b1[symbolOriginalValue]).toBeUndefined();
+    expect(b1).toBeInstanceOf(VTag);
+    expect(c0[symbolOriginalValue]).toBeUndefined();
     expect(virtualResponse.a).toBeUndefined();
     expect(() => {
       virtualResponse.a.toString;
@@ -104,26 +105,36 @@ describe('virtual response', () => {
       b: 'bb',
       c: [4, 5, 6]
     });
-
     const a = virtualResponse.a;
     const b = virtualResponse.b;
     const c0 = virtualResponse.c[0];
+    const c = virtualResponse.c;
+
+    globalVirtualResponseLock.v = 1;
+    expect(virtualResponse.a[symbolOriginalValue]).toBe(1);
+    expect(virtualResponse.a[symbolVTagId]).toBe(a[symbolVTagId]);
+    expect(virtualResponse.d).toBeUndefined();
+
     globalVirtualResponseLock.v = 2;
     setVtagIdCollectBasket({});
-    expect(a).toBeInstanceOf(Number);
+    expect(a[symbolOriginalValue]).toBe(1);
     expect(a.toFixed(1)).toBe('1.0');
     expect(a.valueOf()).toBe(1);
     expect(a.toString()).toBe('1');
     expect(a + 100).toBe(101);
 
-    expect(b).toBeInstanceOf(String);
+    expect(b[symbolOriginalValue]).toBe('bb');
     expect(b.valueOf()).toBe('bb');
     // b具有和string一样的特性
     expect(b.replace('bb', 'ccc')).toBe('ccc');
     expect(b + 111).toBe('bb111');
 
-    expect(c0).toBeInstanceOf(Number);
+    expect(c[symbolOriginalValue]).toStrictEqual([4, 5, 6]);
+    expect(c.join()).toBe('4,5,6');
+
+    expect(c0[symbolOriginalValue]).toBe(4);
     expect(c0.valueOf()).toBe(4);
+
     expect(virtualResponse.a.valueOf()).toBe(1);
     expect(virtualResponse.b.valueOf()).toBe('bb');
     expect(virtualResponse.c0).toBeUndefined(); // 锁定后，不能再任意访问虚拟响应了
@@ -137,7 +148,7 @@ describe('virtual response', () => {
     expect(() => {
       virtualResponse.d.toString;
     }).toThrow();
-    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(4);
+    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(5);
     setVtagIdCollectBasket(undefined);
   });
 
@@ -147,8 +158,8 @@ describe('virtual response', () => {
     let b = virtualResponse.b;
     globalVirtualResponseLock.v = 2;
     setVtagIdCollectBasket({});
-    expect(a).toBeInstanceOf(Undefined);
-    expect(b).toBeInstanceOf(Undefined);
+    expect(a[symbolOriginalValue]).toBeUndefined();
+    expect(b[symbolOriginalValue]).toBeUndefined();
     expect(virtualResponse.a).toBeUndefined();
     expect(virtualResponse.c).toBeUndefined();
 
@@ -157,38 +168,12 @@ describe('virtual response', () => {
     a = virtualResponse.a;
     b = virtualResponse.b;
     globalVirtualResponseLock.v = 2;
-    setVtagIdCollectBasket({});
-    expect(a).toBeInstanceOf(Undefined);
-    expect(b).toBeInstanceOf(Undefined);
+    expect(a[symbolOriginalValue]).toBeUndefined();
+    expect(b[symbolOriginalValue]).toBeUndefined();
     expect(virtualResponse.a).toBeUndefined();
     expect(virtualResponse.c).toBeUndefined();
-  });
 
-  test('should return primitive type when call valueOf that custom defined', () => {
-    const virtualResponse = createVirtualResponse({
-      a: 1,
-      b: 'bb',
-      c: [4, 5, 6],
-      d: null
-    });
-
-    const a = virtualResponse.a;
-    const b = virtualResponse.b;
-    const c = virtualResponse.c;
-    const d = virtualResponse.d;
-    const f = virtualResponse.e.f;
-    globalVirtualResponseLock.v = 2;
-    expect(vtagDhy(a)).toBe(1);
-    expect(typeof vtagDhy(a)).toBe('number');
-    expect(vtagDhy(b)).toBe('bb');
-    expect(vtagDhy(c)).toEqual([4, 5, 6]);
-    expect(typeof vtagDhy(b)).toBe('string');
-    expect(vtagDhy(d)).toBeNull();
-    expect(vtagDhy(f)).toBeUndefined();
-
-    // vtagStringify测试
-    expect(vtagStringify(a)).toMatch(regVirtualTag);
-    expect(vtagStringify(b)).toMatch(regVirtualTag);
-    expect(vtagStringify(virtualResponse.a)).toBe(1);
+    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(2);
+    setVtagIdCollectBasket(undefined);
   });
 });

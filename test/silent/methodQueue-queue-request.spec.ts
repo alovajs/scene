@@ -94,7 +94,6 @@ describe('silent method request in queue with queue behavior', () => {
         reason => resolve(reason),
         undefined,
         undefined,
-        undefined,
         [
           () => {
             retryMockFn();

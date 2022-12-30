@@ -38,12 +38,6 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
   public virtualResponse?: any;
 
   /**
-   * method实例生成函数，由虚拟标签内的Symbol.toPrimitive函数保存至此
-   * 当虚拟响应数据被替换为实际响应数据时，将调用此函数重新创建method，达到替换虚拟标签的目的
-   */
-  public methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>;
-
-  /**
    * methodHandler的调用参数
    * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
    */
@@ -74,24 +68,23 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     fallbackHandlers?: FallbackHandler<S, E, R, T, RC, RE, RH>[],
     resolveHandler?: PromiseExecuteParameter['0'],
     rejectHandler?: PromiseExecuteParameter['1'],
-    methodHandler?: MethodHandler<S, E, R, T, RC, RE, RH>,
     handlerArgs?: any[],
     vTag?: string[],
     retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[]
   ) {
-    this.entity = entity;
-    this.behavior = behavior;
-    this.id = id;
-    this.retryError = retryError;
-    this.maxRetryTimes = maxRetryTimes;
-    this.backoff = backoff;
-    this.fallbackHandlers = fallbackHandlers;
-    this.resolveHandler = resolveHandler;
-    this.rejectHandler = rejectHandler;
-    this.methodHandler = methodHandler;
-    this.handlerArgs = handlerArgs;
-    this.vTags = vTag;
-    this.retryHandlers = retryHandlers;
+    const thisObj = this;
+    thisObj.entity = entity;
+    thisObj.behavior = behavior;
+    thisObj.id = id;
+    thisObj.retryError = retryError;
+    thisObj.maxRetryTimes = maxRetryTimes;
+    thisObj.backoff = backoff;
+    thisObj.fallbackHandlers = fallbackHandlers;
+    thisObj.resolveHandler = resolveHandler;
+    thisObj.rejectHandler = rejectHandler;
+    thisObj.handlerArgs = handlerArgs;
+    thisObj.vTags = vTag;
+    thisObj.retryHandlers = retryHandlers;
   }
 
   /**

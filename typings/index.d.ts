@@ -147,12 +147,6 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   readonly rejectHandler?: Parameters<ConstructorParameters<typeof Promise<any>>['0']>['1'];
 
   /**
-   * method实例生成函数，由虚拟标签内的Symbol.toPrimitive函数保存至此
-   * 当虚拟响应数据被替换为实际响应数据时，将调用此函数重新创建method，达到替换虚拟标签的目的
-   */
-  readonly methodHandler?: (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
-
-  /**
    * methodHandler的调用参数
    * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
    */

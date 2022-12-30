@@ -20,6 +20,7 @@ module.exports = {
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
     'no-empty': 'off',
-    'prefer-const': 'off'
+    'prefer-const': 'off',
+    '@typescript-eslint/no-this-alias': 'off'
   }
 };

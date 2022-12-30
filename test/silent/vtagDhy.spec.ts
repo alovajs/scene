@@ -1,5 +1,5 @@
-import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
-import vtagDhy from '../../src/hooks/silent/virtualTag/vtagDhy';
+import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import vtagDhy from '../../src/hooks/silent/virtualResponse/vtagDhy';
 
 describe('vtagDhy', () => {
   test('primitive value', () => {

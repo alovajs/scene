@@ -1,6 +1,6 @@
 import { Method } from 'alova';
 import { SilentMethod, SQHookBehavior } from '../../../typings';
-import { defineProperties } from '../../helper';
+import { defineProperty } from '../../helper';
 import { symbolToStringTag } from '../../helper/variables';
 
 /**
@@ -71,9 +71,6 @@ export default <S, E, R, T, RC, RE, RH>(
     'ScopedSQErrorEvent',
     'ScopedSQRetryEvent'
   ][eventType];
-  typeName &&
-    defineProperties(sqEvent, {
-      [symbolToStringTag]: typeName
-    });
+  typeName && defineProperty(sqEvent, symbolToStringTag, typeName);
   return sqEvent;
 };

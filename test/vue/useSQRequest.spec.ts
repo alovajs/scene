@@ -6,11 +6,11 @@ import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { silentQueueMap } from '../../src/hooks/silent/silentQueue';
 import loadSilentQueueMapFromStorage from '../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
 import useSQRequest from '../../src/hooks/silent/useSQRequest';
-import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
-import updateStateEffect from '../../src/hooks/silent/virtualTag/updateStateEffect';
-import { symbolIsProxy, symbolVirtualTag } from '../../src/hooks/silent/virtualTag/variables';
-import vtagDhy from '../../src/hooks/silent/virtualTag/vtagDhy';
-import vtagStringify from '../../src/hooks/silent/virtualTag/vtagStringify';
+import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import updateStateEffect from '../../src/hooks/silent/virtualResponse/updateStateEffect';
+import { symbolIsProxy, symbolVTagId } from '../../src/hooks/silent/virtualResponse/variables';
+import vtagDhy from '../../src/hooks/silent/virtualResponse/vtagDhy';
+import vtagStringify from '../../src/hooks/silent/virtualResponse/vtagStringify';
 import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '../../typings';
 import { mockRequestAdapter } from '../mockData';
 import { untilCbCalled } from '../utils';
@@ -435,7 +435,7 @@ describe('useSQRequest', () => {
       })
     });
     onPostSuccess(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
-      expect(postRes.value[symbolVirtualTag]).toBeTruthy(); // 此时还是虚拟响应数据
+      expect(postRes.value[symbolVTagId]).toBeTruthy(); // 此时还是虚拟响应数据
 
       // 调用updateStateEffect后将首先立即更新虚拟数据到listData中
       // 等到请求响应后再次更新实际数据到listData中
@@ -455,7 +455,6 @@ describe('useSQRequest', () => {
 
     await untilCbCalled(onSilentSubmitSuccess);
     // 已替换为实际数据
-    expect(postRes.value).toStrictEqual({ id: 1 });
     expect(postRes.value).toStrictEqual({ id: 1 });
 
     // listData也被替换为实际数据
@@ -479,54 +478,82 @@ describe('useSQRequest', () => {
     ]);
   });
 
-  test.skip('should replace virtual tag to real value that method instance after requesting method instance', async () => {
+  test('should replace virtual tag to real value that method instances after requesting method instance', async () => {
     // 提交数据并立即更新
-    const poster = () => alovaInst.Post<any>('/detail');
-    const { onSuccess: onPostSuccess } = useSQRequest(poster, {
-      behavior: 'silent',
-      silentDefaultResponse: () => ({
-        id: '--',
-        status: true
-      })
-    });
+    const poster = (data: Record<string, any>) => alovaInst.Post<any>('/detail2', data);
+    const { onSuccess: onPostSuccess } = useSQRequest(
+      () =>
+        poster({
+          text: 'aaa',
+          status: 1
+        }),
+      {
+        behavior: 'silent'
+      }
+    );
 
     let vtagId: number | void;
     let vtagStatus: boolean | void;
+    let vtagText: string | void;
     onPostSuccess(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
       vtagId = data.id;
       vtagStatus = data.status;
+      vtagText = data.text;
     });
 
     await untilCbCalled(onPostSuccess);
+    const { onSuccess: onPostSuccess2 } = useSQRequest(
+      () =>
+        poster({
+          text: 'bbb',
+          status: 2
+        }),
+      {
+        behavior: 'silent'
+      }
+    );
+
+    let vtagId2: number | void;
+    let vtagStatus2: boolean | void;
+    let vtagText2: string | void;
+    onPostSuccess2(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
+      vtagId2 = data.id;
+      vtagStatus2 = data.status;
+      vtagText2 = data.text;
+    });
+    await untilCbCalled(onPostSuccess2);
+
     const deleter = () =>
-      alovaInst.Delete<any>(`/detail/${vtagStringify(vtagId)}`, {
-        status: vtagStatus,
-        statusCode: vtagStatus == true ? 1 : 0
+      alovaInst.Delete<any>(`/detail/${vtagStringify(vtagId) + vtagStringify(vtagId2)}`, {
+        text1: vtagText,
+        text2: vtagText2,
+        status: [vtagStatus, vtagStatus2]
       });
-    useSQRequest(deleter, {
-      behavior: 'silent'
+    const { onSuccess: onDeleteSuccess } = useSQRequest(deleter, {
+      behavior: 'queue'
     });
 
     // 使用全局事件来检查上面的请求数据
     onSilentSubmitSuccess(event => {
       if (event.method.type === 'DELETE' && event.behavior === 'queue') {
-        expect(event.method.url).toBe('/detail/1');
-        expect((event.method.requestBody as any).status).toBeTruthy();
-        expect((event.method.requestBody as any).statusCode).toBe(1);
+        expect(event.method.url).toBe('/detail/1010');
+        expect(event.method.requestBody).toStrictEqual({
+          text1: 'aaa',
+          text2: 'bbb',
+          status: [1, 2]
+        });
       }
     });
 
-    const { onSuccess: onDeleteSuccess } = useSQRequest(deleter, {
-      behavior: 'queue'
-    });
     const resRaw = await untilCbCalled(onDeleteSuccess);
     expect(resRaw.data).toStrictEqual({
       params: {
-        id: 1
+        id: '1010'
       },
       data: {
-        status: true,
-        statusCode: 1
+        text1: 'aaa',
+        text2: 'bbb',
+        status: [1, 2]
       }
     });
   });

@@ -12,7 +12,7 @@ import {
 } from '../../src/hooks/silent/silentFactory';
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { pushNewSilentMethod2Queue } from '../../src/hooks/silent/silentQueue';
-import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
+import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import { GlobalSQErrorEvent, GlobalSQSuccessEvent } from '../../typings';
 import { mockRequestAdapter } from '../mockData';
 
@@ -47,7 +47,6 @@ describe('silent method request in queue with silent behavior', () => {
           }
         ],
         value => resolve(value),
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -138,7 +137,6 @@ describe('silent method request in queue with silent behavior', () => {
         undefined,
         undefined,
         undefined,
-        undefined,
         [
           () => {
             retryMockFn();
@@ -157,11 +155,11 @@ describe('silent method request in queue with silent behavior', () => {
     });
 
     const completeMockFn = jest.fn();
-    onSilentSubmitComplete(ev => {
+    onSilentSubmitComplete(() => {
       completeMockFn();
     });
     const successMockFn = jest.fn();
-    onSilentSubmitSuccess(event => {
+    onSilentSubmitSuccess(() => {
       successMockFn();
     });
 
@@ -208,7 +206,6 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -297,13 +294,7 @@ describe('silent method request in queue with silent behavior', () => {
             fallbackMockFn();
             resolve();
           }
-        ],
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
+        ]
       );
       silentMethodInstance.virtualResponse = virtualResponse;
       globalVirtualResponseLock.v = 2;
@@ -327,7 +318,7 @@ describe('silent method request in queue with silent behavior', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
-      responsed: data => {
+      responsed: () => {
         throw new Error('custom error');
       }
     });
@@ -355,7 +346,6 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -413,7 +403,6 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -478,7 +467,6 @@ describe('silent method request in queue with silent behavior', () => {
         undefined,
         undefined,
         undefined,
-        undefined,
         [
           event => {
             retryMockFn();
@@ -528,7 +516,6 @@ describe('silent method request in queue with silent behavior', () => {
         undefined,
         undefined,
         undefined,
-        undefined,
         [
           event => {
             retryMockFn();
@@ -571,7 +558,6 @@ describe('silent method request in queue with silent behavior', () => {
             resolve();
           }
         ],
-        undefined,
         undefined,
         undefined,
         undefined,

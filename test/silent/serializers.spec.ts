@@ -6,10 +6,9 @@ import { mergeSerializer, serializers } from '../../src/hooks/silent/serializer'
 import { SerializedSilentMethod, SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import deserializeSilentMethod from '../../src/hooks/silent/storage/deserializeSilentMethod';
 import serializeSilentMethod from '../../src/hooks/silent/storage/serializeSilentMethod';
-import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
-import Undefined from '../../src/hooks/silent/virtualTag/Undefined';
-import { symbolVirtualTag } from '../../src/hooks/silent/virtualTag/variables';
-import vtagDhy from '../../src/hooks/silent/virtualTag/vtagDhy';
+import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import { symbolVTagId } from '../../src/hooks/silent/virtualResponse/variables';
+import vtagDhy from '../../src/hooks/silent/virtualResponse/vtagDhy';
 
 // 虚拟响应测试
 describe('serializers', () => {
@@ -71,12 +70,12 @@ describe('serializers', () => {
       localCache: {
         expire: 500000
       },
-      params: { id: { __$k: virtualResponse.id[symbolVirtualTag], __$v: 1 }, createDate: ['date', 1664553600000] }
+      params: { id: { __$k: virtualResponse.id[symbolVTagId], __$v: 1 }, createDate: ['date', 1664553600000] }
     });
     expect(serializedObj.entity.requestBody).toEqual({
-      text: { __$k: virtualResponse.text[symbolVirtualTag], __$v: ['custom', '2a'] },
-      time: { __$k: virtualResponse.time[symbolVirtualTag], __$v: ['date', 1664553600000] },
-      others: { __$k: virtualResponse.e[0][symbolVirtualTag] }
+      text: { __$k: virtualResponse.text[symbolVTagId], __$v: ['custom', '2a'] },
+      time: { __$k: virtualResponse.time[symbolVTagId], __$v: ['date', 1664553600000] },
+      others: { __$k: virtualResponse.e[0][symbolVTagId] }
     });
     expect(serializedObj.entity.url).toBe(methodInstance.url);
     expect(serializedObj.entity.context).toBeUndefined();
@@ -89,12 +88,12 @@ describe('serializers', () => {
       multiplier: 1.5
     });
     expect(serializedObj.virtualResponse).toEqual({
-      __$k: virtualResponse[symbolVirtualTag],
+      __$k: virtualResponse[symbolVTagId],
       __$v: {},
-      id: { __$k: virtualResponse.id[symbolVirtualTag], __$v: 1 },
-      text: { __$k: virtualResponse.text[symbolVirtualTag], __$v: ['custom', '2a'] },
-      time: { __$k: virtualResponse.time[symbolVirtualTag], __$v: ['date', 1664553600000] },
-      e: { '0': { __$k: virtualResponse.e[0][symbolVirtualTag] }, __$k: virtualResponse.e[symbolVirtualTag] }
+      id: { __$k: virtualResponse.id[symbolVTagId], __$v: 1 },
+      text: { __$k: virtualResponse.text[symbolVTagId], __$v: ['custom', '2a'] },
+      time: { __$k: virtualResponse.time[symbolVTagId], __$v: ['date', 1664553600000] },
+      e: { '0': { __$k: virtualResponse.e[0][symbolVTagId] }, __$k: virtualResponse.e[symbolVTagId] }
     });
     globalVirtualResponseLock.v = 2;
   });
@@ -148,7 +147,6 @@ describe('serializers', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       [virtualResponse.extra.other2]
     );
     silentMethodInstance.cache = true;
@@ -165,10 +163,10 @@ describe('serializers', () => {
     expect(deserizlizedSilentMethodInstance.entity.baseURL).toBe(methodInstance.baseURL);
 
     const params = deserizlizedSilentMethodInstance.entity.config.params || {};
-    expect(params.id[symbolVirtualTag]).toBe(virtualResponse.id[symbolVirtualTag]);
+    expect(params.id[symbolVTagId]).toBe(virtualResponse.id[symbolVTagId]);
     expect(vtagDhy(params.id)).toBe(vtagDhy(virtualResponse.id));
     expect(params.content).toBe('I am a content');
-    expect(params.other[symbolVirtualTag]).toBe(virtualResponse.extra.other1[symbolVirtualTag]);
+    expect(params.other[symbolVTagId]).toBe(virtualResponse.extra.other1[symbolVTagId]);
     expect(vtagDhy(params.other)).toBe(vtagDhy(virtualResponse.extra.other1));
 
     expect((deserizlizedSilentMethodInstance.retryError as RegExp).source).toBe('.*');
@@ -178,15 +176,14 @@ describe('serializers', () => {
       multiplier: 1.5
     });
 
-    expect(deserizlizedSilentMethodInstance.handlerArgs?.[0]).toBeInstanceOf(Undefined);
-    expect(deserizlizedSilentMethodInstance.handlerArgs?.[0][symbolVirtualTag]).toBe(
-      virtualResponse.extra.other2[symbolVirtualTag]
+    expect(deserizlizedSilentMethodInstance.handlerArgs?.[0][symbolVTagId]).toBe(
+      virtualResponse.extra.other2[symbolVTagId]
     );
-    expect(deserizlizedSilentMethodInstance.virtualResponse?.text[symbolVirtualTag]).toBe(
-      virtualResponse.text[symbolVirtualTag]
+    expect(deserizlizedSilentMethodInstance.virtualResponse?.text[symbolVTagId]).toBe(
+      virtualResponse.text[symbolVTagId]
     );
-    expect(deserizlizedSilentMethodInstance.virtualResponse?.time[symbolVirtualTag]).toBe(
-      virtualResponse.time[symbolVirtualTag]
+    expect(deserizlizedSilentMethodInstance.virtualResponse?.time[symbolVTagId]).toBe(
+      virtualResponse.time[symbolVTagId]
     );
     globalVirtualResponseLock.v = 2;
   });

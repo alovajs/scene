@@ -9,9 +9,9 @@ import {
 } from '../../src/hooks/silent/silentFactory';
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { pushNewSilentMethod2Queue } from '../../src/hooks/silent/silentQueue';
-import createVirtualResponse from '../../src/hooks/silent/virtualTag/createVirtualResponse';
-import { replaceObjectVTag } from '../../src/hooks/silent/virtualTag/helper';
-import vtagStringify from '../../src/hooks/silent/virtualTag/vtagStringify';
+import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import { deepReplaceVTag } from '../../src/hooks/silent/virtualResponse/helper';
+import vtagStringify from '../../src/hooks/silent/virtualResponse/vtagStringify';
 import { GlobalSQSuccessEvent } from '../../typings';
 import { mockRequestAdapter } from '../mockData';
 import { untilCbCalled } from '../utils';
@@ -20,6 +20,10 @@ beforeEach(() => (globalVirtualResponseLock.v = 0));
 describe('boot silent queue', () => {
   test('replace vtag to real data', () => {
     const virtualResponse = createVirtualResponse({ id: 'loading...' });
+    const vid = virtualResponse.id;
+    const text = virtualResponse.text;
+    globalVirtualResponseLock.v = 2;
+
     const methodInstance = new Method(
       'DELETE',
       createAlova({
@@ -27,20 +31,19 @@ describe('boot silent queue', () => {
         statesHook: VueHook,
         requestAdapter: mockRequestAdapter
       }),
-      `/detail/${vtagStringify(virtualResponse.id)}`,
+      `/detail/${vtagStringify(vid)}`,
       {
         transformData: (data: any) => data
       },
-      { whole: virtualResponse, text: virtualResponse.text }
+      { whole: virtualResponse, text }
     );
-
     const virtualTagReplacedResponseMap = {
       [vtagStringify(virtualResponse)]: { id: 1 },
-      [vtagStringify(virtualResponse.id)]: 1
+      [vtagStringify(vid)]: 1,
+      [vtagStringify(text)]: undefined
     };
-    globalVirtualResponseLock.v = 2;
-    const { r: replace } = replaceObjectVTag(methodInstance, virtualTagReplacedResponseMap);
-    expect(replace).toBeTruthy();
+
+    deepReplaceVTag(methodInstance, virtualTagReplacedResponseMap);
     expect(methodInstance.url).toBe('/detail/1');
     expect(methodInstance.requestBody).toEqual({
       whole: { id: 1 },
@@ -61,8 +64,7 @@ describe('boot silent queue', () => {
       },
       { whole: { id: 123 }, text: '' }
     );
-    const { r: replace2 } = replaceObjectVTag(methodInstance2, virtualTagReplacedResponseMap);
-    expect(replace2).toBeFalsy();
+    deepReplaceVTag(methodInstance2, virtualTagReplacedResponseMap);
     expect(methodInstance2.url).toBe('/detail');
     expect(methodInstance2.requestBody).toEqual({
       whole: { id: 123 },
@@ -86,6 +88,8 @@ describe('boot silent queue', () => {
     const completeMockFn = jest.fn();
     const pms = new Promise(resolve => {
       const virtualResponse = createVirtualResponse({ id: 'loading...' });
+      const vid = virtualResponse.id;
+      globalVirtualResponseLock.v = 2;
 
       // 模拟数据创建
       const methodInstance = new Method(
@@ -123,11 +127,11 @@ describe('boot silent queue', () => {
       const methodInstance2 = new Method(
         'DELETE',
         alovaInst,
-        `/detail/${vtagStringify(virtualResponse.id)}`,
+        `/detail/${vtagStringify(vid)}`,
         {
           transformData: (data: any) => data
         },
-        { id: virtualResponse.id }
+        { id: vid }
       );
       const silentMethodInstance2 = new SilentMethod(
         methodInstance2,
@@ -156,15 +160,14 @@ describe('boot silent queue', () => {
         },
         undefined,
         undefined,
-        [virtualResponse.id]
+        [vid]
       );
       // 锁定前构造，否则virtualResponse.id将拿到原始值
       const vtagResponsePayload = {
         [vtagStringify(virtualResponse)]: { id: 1 },
-        [vtagStringify(virtualResponse.id)]: 1
+        [vtagStringify(vid)]: 1
       };
 
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false);
       pushNewSilentMethod2Queue(silentMethodInstance2, false);
       onSilentSubmitBoot(() => {
@@ -260,11 +263,13 @@ describe('boot silent queue', () => {
         multiplier: 1.5
       });
       silentMethodInstance.virtualResponse = virtualResponse;
-
       const vid = virtualResponse.id;
+      const other = virtualResponse.other[0];
+      globalVirtualResponseLock.v = 2;
+
       const methodInstance2 = new Method('DELETE', alovaInst, `/detail/${vid}`, undefined, {
         id: vid,
-        other: virtualResponse.other[0]
+        other
       });
       const silentMethodInstance2 = new SilentMethod(
         methodInstance2,
@@ -292,9 +297,8 @@ describe('boot silent queue', () => {
         undefined,
         undefined,
         undefined,
-        [virtualResponse.id]
+        [vid]
       );
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false);
       pushNewSilentMethod2Queue(silentMethodInstance2, false);
 
@@ -353,74 +357,6 @@ describe('boot silent queue', () => {
         undefined,
         undefined,
         [virtualResponse]
-      );
-      globalVirtualResponseLock.v = 2;
-      pushNewSilentMethod2Queue(silentMethodInstance, false);
-      pushNewSilentMethod2Queue(silentMethodInstance2, false);
-
-      // 启动silentFactory
-      bootSilentFactory({
-        alova: alovaInst,
-        delay: 0
-      });
-    });
-    await pms;
-    await untilCbCalled(setTimeout, 200);
-  });
-  test('it will regenerate a method instance when methodHandler exists', async () => {
-    const alovaInst = createAlova({
-      baseURL: 'http://xxx',
-      statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
-    });
-    const pms = new Promise(resolve => {
-      const virtualResponse = createVirtualResponse({
-        id: ''
-      });
-      const methodInstance = new Method('POST', alovaInst, '/detail');
-      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', /.*/, 2, {
-        delay: 2000,
-        multiplier: 1.5
-      });
-      silentMethodInstance.virtualResponse = virtualResponse;
-
-      const methodHandler = (id: string, text: string, textWithId: string) =>
-        new Method('DELETE', alovaInst, `/detail/${vtagStringify(id)}`, undefined, {
-          needIf: id == '' ? false : true,
-          text,
-          textWithId
-        });
-      const silentMethodInstance2 = new SilentMethod(
-        methodHandler(virtualResponse.id, 'text', `text-${vtagStringify(virtualResponse.id)}`),
-        'silent',
-        'abcdef',
-        /.*/,
-        2,
-        {
-          delay: 2000,
-          multiplier: 1.5
-        },
-        undefined,
-        value => {
-          resolve(0);
-          expect(value).toStrictEqual({
-            params: {
-              id: '1'
-            },
-            data: {
-              needIf: true,
-              text: 'text',
-              textWithId: 'text-1'
-            }
-          });
-        },
-        undefined,
-
-        // 传了methodHandler时，将会调用此函数重新生成method实例
-        methodHandler,
-        // 上一个请求完成后，将会把handlerArgs中的虚拟标签或藏在字符串中的虚拟标签id替换为实际值
-        [virtualResponse.id, 'text', `text-${vtagStringify(virtualResponse.id)}`],
-        [virtualResponse.id]
       );
       globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false);

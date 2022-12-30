@@ -1,12 +1,10 @@
 import { Method } from 'alova';
 import { forEach, includes, isArray, isObject, JSONParse, len, newInstance, objectKeys } from '../../../helper';
-import { nullValue, ObjectCls, trueValue, undefinedValue } from '../../../helper/variables';
+import { trueValue } from '../../../helper/variables';
 import { dependentAlovaInstance } from '../globalVariables';
 import { serializers } from '../serializer';
 import { SerializedSilentMethod, SilentMethod } from '../SilentMethod';
-import createVirtualResponse from '../virtualTag/createVirtualResponse';
-import Null from '../virtualTag/Null';
-import Undefined from '../virtualTag/Undefined';
+import createVirtualResponse from '../virtualResponse/createVirtualResponse';
 import { vtagKey, vtagValueKey } from './helper';
 
 /**
@@ -24,16 +22,7 @@ export default (serializedSilentMethodString: string) => {
     // 将虚拟标签格式转换回虚拟标签实例
     if (isObject(value) && value?.[vtagKey]) {
       const virtualTagId = value[vtagKey];
-      let virtualTagValue = value[vtagValueKey];
-      virtualTagValue = createVirtualResponse(
-        virtualTagValue === undefinedValue
-          ? newInstance(Undefined, virtualTagId)
-          : virtualTagValue === nullValue
-          ? newInstance(Null, virtualTagId)
-          : newInstance(ObjectCls, virtualTagValue),
-        virtualTagId
-      );
-
+      const virtualTagValue = createVirtualResponse(value[vtagValueKey], virtualTagId);
       forEach(objectKeys(value), key => {
         if (!includes([vtagKey, vtagValueKey], key)) {
           virtualTagValue[key] = value[key];
@@ -55,9 +44,7 @@ export default (serializedSilentMethodString: string) => {
     resolveHandler,
     rejectHandler,
     virtualResponse,
-    methodHandler,
     handlerArgs,
-    vTags,
     targetRefMethod,
     updateStates
   } = payload;
@@ -78,9 +65,7 @@ export default (serializedSilentMethodString: string) => {
     fallbackHandlers,
     resolveHandler,
     rejectHandler,
-    methodHandler,
-    handlerArgs,
-    vTags
+    handlerArgs
   );
   silentMethodInstance.cache = trueValue;
   silentMethodInstance.virtualResponse = virtualResponse;

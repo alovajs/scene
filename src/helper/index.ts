@@ -118,10 +118,8 @@ export const valueObject = <T>(value: T, writable = false) => ({
  * @param o 对象
  * @param attrs 值对象
  */
-export const defineProperties = (o: object, attrs: Record<string, any>, writable = falseValue) => {
-  forEach([...objectKeys(attrs), ...ObjectCls.getOwnPropertySymbols(attrs)], key => {
-    ObjectCls.defineProperty(o, key, valueObject(attrs[key as keyof typeof attrs], writable));
-  });
+export const defineProperty = (o: object, key: string | symbol, value: any, writable = falseValue) => {
+  ObjectCls.defineProperty(o, key, valueObject(value, writable));
 };
 
 export type GeneralFn = (...args: any[]) => any;
