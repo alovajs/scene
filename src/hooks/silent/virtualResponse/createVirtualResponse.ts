@@ -3,7 +3,7 @@ import { nullValue, symbolToPrimitive, symbolToStringTag, trueValue, undefinedVa
 import { globalVirtualResponseLock } from '../globalVariables';
 import { vDataCollectUnified } from './helper';
 import { symbolIsProxy, symbolOriginalValue, symbolVDataId } from './variables';
-import VData, { VDataInterface } from './vData';
+import VData, { VDataInterface } from './VData';
 
 /**
  * 创建虚拟响应数据
