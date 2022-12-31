@@ -1,4 +1,4 @@
-export const symbolVTagId = Symbol('vtagId'),
+export const symbolVDataId = Symbol('vdid'),
   symbolIsProxy = Symbol('isProxy'),
   symbolOriginalValue = Symbol('original'),
-  regVirtualTag = /\[vtag:([0-9a-z]+)\]/g;
+  regVDataId = /\[vd:([0-9a-z]+)\]/g;

@@ -1,6 +1,6 @@
-import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
+import { AlovaMethodHandler, CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
 import { ComputedRef, Ref, WatchSource } from 'vue';
-import { IsUnknown, PaginationConfig } from '.';
+import { IsUnknown, PaginationConfig, SQHookReturnType, SQRequestHookConfig } from '.';
 
 interface UsePaginationReturnType<LD, R> {
   loading: Ref<boolean>;
@@ -79,3 +79,12 @@ export declare function usePagination<S extends Ref, E extends Ref, R, T, RC, RE
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
   config?: PaginationConfig<R, LD, WS>
 ): UsePaginationReturnType<LD, R>;
+
+/**
+ * 带silentQueue的request hook
+ * silentQueue是实现静默提交的核心部件，其中将用于存储silentMethod实例，它们将按顺序串行发送提交
+ */
+export declare function useSQRequest<S, E, R, T, RC, RE, RH>(
+  handler: AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  config?: SQRequestHookConfig<S, E, R, T, RC, RE, RH>
+): SQHookReturnType<S, E, R, T, RC, RE, RH>;

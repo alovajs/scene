@@ -1,18 +1,18 @@
 import { includes, isFn, newInstance, uuid } from '../../../helper';
 import { nullValue, symbolToPrimitive, symbolToStringTag, trueValue, undefinedValue } from '../../../helper/variables';
 import { globalVirtualResponseLock } from '../globalVariables';
-import { vTagCollectUnified } from './helper';
-import { symbolIsProxy, symbolOriginalValue, symbolVTagId } from './variables';
-import VTag, { VTagInterface } from './VTag';
+import { vDataCollectUnified } from './helper';
+import { symbolIsProxy, symbolOriginalValue, symbolVDataId } from './variables';
+import VData, { VDataInterface } from './vData';
 
 /**
- * 创建虚拟标签
+ * 创建虚拟响应数据
  * @returns 虚拟响应数据代理实例
  */
-const createVirtualResponse = (defaults: any, vTagId = uuid()): any => {
-  const vtagInstance = newInstance(VTag, defaults, vTagId);
-  return newInstance(Proxy, vtagInstance, {
-    get(target: VTagInterface, key): any {
+const createVirtualResponse = (defaults: any, vDataId = uuid()): any => {
+  const vDataInstance = newInstance(VData, defaults, vDataId);
+  return newInstance(Proxy, vDataInstance, {
+    get(target: VDataInterface, key): any {
       const originalValue = target[symbolOriginalValue];
       // 判断是否为proxy实例
       if (key === symbolIsProxy) {
@@ -22,9 +22,9 @@ const createVirtualResponse = (defaults: any, vTagId = uuid()): any => {
       if (key === symbolOriginalValue) {
         return originalValue;
       }
-      // 获取虚拟标签id
+      // 获取虚拟数据id
       let subTargetValue = target[key];
-      if (symbolVTagId === key) {
+      if (symbolVDataId === key) {
         return subTargetValue;
       }
 
@@ -55,7 +55,7 @@ const createVirtualResponse = (defaults: any, vTagId = uuid()): any => {
         if (includes([undefinedValue, nullValue], originalValue)) {
           ret = symbolToPrimitive === key ? subTargetValue : originalValue[key];
         }
-        vTagCollectUnified(target);
+        vDataCollectUnified(target);
       } else if (globalVirtualResponseLock.v === 1) {
         ret = subTargetValue;
       } else if (globalVirtualResponseLock.v === 0) {

@@ -7,10 +7,10 @@ import { silentQueueMap } from '../../src/hooks/silent/silentQueue';
 import loadSilentQueueMapFromStorage from '../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
 import useSQRequest from '../../src/hooks/silent/useSQRequest';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import dehydrateVData from '../../src/hooks/silent/virtualResponse/dehydrateVData';
+import stringifyVData from '../../src/hooks/silent/virtualResponse/stringifyVData';
 import updateStateEffect from '../../src/hooks/silent/virtualResponse/updateStateEffect';
-import { symbolIsProxy, symbolVTagId } from '../../src/hooks/silent/virtualResponse/variables';
-import vtagDhy from '../../src/hooks/silent/virtualResponse/vtagDhy';
-import vtagStringify from '../../src/hooks/silent/virtualResponse/vtagStringify';
+import { symbolIsProxy, symbolVDataId } from '../../src/hooks/silent/virtualResponse/variables';
 import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '../../typings';
 import { mockRequestAdapter } from '../mockData';
 import { untilCbCalled } from '../utils';
@@ -294,19 +294,19 @@ describe('useSQRequest', () => {
     expect(event.sendArgs).toStrictEqual([1, 2, 3]);
   });
 
-  test('should be intercpeted when has virtual tag in method instance', async () => {
+  test('should be intercpeted when has virtual data in method instance', async () => {
     const virtualResponse = createVirtualResponse(undefined);
     globalVirtualResponseLock.v = 0;
-    const vtagId = virtualResponse.id;
+    const vDataId = virtualResponse.id;
     globalVirtualResponseLock.v = 2;
 
     const poster = (id: number) => alovaInst.Post<any>('/detail', { id });
-    const { data, onSuccess } = useSQRequest(() => poster(vtagId), {
+    const { data, onSuccess } = useSQRequest(() => poster(vDataId), {
       behavior: 'queue',
-      vtagCaptured(method) {
+      vDataCaptured(method) {
         expect(method.url).toBe('/detail');
         expect(method.type).toBe('POST');
-        expect((method.requestBody as any).id).toBe(vtagId);
+        expect((method.requestBody as any).id).toBe(vDataId);
         return {
           localData: 'abc'
         };
@@ -317,8 +317,8 @@ describe('useSQRequest', () => {
     expect(event.data).toStrictEqual({ localData: 'abc' });
     expect(data.value).toStrictEqual({ localData: 'abc' });
 
-    // 第二：测试未设置vtagCaptured的情况，将发送请求
-    const { data: data2, onSuccess: onSuccess2 } = useSQRequest(() => poster(vtagId), {
+    // 第二：测试未设置vDataCaptured的情况，将发送请求
+    const { data: data2, onSuccess: onSuccess2 } = useSQRequest(() => poster(vDataId), {
       behavior: 'queue'
     });
     event = await untilCbCalled(onSuccess2);
@@ -326,19 +326,19 @@ describe('useSQRequest', () => {
     expect(data2.value).toStrictEqual({ id: 1 });
   });
 
-  test('should be intercpeted when has vtag id string in method instance', async () => {
+  test('should be intercpeted when has virtual data id string in method instance', async () => {
     const virtualResponse = createVirtualResponse(undefined);
     globalVirtualResponseLock.v = 0;
-    const vtagId = virtualResponse.id;
+    const vDataId = virtualResponse.id;
     globalVirtualResponseLock.v = 2;
 
     const poster = (id: number) =>
       alovaInst.Post<any>('/detail', {
-        id: 'id is ' + vtagStringify(id)
+        id: 'id is ' + stringifyVData(id)
       });
-    const { data, onSuccess } = useSQRequest(() => poster(vtagId), {
-      behavior: 'static', // vtagCaptured在任何行为模式下都有效
-      vtagCaptured() {
+    const { data, onSuccess } = useSQRequest(() => poster(vDataId), {
+      behavior: 'static', // vDataCaptured在任何行为模式下都有效
+      vDataCaptured() {
         return {
           localData: 'abc'
         };
@@ -350,20 +350,20 @@ describe('useSQRequest', () => {
     expect(data.value).toStrictEqual({ localData: 'abc' });
   });
 
-  test('should be intercpeted when use vtag to calculate in method instance', async () => {
+  test('should be intercpeted when use virtual data to calculate in method instance', async () => {
     const virtualResponse = createVirtualResponse(undefined);
     globalVirtualResponseLock.v = 0;
-    const vtagId = virtualResponse.id;
-    const obj = { vtagId };
+    const vDataId = virtualResponse.id;
+    const obj = { vDataId };
     globalVirtualResponseLock.v = 2;
 
-    const poster = (o: { vtagId: any }) =>
+    const poster = (o: { vDataId: any }) =>
       alovaInst.Post<any>('/detail', {
-        status: vtagDhy(o.vtagId) ? 1 : 0
+        status: dehydrateVData(o.vDataId) ? 1 : 0
       });
     const { data, onSuccess } = useSQRequest(() => poster(obj), {
       behavior: 'queue',
-      vtagCaptured() {
+      vDataCaptured() {
         return {
           localData: 'abc'
         };
@@ -387,8 +387,8 @@ describe('useSQRequest', () => {
     expect(event.silentMethod).not.toBeUndefined();
     expect(event.sendArgs).toStrictEqual([]);
     expect(data.value[symbolIsProxy]).toBeTruthy();
-    expect(vtagDhy(event.data)).toBeUndefined();
-    expect(vtagDhy(data.value)).toBeUndefined();
+    expect(dehydrateVData(event.data)).toBeUndefined();
+    expect(dehydrateVData(data.value)).toBeUndefined();
 
     const { data: data2, onSuccess: onSuccess2 } = useSQRequest(poster, {
       behavior: 'silent',
@@ -402,8 +402,8 @@ describe('useSQRequest', () => {
     expect(data2.value.a).toBe(1);
     expect(data2.value.b).toBe(2);
 
-    expect(vtagDhy(event2.data)).toStrictEqual({ a: 1, b: 2 });
-    expect(vtagDhy(data2.value)).toStrictEqual({ a: 1, b: 2 });
+    expect(dehydrateVData(event2.data)).toStrictEqual({ a: 1, b: 2 });
+    expect(dehydrateVData(data2.value)).toStrictEqual({ a: 1, b: 2 });
   });
 
   test('should be delay update states when call `updateStateEffect` in onSuccess handler', async () => {
@@ -435,7 +435,7 @@ describe('useSQRequest', () => {
       })
     });
     onPostSuccess(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
-      expect(postRes.value[symbolVTagId]).toBeTruthy(); // 此时还是虚拟响应数据
+      expect(postRes.value[symbolVDataId]).toBeTruthy(); // 此时还是虚拟响应数据
 
       // 调用updateStateEffect后将首先立即更新虚拟数据到listData中
       // 等到请求响应后再次更新实际数据到listData中
@@ -448,8 +448,8 @@ describe('useSQRequest', () => {
       });
 
       const listDataLastItem = listData.value[listData.value.length - 1];
-      expect(vtagStringify(listDataLastItem?.id)).toBe(vtagStringify(data.id));
-      expect(vtagDhy(listDataLastItem?.id)).toBe('--'); // 虚拟标签默认值
+      expect(stringifyVData(listDataLastItem?.id)).toBe(stringifyVData(data.id));
+      expect(dehydrateVData(listDataLastItem?.id)).toBe('--'); // 虚拟数据默认值
       expect(listDataLastItem?.text).toBe('abc');
     });
 
@@ -478,7 +478,7 @@ describe('useSQRequest', () => {
     ]);
   });
 
-  test('should replace virtual tag to real value that method instances after requesting method instance', async () => {
+  test('should replace virtual data to real value that method instances after requesting method instance', async () => {
     // 提交数据并立即更新
     const poster = (data: Record<string, any>) => alovaInst.Post<any>('/detail2', data);
     const { onSuccess: onPostSuccess } = useSQRequest(
@@ -492,13 +492,13 @@ describe('useSQRequest', () => {
       }
     );
 
-    let vtagId: number | void;
-    let vtagStatus: boolean | void;
-    let vtagText: string | void;
+    let vDataId: number | void;
+    let vDataStatus: boolean | void;
+    let vDataText: string | void;
     onPostSuccess(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
-      vtagId = data.id;
-      vtagStatus = data.status;
-      vtagText = data.text;
+      vDataId = data.id;
+      vDataStatus = data.status;
+      vDataText = data.text;
     });
 
     await untilCbCalled(onPostSuccess);
@@ -513,21 +513,21 @@ describe('useSQRequest', () => {
       }
     );
 
-    let vtagId2: number | void;
-    let vtagStatus2: boolean | void;
-    let vtagText2: string | void;
+    let vDataId2: number | void;
+    let vDataStatus2: boolean | void;
+    let vDataText2: string | void;
     onPostSuccess2(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
-      vtagId2 = data.id;
-      vtagStatus2 = data.status;
-      vtagText2 = data.text;
+      vDataId2 = data.id;
+      vDataStatus2 = data.status;
+      vDataText2 = data.text;
     });
     await untilCbCalled(onPostSuccess2);
 
     const deleter = () =>
-      alovaInst.Delete<any>(`/detail/${vtagStringify(vtagId) + vtagStringify(vtagId2)}`, {
-        text1: vtagText,
-        text2: vtagText2,
-        status: [vtagStatus, vtagStatus2]
+      alovaInst.Delete<any>(`/detail/${stringifyVData(vDataId) + stringifyVData(vDataId2)}`, {
+        text1: vDataText,
+        text2: vDataText2,
+        status: [vDataStatus, vDataStatus2]
       });
     const { onSuccess: onDeleteSuccess } = useSQRequest(deleter, {
       behavior: 'queue'

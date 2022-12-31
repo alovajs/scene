@@ -1,15 +1,12 @@
-import { Alova, Method } from 'alova';
-import { falseValue, ObjectCls, PromiseCls } from './variables';
+import { Method } from 'alova';
+import { falseValue, nullValue, ObjectCls, PromiseCls } from './variables';
 
 export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
-export const promiseReject = <T>(value: T) => PromiseCls.reject(value);
 export const promiseThen = <T, TResult1 = T, TResult2 = never>(
   promise: Promise<T>,
   onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
   onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
 ): Promise<TResult1 | TResult2> => promise.then(onFulfilled, onrejected);
-export const promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
-export const promiseFinally = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected);
 
 export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn);
 export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);
@@ -21,13 +18,8 @@ export const shift = <T>(ary: T[]) => ary.shift();
 export const splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) =>
   ary.splice(start, deleteCount, ...items);
 
-export const getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-  methodInstance.context;
 export const getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
   methodInstance.config;
-export const getContextOptions = <S, E, RC, RE, RH>(alovaInstance: Alova<S, E, RC, RE, RH>) => alovaInstance.options;
-export const getOptions = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-  getContextOptions(getContext(methodInstance));
 export const JSONStringify = (
   value: any,
   replacer?: ((this: any, key: string, value: any) => any) | undefined,
@@ -36,9 +28,7 @@ export const JSONStringify = (
 export const JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
   JSON.parse(text, reviver);
 export const objectKeys = (obj: any) => Object.keys(obj);
-export const objectValues = <T>(obj: Record<any, T>) => Object.values(obj);
 export const setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay);
-export const clearTimeoutTimer = (timer: NodeJS.Timeout) => clearTimeout(timer);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
@@ -145,13 +135,6 @@ export const typeOf = (arg: any) => typeof arg;
 export const isFn = (arg: any): arg is GeneralFn => typeOf(arg) === 'function';
 
 /**
- * 判断参数是否为数字
- * @param arg 任意参数
- * @returns 该参数是否为数字
- */
-export const isNumber = (arg: any): arg is number => typeOf(arg) === 'number' && !isNaN(arg);
-
-/**
  * 判断参数是否为字符串
  * @param arg 任意参数
  * @returns 该参数是否为字符串
@@ -163,7 +146,7 @@ export const isString = (arg: any): arg is string => typeOf(arg) === 'string';
  * @param arg 任意参数
  * @returns 该参数是否为对象
  */
-export const isObject = (arg: any) => typeOf(arg) === 'object';
+export const isObject = (arg: any) => arg !== nullValue && typeOf(arg) === 'object';
 
 /**
  * 深层遍历目标对象

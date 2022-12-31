@@ -1,19 +1,19 @@
 import {
   globalVirtualResponseLock,
-  setVtagIdCollectBasket,
-  vtagIdCollectBasket
+  setVDataIdCollectBasket,
+  vDataIdCollectBasket
 } from '../../src/hooks/silent/globalVariables';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
-import { symbolOriginalValue, symbolVTagId } from '../../src/hooks/silent/virtualResponse/variables';
-import VTag from '../../src/hooks/silent/virtualResponse/VTag';
+import { symbolOriginalValue, symbolVDataId } from '../../src/hooks/silent/virtualResponse/variables';
+import VData from '../../src/hooks/silent/virtualResponse/VData';
 
 beforeEach(() => (globalVirtualResponseLock.v = 0));
 // 虚拟响应测试
 describe('virtual response', () => {
-  test('undefined vtag', () => {
+  test('undefined virtual data', () => {
     const undef = createVirtualResponse(undefined);
     globalVirtualResponseLock.v = 2;
-    setVtagIdCollectBasket({});
+    setVDataIdCollectBasket({});
     expect(undef + 1).toBeNaN();
     expect(undef - 1).toBeNaN();
     expect(undef | 1).toBe(1);
@@ -27,14 +27,14 @@ describe('virtual response', () => {
     expect(() => {
       undef.toString;
     }).toThrow();
-    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(1);
-    setVtagIdCollectBasket(undefined);
+    expect(Object.keys(vDataIdCollectBasket || {})).toHaveLength(1);
+    setVDataIdCollectBasket(undefined);
   });
 
-  test('null vtag', () => {
+  test('null virtual data', () => {
     const nil = createVirtualResponse(null);
     globalVirtualResponseLock.v = 2;
-    setVtagIdCollectBasket({});
+    setVDataIdCollectBasket({});
     expect(nil + 1).toBe(1);
     expect(nil - 1).toBe(-1);
     expect(nil | 1).toBe(1);
@@ -48,8 +48,8 @@ describe('virtual response', () => {
     expect(() => {
       nil.toString;
     }).toThrow();
-    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(1);
-    setVtagIdCollectBasket(undefined);
+    expect(Object.keys(vDataIdCollectBasket || {})).toHaveLength(1);
+    setVDataIdCollectBasket(undefined);
   });
 
   test('create virtual response with Undefined instance', () => {
@@ -58,7 +58,7 @@ describe('virtual response', () => {
     const b1 = virtualResponse.b.b1;
     const c0 = virtualResponse.c[0];
     globalVirtualResponseLock.v = 2;
-    expect(a).toBeInstanceOf(VTag);
+    expect(a).toBeInstanceOf(VData);
     expect(a[symbolOriginalValue]).toBeUndefined();
     expect(b1[symbolOriginalValue]).toBeUndefined();
     expect(c0[symbolOriginalValue]).toBeUndefined();
@@ -82,7 +82,7 @@ describe('virtual response', () => {
     globalVirtualResponseLock.v = 2;
     expect(a[symbolOriginalValue]).toBeUndefined();
     expect(b1[symbolOriginalValue]).toBeUndefined();
-    expect(b1).toBeInstanceOf(VTag);
+    expect(b1).toBeInstanceOf(VData);
     expect(c0[symbolOriginalValue]).toBeUndefined();
     expect(virtualResponse.a).toBeUndefined();
     expect(() => {
@@ -112,11 +112,11 @@ describe('virtual response', () => {
 
     globalVirtualResponseLock.v = 1;
     expect(virtualResponse.a[symbolOriginalValue]).toBe(1);
-    expect(virtualResponse.a[symbolVTagId]).toBe(a[symbolVTagId]);
+    expect(virtualResponse.a[symbolVDataId]).toBe(a[symbolVDataId]);
     expect(virtualResponse.d).toBeUndefined();
 
     globalVirtualResponseLock.v = 2;
-    setVtagIdCollectBasket({});
+    setVDataIdCollectBasket({});
     expect(a[symbolOriginalValue]).toBe(1);
     expect(a.toFixed(1)).toBe('1.0');
     expect(a.valueOf()).toBe(1);
@@ -139,7 +139,7 @@ describe('virtual response', () => {
     expect(virtualResponse.b.valueOf()).toBe('bb');
     expect(virtualResponse.c0).toBeUndefined(); // 锁定后，不能再任意访问虚拟响应了
     const c0Primitive = virtualResponse.c[0];
-    // 锁定后，当访问虚拟标签时将会返回其原始值
+    // 锁定后，当访问虚拟数据时将会返回其原始值
     expect(c0Primitive).toBe(4);
     expect(typeof c0Primitive).toBe('number');
     expect(() => {
@@ -148,8 +148,8 @@ describe('virtual response', () => {
     expect(() => {
       virtualResponse.d.toString;
     }).toThrow();
-    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(5);
-    setVtagIdCollectBasket(undefined);
+    expect(Object.keys(vDataIdCollectBasket || {})).toHaveLength(5);
+    setVDataIdCollectBasket(undefined);
   });
 
   test('create virtual response with primitive type', () => {
@@ -157,7 +157,7 @@ describe('virtual response', () => {
     let a = virtualResponse.a;
     let b = virtualResponse.b;
     globalVirtualResponseLock.v = 2;
-    setVtagIdCollectBasket({});
+    setVDataIdCollectBasket({});
     expect(a[symbolOriginalValue]).toBeUndefined();
     expect(b[symbolOriginalValue]).toBeUndefined();
     expect(virtualResponse.a).toBeUndefined();
@@ -173,7 +173,7 @@ describe('virtual response', () => {
     expect(virtualResponse.a).toBeUndefined();
     expect(virtualResponse.c).toBeUndefined();
 
-    expect(Object.keys(vtagIdCollectBasket || {})).toHaveLength(2);
-    setVtagIdCollectBasket(undefined);
+    expect(Object.keys(vDataIdCollectBasket || {})).toHaveLength(2);
+    setVDataIdCollectBasket(undefined);
   });
 });

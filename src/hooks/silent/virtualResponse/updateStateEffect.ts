@@ -5,7 +5,7 @@ import { currentSilentMethod } from '../createSilentQueueMiddlewares';
 
 /**
  * 更新对应method的状态
- * 与updateState不同的是，除了立即更新状态外，它还会在silent模式下响应后再次更新一次，目的是将虚拟标签替换为实际数据
+ * 与updateState不同的是，除了立即更新状态外，它还会在silent模式下响应后再次更新一次，目的是将虚拟数据替换为实际数据
  * @param method 请求方法对象
  * @param handleUpdate 更新回调
  */

@@ -39,12 +39,12 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 
   /**
    * methodHandler的调用参数
-   * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
+   * 如果其中有虚拟数据也将在请求被响应后被实际数据替换
    */
   public handlerArgs?: any[];
 
-  /** method创建时所使用的虚拟标签id */
-  public vTags?: string[];
+  /** method创建时所使用的虚拟数据id */
+  public vDatas?: string[];
 
   /**
    * 状态更新所指向的method实例
@@ -69,7 +69,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     resolveHandler?: PromiseExecuteParameter['0'],
     rejectHandler?: PromiseExecuteParameter['1'],
     handlerArgs?: any[],
-    vTag?: string[],
+    vDatas?: string[],
     retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[]
   ) {
     const thisObj = this;
@@ -83,7 +83,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     thisObj.resolveHandler = resolveHandler;
     thisObj.rejectHandler = rejectHandler;
     thisObj.handlerArgs = handlerArgs;
-    thisObj.vTags = vTag;
+    thisObj.vDatas = vDatas;
     thisObj.retryHandlers = retryHandlers;
   }
 

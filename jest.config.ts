@@ -26,7 +26,7 @@ export default {
   coverageDirectory: 'coverage',
 
   // An array of regexp pattern strings used to skip coverage collection
-  coveragePathIgnorePatterns: ['\\\\node_modules\\\\', '/node_modules/', 'test/mockData.js', 'test/components'],
+  coveragePathIgnorePatterns: ['\\\\node_modules\\\\', '/node_modules/', 'test/mockData.js', 'test/utils.ts'],
 
   // Indicates which provider should be used to instrument code for coverage
   coverageProvider: 'v8',
@@ -144,14 +144,15 @@ export default {
     '**/?(*.)+(spec|test).[tj]s?(x)'
     // '**/test/modules/uuid.spec.ts(x)?',
     // '**/test/vue/usePagination.spec.js(x)?',
-    // '**/test/silent/virtualResponse.spec.ts(x)?',
+    // '**/test/silent/virtualResponse.spec.ts(x)?'
     // '**/test/silent/serializers.spec.ts(x)?',
     // '**/test/silent/bootSilentQueue.spec.ts(x)?',
     // '**/test/silent/methodQueue-silent-request.spec.ts(x)?',
     // '**/test/silent/silentMethod-storage.spec.ts(x)?',
     // '**/test/silent/methodQueue-queue-request.spec.ts(x)?',
-    // '**/test/silent/vtagDhy.spec.ts(x)?'
+    // '**/test/silent/dehydrateVData.spec.ts(x)?'
     // '**/test/vue/useSQRequest.spec.ts(x)?'
+    // '**/test/silent/silentMethod-filter.spec.ts(x)?'
   ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped

@@ -6,7 +6,7 @@ import { symbolToStringTag } from '../../helper/variables';
 /**
  * 创建统一的事件对象，它将承载以下事件
  * 全局的：
- * 	[GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、响应数据、虚拟标签和实际值的集合
+ * 	[GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、响应数据、虚拟数据和实际值的集合
  * 	[GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retryTimes、错误对象
  * 	[GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、* retryTimes、[?]响应数据、[?]错误对象
  *
@@ -29,7 +29,7 @@ export default <S, E, R, T, RC, RE, RH>(
   retryDelay?: number,
   sendArgs?: any[],
   data?: R,
-  vtagResponse?: Record<string, any>,
+  vDataResponse?: Record<string, any>,
   error?: any
 ) => {
   const sqEvent = {
@@ -54,8 +54,8 @@ export default <S, E, R, T, RC, RE, RH>(
     /** 响应数据，只在成功时有值 */
     data,
 
-    /** 虚拟标签和实际值的集合 */
-    vtagResponse,
+    /** 虚拟数据和实际值的集合 */
+    vDataResponse,
 
     /** 失败时抛出的错误，只在失败时有值 */
     error

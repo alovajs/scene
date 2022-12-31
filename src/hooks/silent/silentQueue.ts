@@ -4,6 +4,7 @@ import {
   forEach,
   instanceOf,
   isObject,
+  isString,
   len,
   noop,
   objectKeys,
@@ -11,7 +12,8 @@ import {
   pushItem,
   runArgsHandler,
   setTimeoutFn,
-  shift
+  shift,
+  walkObject
 } from '../../helper';
 import { behaviorSilent, defaultQueueName, undefinedValue } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
@@ -24,9 +26,8 @@ import {
 } from './globalVariables';
 import { SilentMethod } from './SilentMethod';
 import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
-import { deepReplaceVTag } from './virtualResponse/helper';
-import { symbolOriginalValue } from './virtualResponse/variables';
-import vtagStringify from './virtualResponse/vtagStringify';
+import stringifyVData from './virtualResponse/stringifyVData';
+import { regVDataId, symbolIsProxy, symbolOriginalValue } from './virtualResponse/variables';
 
 export type SilentQueueMap = Record<string, SilentMethod[]>;
 /** 静默方法队列集合 */
@@ -48,14 +49,42 @@ export const merge2SilentQueueMap = (queueMap: SilentQueueMap) => {
 export const clearSilentQueueMap = () => (silentQueueMap = {});
 
 /**
- * 更新队列内的method实例，将虚拟标签替换为实际数据
- * @param vtagResponse 虚拟id和对应真实数据的集合
+ * 深层遍历目标数据，并将虚拟数据替换为实际数据
+ * @param target 目标数据
+ * @param vDataResponse 虚拟数据和实际数据的集合
+ * @returns 是否有替换数据
+ */
+export const deepReplaceVData = (target: any, vDataResponse: Record<string, any>) => {
+  // 搜索单一值并将虚拟数据对象或虚拟数据id替换为实际值
+  const replaceVData = (value: any) => {
+    const vData = stringifyVData(value);
+    // 如果直接是虚拟数据对象并且在vDataResponse中，则使用vDataResponse中的值替换Map
+    // 如果是字符串，则里面可能包含虚拟数据id并且在vDataResponse中，也需将它替换为实际值Map
+    // 不在本次vDataResponse中的虚拟数据将不变，它可能是下一次请求的虚拟数据Map
+    if (vData in vDataResponse) {
+      return vDataResponse[vData];
+    } else if (isString(value)) {
+      return value.replace(regVDataId, mat => (mat in vDataResponse ? vDataResponse[mat] : mat));
+    }
+    return value;
+  };
+  if (isObject(target) && !target?.[symbolIsProxy]) {
+    walkObject(target, replaceVData);
+  } else {
+    target = replaceVData(target);
+  }
+  return target;
+};
+
+/**
+ * 更新队列内的method实例，将虚拟数据替换为实际数据
+ * @param vDataResponse 虚拟id和对应真实数据的集合
  * @param targetQueue 目标队列
  */
-const updateQueueMethodEntities = (vtagResponse: Record<string, any>, targetQueue: SilentQueueMap[string]) => {
+const updateQueueMethodEntities = (vDataResponse: Record<string, any>, targetQueue: SilentQueueMap[string]) => {
   forEach(targetQueue, silentMethodItem => {
-    // 深层遍历entity对象，如果发现有虚拟标签或虚拟标签id，则替换为实际数据
-    deepReplaceVTag(silentMethodItem.entity, vtagResponse);
+    // 深层遍历entity对象，如果发现有虚拟数据或虚拟数据id，则替换为实际数据
+    deepReplaceVData(silentMethodItem.entity, vDataResponse);
     // 如果method实例有更新，则重新持久化此silentMethod实例
     silentMethodItem.cache && persistSilentMethod(silentMethodItem);
   });
@@ -65,22 +94,22 @@ const updateQueueMethodEntities = (vtagResponse: Record<string, any>, targetQueu
  * 使用响应数据替换虚拟数据
  * @param response 真实响应数据
  * @param virtualResponse 虚拟响应数据
- * @returns 虚拟标签id所构成的对应真实数据集合
+ * @returns 虚拟数据id所构成的对应真实数据集合
  */
 const replaceVirtualResponseWithResponse = (virtualResponse: any, response: any) => {
-  let vtagResponseMap = {} as Record<string, any>;
-  const virtualTagId = vtagStringify(virtualResponse);
-  virtualTagId !== virtualResponse && (vtagResponseMap[virtualTagId] = virtualResponse[symbolOriginalValue] = response);
+  let vDataResponse = {} as Record<string, any>;
+  const vDataId = stringifyVData(virtualResponse);
+  vDataId !== virtualResponse && (vDataResponse[vDataId] = virtualResponse[symbolOriginalValue] = response);
 
   if (isObject(virtualResponse)) {
     for (const i in virtualResponse) {
-      vtagResponseMap = {
-        ...vtagResponseMap,
+      vDataResponse = {
+        ...vDataResponse,
         ...replaceVirtualResponseWithResponse(virtualResponse[i], response?.[i])
       };
     }
   }
-  return vtagResponseMap;
+  return vDataResponse;
 };
 
 /**
@@ -119,13 +148,13 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
         // 如果有resolveHandler则调用它通知外部
         resolveHandler(data);
 
-        // 有virtualResponse时才遍历替换虚拟标签，且触发全局事件
+        // 有virtualResponse时才遍历替换虚拟数据，且触发全局事件
         // 一般为silent behavior，而queue behavior不需要
         if (behavior === behaviorSilent) {
-          // 替换队列中后面方法实例中的虚拟标签为真实数据
+          // 替换队列中后面方法实例中的虚拟数据为真实数据
           // 开锁后才能正常访问virtualResponse的层级结构
           globalVirtualResponseLock.v = 1;
-          const virtualTagReplacedResponseMap = replaceVirtualResponseWithResponse(virtualResponse, data);
+          const vDataResponse = replaceVirtualResponseWithResponse(virtualResponse, data);
           globalVirtualResponseLock.v = 2;
 
           const { targetRefMethod, updateStates } = silentMethodInstance; // 实时获取才准确
@@ -134,8 +163,8 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
           if (instanceOf(targetRefMethod, Method) && updateStates && len(updateStates) > 0) {
             const updateStateCollection: UpdateStateCollection<any> = {};
             forEach(updateStates, stateName => {
-              // 请求成功后，将带有虚拟标签的数据替换为实际数据
-              updateStateCollection[stateName] = dataRaw => deepReplaceVTag(dataRaw, virtualTagReplacedResponseMap);
+              // 请求成功后，将带有虚拟数据的数据替换为实际数据
+              updateStateCollection[stateName] = dataRaw => deepReplaceVData(dataRaw, vDataResponse);
             });
             updateState(targetRefMethod, updateStateCollection);
           }
@@ -151,13 +180,13 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
               undefinedValue,
               undefinedValue,
               data,
-              virtualTagReplacedResponseMap
+              vDataResponse
             );
           runArgsHandler(successHandlers, createGlobalSuccessEvent());
           runArgsHandler(completeHandlers, createGlobalSuccessEvent());
 
-          // 对当前队列的后续silentMethod实例进行虚拟标签替换
-          updateQueueMethodEntities(virtualTagReplacedResponseMap, queue);
+          // 对当前队列的后续silentMethod实例进行虚拟数据替换
+          updateQueueMethodEntities(vDataResponse, queue);
         }
 
         // 继续下一个silentMethod的处理

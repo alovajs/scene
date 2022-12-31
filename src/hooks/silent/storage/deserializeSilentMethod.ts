@@ -5,7 +5,7 @@ import { dependentAlovaInstance } from '../globalVariables';
 import { serializers } from '../serializer';
 import { SerializedSilentMethod, SilentMethod } from '../SilentMethod';
 import createVirtualResponse from '../virtualResponse/createVirtualResponse';
-import { vtagKey, vtagValueKey } from './helper';
+import { vDataKey, vDataValueKey } from './helper';
 
 /**
  * 反序列化silentMethod实例，根据序列化器的名称进行反序列化
@@ -19,16 +19,16 @@ export default (serializedSilentMethodString: string) => {
       value = foundSerializer ? foundSerializer.backward(value[1]) : value;
     }
 
-    // 将虚拟标签格式转换回虚拟标签实例
-    if (isObject(value) && value?.[vtagKey]) {
-      const virtualTagId = value[vtagKey];
-      const virtualTagValue = createVirtualResponse(value[vtagValueKey], virtualTagId);
+    // 将虚拟数据格式转换回虚拟数据实例
+    if (isObject(value) && value?.[vDataKey]) {
+      const vDataId = value[vDataKey];
+      const vDataValue = createVirtualResponse(value[vDataValueKey], vDataId);
       forEach(objectKeys(value), key => {
-        if (!includes([vtagKey, vtagValueKey], key)) {
-          virtualTagValue[key] = value[key];
+        if (!includes([vDataKey, vDataValueKey], key)) {
+          vDataValue[key] = value[key];
         }
       });
-      value = virtualTagValue;
+      value = vDataValue;
     }
     return value;
   });

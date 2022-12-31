@@ -1,70 +1,70 @@
-import { CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
+import { AlovaMethodHandler, CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
 import { Readable, Writable } from 'svelte/store';
-import { IsUnknown, PaginationConfig } from '.';
+import { IsUnknown, PaginationConfig, SQHookReturnType, SQRequestHookConfig } from '.';
 
 interface UsePaginationReturnType<LD, R> {
-	loading: Writable<boolean>;
-	error: Writable<Error | undefined>;
-	downloading: Writable<Progress>;
-	uploading: Writable<Progress>;
-	page: Writable<number>;
-	pageSize: Writable<number>;
-	data: Writable<
-		IsUnknown<
-			LD,
-			R extends {
-				data: any;
-			}
-				? R['data']
-				: R,
-			LD
-		>
-	>;
-	pageCount: Readable<number | undefined>;
-	total: Readable<number | undefined>;
-	isLastPage: Readonly<Readable<boolean>>;
+  loading: Writable<boolean>;
+  error: Writable<Error | undefined>;
+  downloading: Writable<Progress>;
+  uploading: Writable<Progress>;
+  page: Writable<number>;
+  pageSize: Writable<number>;
+  data: Writable<
+    IsUnknown<
+      LD,
+      R extends {
+        data: any;
+      }
+        ? R['data']
+        : R,
+      LD
+    >
+  >;
+  pageCount: Readable<number | undefined>;
+  total: Readable<number | undefined>;
+  isLastPage: Readonly<Readable<boolean>>;
 
-	abort: () => void;
-	send: (...args: any[]) => Promise<R>;
-	onSuccess: (handler: SuccessHandler<R>) => void;
-	onError: (handler: ErrorHandler) => void;
-	onComplete: (handler: CompleteHandler) => void;
+  abort: () => void;
+  send: (...args: any[]) => Promise<R>;
+  onSuccess: (handler: SuccessHandler<R>) => void;
+  onError: (handler: ErrorHandler) => void;
+  onComplete: (handler: CompleteHandler) => void;
 
-	fetching: Writable<boolean>;
-	onFetchSuccess: (handler: SuccessHandler<R>) => void;
-	onFetchError: (handler: ErrorHandler) => void;
-	onFetchComplete: (handler: CompleteHandler) => void;
+  fetching: Writable<boolean>;
+  onFetchSuccess: (handler: SuccessHandler<R>) => void;
+  onFetchError: (handler: ErrorHandler) => void;
+  onFetchComplete: (handler: CompleteHandler) => void;
 
-	/**
-	 * 刷新指定页码数据，此函数将忽略缓存强制发送请求
-	 * @param refreshPage 刷新的页码
-	 */
-	refresh: (refreshPage: number) => void;
+  /**
+   * 刷新指定页码数据，此函数将忽略缓存强制发送请求
+   * @param refreshPage 刷新的页码
+   */
+  refresh: (refreshPage: number) => void;
 
-	/**
-	 * 插入一条数据，未传入index时默认插入到最前面
-	 * @param item 插入项
-	 * @param index 插入位置（索引）
-	 */
-	insert: (item: LD extends any[] ? LD[number] : any, index?: number) => void;
+  /**
+   * 插入一条数据，未传入index时默认插入到最前面
+   * @param item 插入项
+   * @param index 插入位置（索引）
+   */
+  insert: (item: LD extends any[] ? LD[number] : any, index?: number) => void;
 
-	/**
-	 * 移除一条数据
-	 * @param index 移除的索引
-	 */
-	remove: (index: number) => void;
+  /**
+   * 移除一条数据
+   * @param index 移除的索引
+   */
+  remove: (index: number) => void;
 
-	/**
-	 * 替换一条数据
-	 * @param item 替换项
-	 * @param index 替换位置（索引）
-	 */
-	replace: (item: LD extends any[] ? LD[number] : any, index: number) => void;
+  /**
+   * 替换一条数据
+   * @param item 替换项
+   * @param index 替换位置（索引）
+   */
+  replace: (item: LD extends any[] ? LD[number] : any, index: number) => void;
 
-	/**
-	 * 从第一页开始重新加载列表，并清空缓存
-	 */
-	reload: () => void;
+  /**
+   * 从第一页开始重新加载列表，并清空缓存
+   */
+  reload: () => void;
 }
 
 /**
@@ -76,16 +76,25 @@ interface UsePaginationReturnType<LD, R> {
  * @returns {UsePaginationReturnType}
  */
 export declare function usePagination<
-	S extends Writable<any>,
-	E extends Writable<any>,
-	R,
-	T,
-	RC,
-	RE,
-	RH,
-	LD,
-	WS extends Readable<any>[]
+  S extends Writable<any>,
+  E extends Writable<any>,
+  R,
+  T,
+  RC,
+  RE,
+  RH,
+  LD,
+  WS extends Readable<any>[]
 >(
-	handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
-	config?: PaginationConfig<R, LD, WS>
+  handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
+  config?: PaginationConfig<R, LD, WS>
 ): UsePaginationReturnType<LD, R>;
+
+/**
+ * 带silentQueue的request hook
+ * silentQueue是实现静默提交的核心部件，其中将用于存储silentMethod实例，它们将按顺序串行发送提交
+ */
+export declare function useSQRequest<S, E, R, T, RC, RE, RH>(
+  handler: AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  config?: SQRequestHookConfig<S, E, R, T, RC, RE, RH>
+): SQHookReturnType<S, E, R, T, RC, RE, RH>;

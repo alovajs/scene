@@ -26,7 +26,7 @@ interface PaginationConfig<R, LD, WS> {
 /** 静默提交事件 */
 // 事件：
 // 全局的：
-//  [GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、响应数据、虚拟标签和实际值的集合
+//  [GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、响应数据、虚拟数据和实际值的集合
 //  [GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retryTimes、错误对象
 //  [GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retryTimes、[?]响应数据、[?]错误对象
 
@@ -56,10 +56,10 @@ interface GlobalSQSuccessEvent extends GlobalSQEvent {
   /** 响应数据 */
   data: any;
   /**
-   * 虚拟标签和实际值的集合
-   * 里面只包含你已用到的虚拟标签的实际值
+   * 虚拟数据和实际值的集合
+   * 里面只包含你已用到的虚拟数据的实际值
    */
-  vtagResponse: Record<string, any>;
+  vDataResponse: Record<string, any>;
 }
 /** 全局失败事件 */
 interface GlobalSQErrorEvent extends GlobalSQEvent {
@@ -138,7 +138,7 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   };
 
   /** 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用 */
-  readonly fallbackHandlers?: FallbackHandler[];
+  readonly fallbackHandlers?: FallbackHandler<S, E, R, T, RC, RE, RH>[];
 
   /** Promise的resolve函数，调用将通过对应的promise对象 */
   readonly resolveHandler?: Parameters<ConstructorParameters<typeof Promise<any>>['0']>['0'];
@@ -148,12 +148,12 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
 
   /**
    * methodHandler的调用参数
-   * 如果其中有虚拟标签也将在请求被响应后被实际数据替换
+   * 如果其中有虚拟数据也将在请求被响应后被实际数据替换
    */
   readonly handlerArgs?: any[];
 
-  /** method创建时所使用的虚拟标签id */
-  readonly vTags?: string[];
+  /** method创建时所使用的虚拟数据id */
+  readonly vDatas?: string[];
 
   /** 虚拟响应数据，通过delayUpdateState保存到此 */
   virtualResponse?: any;
@@ -236,20 +236,12 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
   silentDefaultResponse?: () => any;
 
   /**
-   * 外部作用域引用的变量记录
-   * methodHandler内的参数可能不仅来自于此函数的参数，还有可能来自于外部作用域的变量
-   * 当持久化的silentMethod实例被重新读取时，methodHandler函数就会失去它原有的作用域而调用报错
-   * 此时就使用此参数用于记录methodHandler中引用的外部作用域变量，并在methodHandler调用时以参数形式传入其中
-   */
-  closure?: Record<string | number, any>;
-
-  /**
-   * 它将在捕获到method中带有虚拟标签时调用
+   * 它将在捕获到method中带有虚拟数据时调用
    * 当此捕获回调返回了数据时将会以此数据作为响应数据处理，而不再发送请求
    * @param {Method} method method实例
    * @returns {R} 与响应数据相同格式的数据
    */
-  vtagCaptured?: (method: Method<S, E, R, T, RC, RE, RH>) => R | undefined | void;
+  vDataCaptured?: (method: Method<S, E, R, T, RC, RE, RH>) => R | undefined | void;
 }
 
 type SQRequestHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
@@ -274,7 +266,7 @@ type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<R, S> & {
    * 1. 只在重试次数达到后仍然失败时触发
    * 2. 在onComplete之前触发
    */
-  onFallback: (handler: FallbackHandler) => void;
+  onFallback: (handler: FallbackHandler<S, E, R, T, RC, RE, RH>) => void;
 
   /** 在入队列前调用，在此可以过滤队列中重复的SilentMethod，在static行为下无效 */
   onBeforePushQueue: (handler: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>) => void;

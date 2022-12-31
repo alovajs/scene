@@ -23,15 +23,15 @@ import {
 import createSQEvent from './createSQEvent';
 import {
   globalVirtualResponseLock,
-  setVtagIdCollectBasket,
+  setVDataIdCollectBasket,
   silentAssert,
-  vtagIdCollectBasket
+  vDataIdCollectBasket
 } from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';
 import { pushNewSilentMethod2Queue } from './silentQueue';
 import createVirtualResponse from './virtualResponse/createVirtualResponse';
-import { regVirtualTag } from './virtualResponse/variables';
-import vtagStringify from './virtualResponse/vtagStringify';
+import stringifyVData from './virtualResponse/stringifyVData';
+import { regVDataId } from './virtualResponse/variables';
 
 /**
  * 全局的silentMethod实例，它将在第一个成功事件触发前到最后一个成功事件触发后有值（同步时段）
@@ -61,7 +61,7 @@ export default <S, E, R, T, RC, RE, RH>(
    */
   const createMethod = (...args: any[]) => {
     silentAssert(isFn(handler), 'method handler must be a function. eg. useSQRequest(() => method)');
-    setVtagIdCollectBasket({});
+    setVDataIdCollectBasket({});
     handlerArgs = args;
     return (handler as MethodHandler<S, E, R, T, RC, RE, RH>)(...args);
   };
@@ -78,7 +78,7 @@ export default <S, E, R, T, RC, RE, RH>(
   ) => {
     // 因为behavior返回值可能会变化，因此每次请求都应该调用它重新获取返回值
     const behaviorFinally = isFn(behavior) ? behavior() : behavior;
-    const { silentDefaultResponse, vtagCaptured } = config;
+    const { silentDefaultResponse, vDataCaptured } = config;
     let silentMethodInstance: any;
 
     // 首先设置事件回调装饰器
@@ -105,8 +105,8 @@ export default <S, E, R, T, RC, RE, RH>(
           ));
       handler(createFinishedEvent() as any);
 
-      // 所有成功回调执行完后再锁定虚拟标签，锁定后虚拟响应数据内不能再访问任意层级
-      // 锁定操作只在silent模式下，用于锁定虚拟标签的生成操作
+      // 所有成功回调执行完后再锁定虚拟数据，锁定后虚拟响应数据内不能再访问任意层级
+      // 锁定操作只在silent模式下，用于锁定虚拟数据的生成操作
       if (index === length - 1) {
         // 锁定，详情请看globalVirtualResponseLock
         globalVirtualResponseLock.v = 2;
@@ -138,25 +138,25 @@ export default <S, E, R, T, RC, RE, RH>(
     // 置空临时收集变量
     // 返回前都需要置空它们
     const resetCollectBasket = () => {
-      setVtagIdCollectBasket((handlerArgs = undefinedValue));
+      setVDataIdCollectBasket((handlerArgs = undefinedValue));
     };
 
-    // 如果设置了vtagCaptured，则先判断内是否包含虚拟标签
-    if (isFn(vtagCaptured)) {
-      let hasVirtualTag = vtagIdCollectBasket && len(objectKeys(vtagIdCollectBasket)) > 0;
-      if (!hasVirtualTag) {
+    // 如果设置了vDataCaptured，则先判断内是否包含虚拟数据
+    if (isFn(vDataCaptured)) {
+      let hasVData = vDataIdCollectBasket && len(objectKeys(vDataIdCollectBasket)) > 0;
+      if (!hasVData) {
         walkObject(method, value => {
-          if (!hasVirtualTag && (vtagStringify(value) || regVirtualTag.test(value))) {
-            hasVirtualTag = trueValue;
+          if (!hasVData && (stringifyVData(value) || regVDataId.test(value))) {
+            hasVData = trueValue;
           }
           return value;
         });
       }
 
-      // 如果vtagCaptured有返回数据，则使用它作为响应数据，否则继续请求
-      const customResponse = hasVirtualTag ? vtagCaptured(method) : undefinedValue;
+      // 如果vDataCaptured有返回数据，则使用它作为响应数据，否则继续请求
+      const customResponse = hasVData ? vDataCaptured(method) : undefinedValue;
       if (customResponse !== undefinedValue) {
-        resetCollectBasket(); // 被vtagCaptured捕获时的重置
+        resetCollectBasket(); // 被vDataCaptured捕获时的重置
         return promiseResolve(customResponse);
       }
     }
@@ -176,7 +176,7 @@ export default <S, E, R, T, RC, RE, RH>(
           resolveHandler,
           rejectHandler,
           handlerArgs,
-          vtagIdCollectBasket && objectKeys(vtagIdCollectBasket)
+          vDataIdCollectBasket && objectKeys(vDataIdCollectBasket)
         );
         resetCollectBasket(); // behavior为queue和silent时的重置
       });
@@ -210,7 +210,7 @@ export default <S, E, R, T, RC, RE, RH>(
         return queueResolvePromise;
       }
 
-      // 在silent模式下创建虚拟响应数据，虚拟响应数据可生成任意的虚拟标签
+      // 在silent模式下创建虚拟响应数据，虚拟响应数据可生成任意的虚拟数据
       const virtualResponse = (silentMethodInstance.virtualResponse = createVirtualResponse(
         isFn(silentDefaultResponse) ? silentDefaultResponse() : undefinedValue
       ));
