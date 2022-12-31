@@ -32,7 +32,10 @@ describe('serializers', () => {
       }
     });
     globalVirtualResponseLock.v = 0;
-    const virtualResponse = createVirtualResponse({ id: 1, text: 'a,a', time: new Date('2022-10-01 00:00:00') });
+
+    const dateObj = new Date('2022-10-01 00:00:00');
+    const dateTimestamp = dateObj.getTime();
+    const virtualResponse = createVirtualResponse({ id: 1, text: 'a,a', time: dateObj });
     const methodInstance = new Method(
       'POST',
       createAlova({
@@ -70,11 +73,11 @@ describe('serializers', () => {
       localCache: {
         expire: 500000
       },
-      params: { id: { __$k: virtualResponse.id[symbolVDataId], __$v: 1 }, createDate: ['date', 1664553600000] }
+      params: { id: { __$k: virtualResponse.id[symbolVDataId], __$v: 1 }, createDate: ['date', dateTimestamp] }
     });
     expect(serializedObj.entity.requestBody).toEqual({
       text: { __$k: virtualResponse.text[symbolVDataId], __$v: ['custom', '2a'] },
-      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', 1664553600000] },
+      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', dateTimestamp] },
       others: { __$k: virtualResponse.e[0][symbolVDataId] }
     });
     expect(serializedObj.entity.url).toBe(methodInstance.url);
