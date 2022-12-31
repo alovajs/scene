@@ -1,5 +1,7 @@
 # alova 场景化方案
 
+[![Coverage Status](https://coveralls.io/repos/github/alovajs/scene/badge.svg?branch=main)](https://coveralls.io/github/alovajs/scene?branch=main)
+
 [alova](https://github.com/alovajs/alova) 是一个请求场景管理库，它的使命，就是让应用更聪明地管理 CS 数据交互，针对不同的请求场景提出更好的请求管理方案，因此也提供了一些特定场景下的请求方案，可以让开发者更优雅地实现更高性能和体验更好的功能。
 
 ## alova 示例

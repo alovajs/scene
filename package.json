@@ -25,7 +25,8 @@
     "build:sveltehooks:umd": "cross-env NODE_ENV=development EXTENSION=sveltehooks rollup -c ./config/rollup.config.umd.js",
     "build:sveltehooks:umd.min": "cross-env NODE_ENV=production EXTENSION=sveltehooks rollup -c ./config/rollup.config.umd.js",
     "build:sveltehooks": "npm run build:sveltehooks:esm && npm run build:sveltehooks:umd && npm run build:sveltehooks:umd.min",
-    "build": "npm run clean && npm run build:vuehooks && npm run build:reacthooks && npm run build:sveltehooks"
+    "build": "npm run clean && npm run build:vuehooks && npm run build:reacthooks && npm run build:sveltehooks",
+    "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info"
   },
   "publishConfig": {
     "access": "public"
