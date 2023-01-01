@@ -95,7 +95,7 @@ describe('serializers', () => {
       __$v: {},
       id: { __$k: virtualResponse.id[symbolVDataId], __$v: 1 },
       text: { __$k: virtualResponse.text[symbolVDataId], __$v: ['custom', '2a'] },
-      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', 1664553600000] },
+      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', dateTimestamp] },
       e: { '0': { __$k: virtualResponse.e[0][symbolVDataId] }, __$k: virtualResponse.e[symbolVDataId] }
     });
     globalVirtualResponseLock.v = 2;
