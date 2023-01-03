@@ -19,65 +19,49 @@ import { mergeSerializer } from './serializer';
 import { bootSilentQueue, merge2SilentQueueMap, silentQueueMap } from './silentQueue';
 import loadSilentQueueMapFromStorage from './storage/loadSilentQueueMapFromStorage';
 
-const offEvent = (offHandler: any, handlers: any[]) => {
+const offEventCallback = (offHandler: any, handlers: any[]) => () => {
   const index = handlers.indexOf(offHandler);
   index >= 0 && splice(handlers, index, 1);
 };
 
 /**
  * 绑定silentSubmit启动事件
+ * @param {SilentSubmitBootHandler} handler 事件回调函数
+ * @returns 解绑函数
  */
 export const onSilentSubmitBoot = (handler: SilentSubmitBootHandler) => {
   pushItem(bootHandlers, handler);
-};
-/**
- * 解绑silentSubmit启动事件
- * @param handler 事件回调
- */
-export const offSilentSubmitBoot = (handler: SilentSubmitBootHandler) => {
-  offEvent(handler, bootHandlers);
+  return offEventCallback(handler, bootHandlers);
 };
 
 /**
  * 绑定silentSubmit成功事件
+ * @param {SilentSubmitSuccessHandler} handler 事件回调函数
+ * @returns 解绑函数
  */
 export const onSilentSubmitSuccess = (handler: SilentSubmitSuccessHandler) => {
   pushItem(successHandlers, handler);
-};
-/**
- * 解绑silentSubmit启动事件
- * @param handler 事件回调
- */
-export const offSilentSubmitSuccess = (handler: SilentSubmitSuccessHandler) => {
-  offEvent(handler, successHandlers);
+  return offEventCallback(handler, successHandlers);
 };
 
 /**
  * 绑定silentSubmit错误事件
+ * @param {SilentSubmitErrorHandler} handler 事件回调函数
+ * @returns 解绑函数
  */
 export const onSilentSubmitError = (handler: SilentSubmitErrorHandler) => {
   pushItem(errorHandlers, handler);
-};
-/**
- * 解绑silentSubmit启动事件
- * @param handler 事件回调
- */
-export const offSilentSubmitError = (handler: SilentSubmitErrorHandler) => {
-  offEvent(handler, errorHandlers);
+  return offEventCallback(handler, errorHandlers);
 };
 
 /**
  * 绑定silentSubmit完成事件
+ * @param {SilentSubmitCompleteHandler} handler 事件回调函数
+ * @returns 解绑函数
  */
 export const onSilentSubmitComplete = (handler: SilentSubmitCompleteHandler) => {
   pushItem(completeHandlers, handler);
-};
-/**
- * 解绑silentSubmit启动事件
- * @param handler 事件回调
- */
-export const offSilentSubmitComplete = (handler: SilentSubmitCompleteHandler) => {
-  offEvent(handler, completeHandlers);
+  return offEventCallback(handler, completeHandlers);
 };
 
 /**

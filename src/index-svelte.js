@@ -8,3 +8,17 @@ export const usePagination = (handler, config = {}) =>
 // 已通过 hooks/silent/useSQRequest 导入测试
 /* c8 ignore start */
 export const useSQRequest = (handler, config = {}) => useSQRequest_unified(handler, config);
+
+export {
+  bootSilentFactory,
+  onSilentSubmitBoot,
+  onSilentSubmitComplete,
+  onSilentSubmitError,
+  onSilentSubmitSuccess
+} from './hooks/silent/silentFactory';
+export { silentQueueMap } from './hooks/silent/silentQueue';
+export { default as dehydrateVData } from './hooks/silent/virtualResponse/dehydrateVData';
+export { filterSilentMethods, getSilentMethod } from './hooks/silent/virtualResponse/filterSilentMethods';
+export { default as stringifyVData } from './hooks/silent/virtualResponse/stringifyVData';
+export { default as updateStateEffect } from './hooks/silent/virtualResponse/updateStateEffect';
+

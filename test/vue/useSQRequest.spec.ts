@@ -35,7 +35,6 @@ describe('useSQRequest', () => {
     const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
     const { loading, data, error, downloading, uploading, onSuccess, onComplete, onBeforePushQueue, onPushedQueue } =
       useSQRequest(() => Get);
-
     const beforePushMockFn = jest.fn();
     onBeforePushQueue(event => {
       beforePushMockFn();

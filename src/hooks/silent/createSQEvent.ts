@@ -32,34 +32,34 @@ export default <S, E, R, T, RC, RE, RH>(
   vDataResponse?: Record<string, any>,
   error?: any
 ) => {
-  const sqEvent = {
-    /** 事件对应的请求行为 */
-    behavior,
+  const sqEvent: any = {};
 
-    /** 当前的method实例 */
-    method,
+  /** 事件对应的请求行为 */
+  behavior && (sqEvent.behavior = behavior);
 
-    /** 当前的silentMethod实例，当behavior为static时没有值 */
-    silentMethod,
+  /** 当前的method实例 */
+  method && (sqEvent.method = method);
 
-    /** 已重试的次数，在beforePush和pushed事件中没有值 */
-    retryTimes,
+  /** 当前的silentMethod实例，当behavior为static时没有值 */
+  silentMethod && (sqEvent.silentMethod = silentMethod);
 
-    /** 重试的延迟时间 */
-    retryDelay,
+  /** 已重试的次数，在beforePush和pushed事件中没有值 */
+  retryTimes && (sqEvent.retryTimes = retryTimes);
 
-    /** 通过send触发请求时传入的参数 */
-    sendArgs,
+  /** 重试的延迟时间 */
+  retryDelay && (sqEvent.retryDelay = retryDelay);
 
-    /** 响应数据，只在成功时有值 */
-    data,
+  /** 通过send触发请求时传入的参数 */
+  sendArgs && (sqEvent.sendArgs = sendArgs);
 
-    /** 虚拟数据和实际值的集合 */
-    vDataResponse,
+  /** 响应数据，只在成功时有值 */
+  data && (sqEvent.data = data);
 
-    /** 失败时抛出的错误，只在失败时有值 */
-    error
-  };
+  /** 虚拟数据和实际值的集合 */
+  vDataResponse && (sqEvent.vDataResponse = vDataResponse);
+
+  /** 失败时抛出的错误，只在失败时有值 */
+  error && (sqEvent.error = error);
 
   // 将此类的对象重新命名，让它看上去是由不同的类生成的对象
   // 以此来对应typescript中定义的类型

@@ -1,5 +1,11 @@
 import { AlovaMethodHandler, AlovaMiddleware, Method } from 'alova';
-import { BeforePushQueueHandler, FallbackHandler, PushedQueueHandler, SQHookConfig } from '../../../typings';
+import {
+  BeforePushQueueHandler,
+  FallbackHandler,
+  PushedQueueHandler,
+  RetryHandler,
+  SQHookConfig
+} from '../../../typings';
 import {
   GeneralFn,
   isFn,
@@ -52,6 +58,7 @@ export default <S, E, R, T, RC, RE, RH>(
   const fallbackHandlers: FallbackHandler<S, E, R, T, RC, RE, RH>[] = [];
   const beforePushQueueHandlers: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>[] = [];
   const pushedQueueHandlers: PushedQueueHandler<S, E, R, T, RC, RE, RH>[] = [];
+  const retryHandlers: RetryHandler<S, E, R, T, RC, RE, RH>[] = [];
   let handlerArgs: any[] | undefined;
 
   /**
@@ -176,7 +183,8 @@ export default <S, E, R, T, RC, RE, RH>(
           resolveHandler,
           rejectHandler,
           handlerArgs,
-          vDataIdCollectBasket && objectKeys(vDataIdCollectBasket)
+          vDataIdCollectBasket && objectKeys(vDataIdCollectBasket),
+          retryHandlers as any[]
         );
         resetCollectBasket(); // behavior为queue和silent时的重置
       });
@@ -256,6 +264,14 @@ export default <S, E, R, T, RC, RE, RH>(
        */
       onPushedQueue: (handler: PushedQueueHandler<S, E, R, T, RC, RE, RH>) => {
         pushItem(pushedQueueHandlers, handler);
+      },
+
+      /**
+       * 重试事件
+       * @param handler 重试事件回调
+       */
+      onRetry: (handler: RetryHandler<S, E, R, T, RC, RE, RH>) => {
+        pushItem(retryHandlers, handler);
       }
     }
   };

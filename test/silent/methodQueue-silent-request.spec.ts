@@ -3,9 +3,6 @@ import VueHook from 'alova/vue';
 import { globalVirtualResponseLock } from '../../src/hooks/silent/globalVariables';
 import {
   bootSilentFactory,
-  offSilentSubmitComplete,
-  offSilentSubmitError,
-  offSilentSubmitSuccess,
   onSilentSubmitComplete,
   onSilentSubmitError,
   onSilentSubmitSuccess
@@ -68,7 +65,7 @@ describe('silent method request in queue with silent behavior', () => {
     });
 
     const completeMockFn = jest.fn();
-    const completeHandler = (ev: any) => {
+    const offComplete = onSilentSubmitComplete(ev => {
       completeMockFn();
       const event = ev as GlobalSQSuccessEvent;
       expect(event.behavior).toBe('silent');
@@ -77,11 +74,10 @@ describe('silent method request in queue with silent behavior', () => {
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
       expect(event.retryTimes).toBe(0);
       // 卸载全局事件避免污染其他用例
-      offSilentSubmitComplete(completeHandler);
-    };
-    onSilentSubmitComplete(completeHandler);
+      offComplete();
+    });
     const successMockFn = jest.fn();
-    const successHandler = (event: GlobalSQSuccessEvent) => {
+    const offSuccess = onSilentSubmitSuccess(event => {
       successMockFn();
       expect(event.behavior).toBe('silent');
       expect(event.data).toStrictEqual({ id: 1 });
@@ -89,9 +85,8 @@ describe('silent method request in queue with silent behavior', () => {
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
       expect(event.retryTimes).toBe(0);
       // 卸载全局事件避免污染其他用例
-      offSilentSubmitSuccess(successHandler);
-    };
-    onSilentSubmitSuccess(successHandler);
+      offSuccess();
+    });
 
     await pms;
     // 成功了，onFallback和onRetry都不会触发
@@ -235,7 +230,7 @@ describe('silent method request in queue with silent behavior', () => {
     });
 
     const completeMockFn = jest.fn();
-    const completeHandler = (ev: any) => {
+    const offComplete = onSilentSubmitComplete(ev => {
       completeMockFn();
       const event = ev as GlobalSQErrorEvent;
       expect(event.behavior).toBe('silent');
@@ -244,11 +239,10 @@ describe('silent method request in queue with silent behavior', () => {
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
       expect(event.retryTimes).toBe(2);
       // 卸载全局事件避免污染其他用例
-      offSilentSubmitComplete(completeHandler);
-    };
-    onSilentSubmitComplete(completeHandler);
+      offComplete();
+    });
     const errorMockFn = jest.fn();
-    const errorHandler = (event: GlobalSQErrorEvent) => {
+    const offError = onSilentSubmitError(event => {
       errorMockFn();
       expect(event.behavior).toBe('silent');
       expect(event.error.message).toBe('no permission');
@@ -256,9 +250,8 @@ describe('silent method request in queue with silent behavior', () => {
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
       expect(event.retryTimes).toBe(2);
       // 卸载全局事件避免污染其他用例
-      offSilentSubmitError(errorHandler);
-    };
-    onSilentSubmitError(errorHandler);
+      offError();
+    });
 
     await pms;
     // 有fallback回调时，不会触发nextRound

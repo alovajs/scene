@@ -2,8 +2,6 @@ import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
 import {
   bootSilentFactory,
-  offSilentSubmitComplete,
-  offSilentSubmitSuccess,
   onSilentSubmitComplete,
   onSilentSubmitError,
   onSilentSubmitSuccess
@@ -42,19 +40,17 @@ describe('silent method request in queue with queue behavior', () => {
     });
 
     const completeMockFn = jest.fn();
-    const completeHandler = () => {
+    const offComplete = onSilentSubmitComplete(() => {
       completeMockFn();
       // 卸载全局事件避免污染其他用例
-      offSilentSubmitComplete(completeHandler);
-    };
-    onSilentSubmitComplete(completeHandler);
+      offComplete();
+    });
     const successMockFn = jest.fn();
-    const successHandler = () => {
+    const offSuccess = onSilentSubmitSuccess(() => {
       successMockFn();
       // 卸载全局事件避免污染其他用例
-      offSilentSubmitSuccess(successHandler);
-    };
-    onSilentSubmitSuccess(successHandler);
+      offSuccess();
+    });
 
     const ret = await pms;
     expect(ret).toStrictEqual({ id: 1 });

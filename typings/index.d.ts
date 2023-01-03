@@ -274,6 +274,9 @@ type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<R, S> & {
   /** 在入队列后调用，在static行为下无效 */
   onPushedQueue: (handler: PushedQueueHandler<S, E, R, T, RC, RE, RH>) => void;
 
+  /** 重试事件绑定 */
+  onRetry: (handler: RetryHandler<S, E, R, T, RC, RE, RH>) => void;
+
   /** @override 重写alova的onSuccess事件 */
   onSuccess: (handler: (event: ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH>) => void) => void;
 
@@ -329,16 +332,11 @@ type SilentSubmitBootHandler = () => void;
 type SilentSubmitSuccessHandler = (event: GlobalSQSuccessEvent) => void;
 type SilentSubmitErrorHandler = (event: GlobalSQErrorEvent) => void;
 type SilentSubmitCompleteHandler = (event: GlobalSQSuccessEvent | GlobalSQErrorEvent) => void;
+type OffEventCallback = () => void;
 
 declare function bootSilentFactory(options: SilentFactoryBootOptions): void;
-declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): void;
-declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): void;
-declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): void;
-declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): void;
-
-declare function offSilentSubmitBoot(handler: SilentSubmitBootHandler): void;
-declare function offSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): void;
-declare function offSilentSubmitError(handler: SilentSubmitErrorHandler): void;
-declare function offSilentSubmitComplete(handler: SilentSubmitCompleteHandler): void;
-
-declare let updateStateEffect: typeof updateState;
+declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): OffEventCallback;
+declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): OffEventCallback;
+declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): OffEventCallback;
+declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): OffEventCallback;
+declare const updateStateEffect: typeof updateState;
