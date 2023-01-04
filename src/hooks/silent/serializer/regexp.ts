@@ -1,4 +1,4 @@
-import { DataSerializer } from '../../../../typings';
+import { DataSerializer } from '../../../../typings/general';
 import { instanceOf, newInstance } from '../../../helper';
 
 export default {

@@ -1,5 +1,5 @@
+import { SilentQueueMap } from '../../../../typings/general';
 import { forEach, JSONParse, objectKeys, pushItem } from '../../../helper';
-import { SilentQueueMap } from '../silentQueue';
 import deserializeSilentMethod from './deserializeSilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,

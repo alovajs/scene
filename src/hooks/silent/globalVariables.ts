@@ -4,7 +4,7 @@ import {
   SilentSubmitCompleteHandler,
   SilentSubmitErrorHandler,
   SilentSubmitSuccessHandler
-} from '../../../typings';
+} from '../../../typings/general';
 import { createAssert } from '../../helper';
 
 /**

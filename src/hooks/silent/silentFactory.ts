@@ -4,7 +4,7 @@ import {
   SilentSubmitCompleteHandler,
   SilentSubmitErrorHandler,
   SilentSubmitSuccessHandler
-} from '../../../typings';
+} from '../../../typings/general';
 import { forEach, objectKeys, pushItem, runArgsHandler, setTimeoutFn, splice } from '../../helper';
 import {
   bootHandlers,

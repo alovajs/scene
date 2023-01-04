@@ -1,5 +1,10 @@
 import { Method } from 'alova';
-import { FallbackHandler, RetryHandler, SilentMethod as SilentMethodInterface, SQHookBehavior } from '../../../typings';
+import {
+  FallbackHandler,
+  RetryHandler,
+  SilentMethod as SilentMethodInterface,
+  SQHookBehavior
+} from '../../../typings/general';
 import { splice, uuid } from '../../helper';
 import { silentQueueMap } from './silentQueue';
 import { persistSilentMethod, removeSilentMethod } from './storage/silentMethodStorage';

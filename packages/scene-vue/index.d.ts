@@ -1,15 +1,37 @@
-import { AlovaMethodHandler, CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
-import { Readable, Writable } from 'svelte/store';
-import { IsUnknown, PaginationConfig, SQHookReturnType, SQRequestHookConfig } from '.';
+import {
+  AlovaMethodHandler,
+  CompleteHandler,
+  ErrorHandler,
+  Method,
+  Progress,
+  SuccessHandler,
+  updateState
+} from 'alova';
+import { ComputedRef, Ref, WatchSource } from 'vue';
+import {
+  BootSilentFactoryFunction,
+  DehydrateVDataFunction,
+  GetSilentMethodFunction,
+  IsUnknown,
+  OnSilentSubmitBootFunction,
+  OnSilentSubmitCompleteFunction,
+  OnSilentSubmitErrorFunction,
+  OnSilentSubmitSuccessFunction,
+  PaginationConfig,
+  SilentQueueMap,
+  SQHookReturnType,
+  SQRequestHookConfig,
+  StringifyVDataFunction
+} from './general';
 
 interface UsePaginationReturnType<LD, R> {
-  loading: Writable<boolean>;
-  error: Writable<Error | undefined>;
-  downloading: Writable<Progress>;
-  uploading: Writable<Progress>;
-  page: Writable<number>;
-  pageSize: Writable<number>;
-  data: Writable<
+  loading: Ref<boolean>;
+  error: Ref<Error | undefined>;
+  downloading: Ref<Progress>;
+  uploading: Ref<Progress>;
+  page: Ref<number>;
+  pageSize: Ref<number>;
+  data: Ref<
     IsUnknown<
       LD,
       R extends {
@@ -20,9 +42,9 @@ interface UsePaginationReturnType<LD, R> {
       LD
     >
   >;
-  pageCount: Readable<number | undefined>;
-  total: Readable<number | undefined>;
-  isLastPage: Readonly<Readable<boolean>>;
+  pageCount: ComputedRef<number | undefined>;
+  total: ComputedRef<number | undefined>;
+  isLastPage: ComputedRef<boolean>;
 
   abort: () => void;
   send: (...args: any[]) => Promise<R>;
@@ -30,7 +52,7 @@ interface UsePaginationReturnType<LD, R> {
   onError: (handler: ErrorHandler) => void;
   onComplete: (handler: CompleteHandler) => void;
 
-  fetching: Writable<boolean>;
+  fetching: Ref<boolean>;
   onFetchSuccess: (handler: SuccessHandler<R>) => void;
   onFetchError: (handler: ErrorHandler) => void;
   onFetchComplete: (handler: CompleteHandler) => void;
@@ -68,24 +90,14 @@ interface UsePaginationReturnType<LD, R> {
 }
 
 /**
- * 基于alova.js的svelte分页hook
+ * 基于alova.js的vue分页hook
  * 分页相关状态自动管理、前后一页预加载、自动维护数据的新增/编辑/移除
  *
  * @param handler method创建函数
  * @param config pagination hook配置
  * @returns {UsePaginationReturnType}
  */
-export declare function usePagination<
-  S extends Writable<any>,
-  E extends Writable<any>,
-  R,
-  T,
-  RC,
-  RE,
-  RH,
-  LD,
-  WS extends Readable<any>[]
->(
+declare function usePagination<S extends Ref, E extends Ref, R, T, RC, RE, RH, LD, WS extends WatchSource[]>(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
   config?: PaginationConfig<R, LD, WS>
 ): UsePaginationReturnType<LD, R>;
@@ -94,7 +106,18 @@ export declare function usePagination<
  * 带silentQueue的request hook
  * silentQueue是实现静默提交的核心部件，其中将用于存储silentMethod实例，它们将按顺序串行发送提交
  */
-export declare function useSQRequest<S, E, R, T, RC, RE, RH>(
+declare function useSQRequest<S, E, R, T, RC, RE, RH>(
   handler: AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config?: SQRequestHookConfig<S, E, R, T, RC, RE, RH>
 ): SQHookReturnType<S, E, R, T, RC, RE, RH>;
+declare const bootSilentFactory: BootSilentFactoryFunction;
+declare const onSilentSubmitBoot: OnSilentSubmitBootFunction;
+declare const onSilentSubmitSuccess: OnSilentSubmitSuccessFunction;
+declare const onSilentSubmitError: OnSilentSubmitErrorFunction;
+declare const onSilentSubmitComplete: OnSilentSubmitCompleteFunction;
+declare const dehydrateVData: DehydrateVDataFunction;
+declare const stringifyVData: StringifyVDataFunction;
+declare const filterSilentMethods: FilterSilentMethodsFunction;
+declare const getSilentMethod: GetSilentMethodFunction;
+declare const updateStateEffect: typeof updateState;
+declare const silentQueueMap: SilentQueueMap;

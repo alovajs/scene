@@ -1,6 +1,29 @@
-import { AlovaMethodHandler, CompleteHandler, ErrorHandler, Method, Progress, SuccessHandler } from 'alova';
+import {
+  AlovaMethodHandler,
+  CompleteHandler,
+  ErrorHandler,
+  Method,
+  Progress,
+  SuccessHandler,
+  updateState
+} from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
-import { IsUnknown, PaginationConfig, SQHookReturnType, SQRequestHookConfig } from '.';
+import {
+  BootSilentFactoryFunction,
+  DehydrateVDataFunction,
+  FilterSilentMethodsFunction,
+  GetSilentMethodFunction,
+  IsUnknown,
+  OnSilentSubmitBootFunction,
+  OnSilentSubmitCompleteFunction,
+  OnSilentSubmitErrorFunction,
+  OnSilentSubmitSuccessFunction,
+  PaginationConfig,
+  SilentQueueMap,
+  SQHookReturnType,
+  SQRequestHookConfig,
+  StringifyVDataFunction
+} from '../../typings/general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
@@ -88,3 +111,14 @@ export declare function useSQRequest<S, E, R, T, RC, RE, RH>(
   handler: AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config?: SQRequestHookConfig<S, E, R, T, RC, RE, RH>
 ): SQHookReturnType<S, E, R, T, RC, RE, RH>;
+declare const bootSilentFactory: BootSilentFactoryFunction;
+declare const onSilentSubmitBoot: OnSilentSubmitBootFunction;
+declare const onSilentSubmitSuccess: OnSilentSubmitSuccessFunction;
+declare const onSilentSubmitError: OnSilentSubmitErrorFunction;
+declare const onSilentSubmitComplete: OnSilentSubmitCompleteFunction;
+declare const dehydrateVData: DehydrateVDataFunction;
+declare const stringifyVData: StringifyVDataFunction;
+declare const filterSilentMethods: FilterSilentMethodsFunction;
+declare const getSilentMethod: GetSilentMethodFunction;
+declare const updateStateEffect: typeof updateState;
+declare const silentQueueMap: SilentQueueMap;

@@ -1,4 +1,4 @@
-import { Alova, Method, RequestHookConfig, updateState, UseHookReturnType, WatcherHookConfig } from 'alova';
+import { Alova, Method, RequestHookConfig, UseHookReturnType, WatcherHookConfig } from 'alova';
 
 /** 判断是否为any */
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
@@ -334,9 +334,32 @@ type SilentSubmitErrorHandler = (event: GlobalSQErrorEvent) => void;
 type SilentSubmitCompleteHandler = (event: GlobalSQSuccessEvent | GlobalSQErrorEvent) => void;
 type OffEventCallback = () => void;
 
-declare function bootSilentFactory(options: SilentFactoryBootOptions): void;
-declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): OffEventCallback;
-declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): OffEventCallback;
-declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): OffEventCallback;
-declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): OffEventCallback;
-declare const updateStateEffect: typeof updateState;
+type SilentQueueMap = Record<string, SilentMethod[]>;
+
+interface BootSilentFactoryFunction {
+  (options: SilentFactoryBootOptions): void;
+}
+interface OnSilentSubmitBootFunction {
+  (handler: SilentSubmitBootHandler): OffEventCallback;
+}
+interface OnSilentSubmitSuccessFunction {
+  (handler: SilentSubmitSuccessHandler): OffEventCallback;
+}
+interface OnSilentSubmitErrorFunction {
+  (handler: SilentSubmitErrorHandler): OffEventCallback;
+}
+interface OnSilentSubmitCompleteFunction {
+  (handler: SilentSubmitCompleteHandler): OffEventCallback;
+}
+interface DehydrateVDataFunction {
+  (target: any): any;
+}
+interface StringifyVDataFunction {
+  (target: any, returnOriginalIfNotVData?: boolean): any;
+}
+interface FilterSilentMethodsFunction {
+  (methodNameMatcher: string | RegExp, queueName?: string): SilentMethod<any, any, any, any, any, any, any>[];
+}
+interface GetSilentMethodFunction {
+  (methodNameMatcher: string | RegExp, queueName?: string): SilentMethod<any, any, any, any, any, any, any>;
+}

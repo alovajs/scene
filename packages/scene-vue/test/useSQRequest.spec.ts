@@ -1,19 +1,19 @@
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
-import { globalVirtualResponseLock } from '../../src/hooks/silent/globalVariables';
-import { bootSilentFactory, onSilentSubmitSuccess } from '../../src/hooks/silent/silentFactory';
-import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
-import { silentQueueMap } from '../../src/hooks/silent/silentQueue';
-import loadSilentQueueMapFromStorage from '../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
-import useSQRequest from '../../src/hooks/silent/useSQRequest';
-import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
-import dehydrateVData from '../../src/hooks/silent/virtualResponse/dehydrateVData';
-import stringifyVData from '../../src/hooks/silent/virtualResponse/stringifyVData';
-import updateStateEffect from '../../src/hooks/silent/virtualResponse/updateStateEffect';
-import { symbolIsProxy, symbolVDataId } from '../../src/hooks/silent/virtualResponse/variables';
-import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '../../typings';
-import { mockRequestAdapter } from '../mockData';
-import { untilCbCalled } from '../utils';
+import { globalVirtualResponseLock } from '../../../src/hooks/silent/globalVariables';
+import { bootSilentFactory, onSilentSubmitSuccess } from '../../../src/hooks/silent/silentFactory';
+import { SilentMethod } from '../../../src/hooks/silent/SilentMethod';
+import { silentQueueMap } from '../../../src/hooks/silent/silentQueue';
+import loadSilentQueueMapFromStorage from '../../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
+import useSQRequest from '../../../src/hooks/silent/useSQRequest';
+import createVirtualResponse from '../../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import dehydrateVData from '../../../src/hooks/silent/virtualResponse/dehydrateVData';
+import stringifyVData from '../../../src/hooks/silent/virtualResponse/stringifyVData';
+import updateStateEffect from '../../../src/hooks/silent/virtualResponse/updateStateEffect';
+import { symbolIsProxy, symbolVDataId } from '../../../src/hooks/silent/virtualResponse/variables';
+import { mockRequestAdapter } from '../../../test/mockData';
+import { untilCbCalled } from '../../../test/utils';
+import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '../../../typings/general';
 
 const alovaInst = createAlova({
   baseURL: 'http://xxx',

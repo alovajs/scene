@@ -1,5 +1,5 @@
 import { Method, updateState, UpdateStateCollection } from 'alova';
-import { RetryErrorDetailed } from '../../../typings';
+import { RetryErrorDetailed, SilentQueueMap } from '../../../typings/general';
 import {
   forEach,
   instanceOf,
@@ -29,7 +29,6 @@ import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } f
 import stringifyVData from './virtualResponse/stringifyVData';
 import { regVDataId, symbolIsProxy, symbolOriginalValue } from './virtualResponse/variables';
 
-export type SilentQueueMap = Record<string, SilentMethod[]>;
 /** 静默方法队列集合 */
 export let silentQueueMap = {} as SilentQueueMap;
 

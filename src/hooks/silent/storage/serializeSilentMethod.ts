@@ -1,4 +1,4 @@
-import { SilentMethod } from '../../../../typings';
+import { SilentMethod } from '../../../../typings/general';
 import { instanceOf, isArray, JSONStringify, len, objectKeys, walkObject } from '../../../helper';
 import { falseValue, trueValue, undefinedValue } from '../../../helper/variables';
 import { globalVirtualResponseLock } from '../globalVariables';

@@ -8,22 +8,22 @@ var { readFileSync } = require('fs');
 var compilePaths = require('./libs');
 
 const getCompiler = (
-	opt = {
-		// objectHashIgnoreUnknownHack: true,
-		// clean: true,
-		tsconfigOverride: {
-			compilerOptions: {
-				module: 'ES2015'
-			}
-		}
-	}
+  opt = {
+    // objectHashIgnoreUnknownHack: true,
+    // clean: true,
+    tsconfigOverride: {
+      compilerOptions: {
+        module: 'ES2015'
+      }
+    }
+  }
 ) => typescript(opt);
 exports.getCompiler = getCompiler;
 
 const extension = process.env.EXTENSION;
 if (!extension) {
-	console.error('compiling extension error');
-	process.exit(1);
+  console.error('compiling extension error');
+  process.exit(1);
 }
 
 const pkg = JSON.parse(readFileSync('package.json').toString() || '{}');

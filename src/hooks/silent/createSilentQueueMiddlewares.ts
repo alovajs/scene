@@ -5,7 +5,7 @@ import {
   PushedQueueHandler,
   RetryHandler,
   SQHookConfig
-} from '../../../typings';
+} from '../../../typings/general';
 import {
   GeneralFn,
   isFn,

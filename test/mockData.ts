@@ -1,13 +1,13 @@
 import { createAlovaMockAdapter, defineMock } from '@alova/mock';
 
 const total = 300;
-let mockListData;
-export const setMockListData = cb => {
+let mockListData: any;
+export const setMockListData = (cb?: (data: any) => void) => {
   mockListData = typeof cb === 'function' ? cb(mockListData) : Array.from({ length: total }).map((_, i) => i);
 };
 
-let mockListWithSearchData;
-export const setMockListWithSearchData = cb => {
+let mockListWithSearchData: { id: number; word: string }[] = [];
+export const setMockListWithSearchData = (cb?: (data: any) => typeof mockListWithSearchData) => {
   mockListWithSearchData =
     typeof cb === 'function'
       ? cb(mockListWithSearchData)
@@ -21,8 +21,8 @@ export const setMockListWithSearchData = cb => {
 };
 
 const shortTotal = 10;
-let shortList;
-export const setMockShortListData = cb => {
+let shortList: any;
+export const setMockShortListData = (cb?: (data: any) => void) => {
   shortList = typeof cb === 'function' ? cb(shortList) : Array.from({ length: shortTotal }).map((_, i) => i);
 };
 

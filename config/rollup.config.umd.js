@@ -19,30 +19,30 @@ const globals = {};
 // 将externals中的内容放到globals对象中
 config.external.forEach(key => (globals[key] = key));
 module.exports = {
-	input: paths.input,
-	output: {
-		name: paths.packageName,
-		file: paths.output(moduleType),
-		format: 'umd',
-		// When export and export default are not used at the same time, set legacy to true.
-		// legacy: true,
-		globals,
-		banner: config.banner
-	},
-	external: config.external,
-	plugins: [
-		nodeResolve({
-			browser: true,
-			extensions: ['.ts', '.js', 'tsx', 'jsx']
-		}),
-		commonjs(),
-		config.getCompiler(),
-		json(), // 可允许import json文件
-		replace({
-			'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-			'process.env.EXTENSION': JSON.stringify(process.env.EXTENSION),
-			preventAssignment: true
-		}),
-		prod && terser()
-	]
+  input: paths.input,
+  output: {
+    name: paths.packageName,
+    file: paths.output(moduleType),
+    format: 'umd',
+    // When export and export default are not used at the same time, set legacy to true.
+    // legacy: true,
+    globals,
+    banner: config.banner
+  },
+  external: config.external,
+  plugins: [
+    nodeResolve({
+      browser: true,
+      extensions: ['.ts', '.js', 'tsx', 'jsx']
+    }),
+    commonjs(),
+    config.getCompiler(),
+    json(), // 可允许import json文件
+    replace({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+      'process.env.EXTENSION': JSON.stringify(process.env.EXTENSION),
+      preventAssignment: true
+    }),
+    prod && terser()
+  ]
 };
