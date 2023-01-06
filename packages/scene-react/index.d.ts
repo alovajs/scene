@@ -23,7 +23,7 @@ import {
   SQHookReturnType,
   SQRequestHookConfig,
   StringifyVDataFunction
-} from '../../typings/general';
+} from './general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 

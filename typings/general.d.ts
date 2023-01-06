@@ -351,8 +351,8 @@ interface OnSilentSubmitErrorFunction {
 interface OnSilentSubmitCompleteFunction {
   (handler: SilentSubmitCompleteHandler): OffEventCallback;
 }
-interface DehydrateVDataFunction {
-  (target: any): any;
+interface DehydrateVDataFunction<T> {
+  (target: T): T;
 }
 interface StringifyVDataFunction {
   (target: any, returnOriginalIfNotVData?: boolean): any;

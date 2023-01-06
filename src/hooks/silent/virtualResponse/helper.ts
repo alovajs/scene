@@ -29,3 +29,5 @@ export const vDataCollectGetter = (valueReturnFn: GeneralFn) =>
     vDataCollectUnified(this);
     return valueReturnFn(this, arg);
   };
+
+export const vDataGetter = (key: string) => vDataCollectGetter((thisObj: any) => thisObj.__proto__[key].call(thisObj));

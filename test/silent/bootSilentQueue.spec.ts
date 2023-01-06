@@ -1,6 +1,5 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
-import { globalVirtualResponseLock } from '../../src/hooks/silent/globalVariables';
 import {
   bootSilentFactory,
   onSilentSubmitBoot,
@@ -11,17 +10,14 @@ import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { deepReplaceVData, pushNewSilentMethod2Queue } from '../../src/hooks/silent/silentQueue';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import stringifyVData from '../../src/hooks/silent/virtualResponse/stringifyVData';
-import { GlobalSQSuccessEvent } from '../../typings';
+import { GlobalSQSuccessEvent } from '../../typings/general';
 import { mockRequestAdapter } from '../mockData';
 import { untilCbCalled } from '../utils';
 
-beforeEach(() => (globalVirtualResponseLock.v = 0));
 describe('boot silent queue', () => {
   test('replace virtual data to real data', () => {
     const virtualResponse = createVirtualResponse({ id: 'loading...' });
     const vid = virtualResponse.id;
-    const text = virtualResponse.text;
-    globalVirtualResponseLock.v = 2;
 
     const methodInstance = new Method(
       'DELETE',
@@ -34,19 +30,17 @@ describe('boot silent queue', () => {
       {
         transformData: (data: any) => data
       },
-      { whole: virtualResponse, text }
+      { whole: virtualResponse }
     );
     const vDataReplacedResponseMap = {
       [stringifyVData(virtualResponse)]: { id: 1 },
-      [stringifyVData(vid)]: 1,
-      [stringifyVData(text)]: undefined
+      [stringifyVData(vid)]: 1
     };
 
     deepReplaceVData(methodInstance, vDataReplacedResponseMap);
     expect(methodInstance.url).toBe('/detail/1');
     expect(methodInstance.requestBody).toEqual({
-      whole: { id: 1 },
-      text: undefined
+      whole: { id: 1 }
     });
 
     // 不存在虚拟数据
@@ -88,7 +82,6 @@ describe('boot silent queue', () => {
     const pms = new Promise(resolve => {
       const virtualResponse = createVirtualResponse({ id: 'loading...' });
       const vid = virtualResponse.id;
-      globalVirtualResponseLock.v = 2;
 
       // 模拟数据创建
       const methodInstance = new Method(
@@ -253,7 +246,7 @@ describe('boot silent queue', () => {
       requestAdapter: mockRequestAdapter
     });
     const pms = new Promise(resolve => {
-      const virtualResponse = createVirtualResponse(undefined);
+      const virtualResponse = createVirtualResponse({ id: undefined, other: undefined });
       const methodInstance = new Method('POST', alovaInst, '/detail', {
         transformData: () => undefined
       });
@@ -264,7 +257,6 @@ describe('boot silent queue', () => {
       silentMethodInstance.virtualResponse = virtualResponse;
       const vid = virtualResponse.id;
       const other = virtualResponse.other[0];
-      globalVirtualResponseLock.v = 2;
 
       const methodInstance2 = new Method('DELETE', alovaInst, `/detail/${vid}`, undefined, {
         id: vid,
@@ -357,7 +349,6 @@ describe('boot silent queue', () => {
         undefined,
         [virtualResponse]
       );
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false);
       pushNewSilentMethod2Queue(silentMethodInstance2, false);
 

@@ -1,13 +1,15 @@
 import { createAlova, Method } from 'alova';
 import GlobalFetch from 'alova/GlobalFetch';
 import VueHook from 'alova/vue';
-import { globalVirtualResponseLock, setDependentAlova } from '../../src/hooks/silent/globalVariables';
+import { setDependentAlova } from '../../src/hooks/silent/globalVariables';
 import { mergeSerializer, serializers } from '../../src/hooks/silent/serializer';
 import { SerializedSilentMethod, SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import deserializeSilentMethod from '../../src/hooks/silent/storage/deserializeSilentMethod';
 import serializeSilentMethod from '../../src/hooks/silent/storage/serializeSilentMethod';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import dehydrateVData from '../../src/hooks/silent/virtualResponse/dehydrateVData';
+import Null from '../../src/hooks/silent/virtualResponse/Null';
+import Undefined from '../../src/hooks/silent/virtualResponse/Undefined';
 import { symbolVDataId } from '../../src/hooks/silent/virtualResponse/variables';
 
 // 虚拟响应测试
@@ -31,7 +33,6 @@ describe('serializers', () => {
         backward: () => 'a,a'
       }
     });
-    globalVirtualResponseLock.v = 0;
 
     const dateObj = new Date('2022-10-01 00:00:00');
     const dateTimestamp = dateObj.getTime();
@@ -53,7 +54,7 @@ describe('serializers', () => {
           expire: 500000
         }
       },
-      { text: virtualResponse.text, time: virtualResponse.time, others: virtualResponse.e[0] }
+      { text: virtualResponse.text, time: virtualResponse.time }
     );
     const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, /.*/, 2, {
       delay: 2000,
@@ -77,8 +78,7 @@ describe('serializers', () => {
     });
     expect(serializedObj.entity.requestBody).toEqual({
       text: { __$k: virtualResponse.text[symbolVDataId], __$v: ['custom', '2a'] },
-      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', dateTimestamp] },
-      others: { __$k: virtualResponse.e[0][symbolVDataId] }
+      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', dateTimestamp] }
     });
     expect(serializedObj.entity.url).toBe(methodInstance.url);
     expect(serializedObj.entity.context).toBeUndefined();
@@ -95,10 +95,8 @@ describe('serializers', () => {
       __$v: {},
       id: { __$k: virtualResponse.id[symbolVDataId], __$v: 1 },
       text: { __$k: virtualResponse.text[symbolVDataId], __$v: ['custom', '2a'] },
-      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', dateTimestamp] },
-      e: { '0': { __$k: virtualResponse.e[0][symbolVDataId] }, __$k: virtualResponse.e[symbolVDataId] }
+      time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', dateTimestamp] }
     });
-    globalVirtualResponseLock.v = 2;
   });
 
   test('deserialized data must be the same as original data', () => {
@@ -110,13 +108,13 @@ describe('serializers', () => {
 
     mergeSerializer();
     setDependentAlova(alovaInst); // 内部重建method实例时需要依赖alova实例
-    globalVirtualResponseLock.v = 0;
     const virtualResponse = createVirtualResponse({
       id: 1,
       time: new Date('2022-10-01 00:00:00'),
       matcher: /^123[a-z]+(.*?)$/g,
       extra: {
-        other1: null
+        other1: null,
+        other2: undefined
       }
     });
     const methodInstance = new Method(
@@ -127,7 +125,7 @@ describe('serializers', () => {
         params: {
           id: virtualResponse.id,
           content: 'I am a content',
-          other: virtualResponse.extra.other1
+          other1: virtualResponse.extra.other1
         },
         localCache: {
           expire: new Date('2022-12-31 00:00:00'),
@@ -135,7 +133,13 @@ describe('serializers', () => {
         },
         transformData: (data: any) => data[0]
       },
-      { text: virtualResponse.text, time: virtualResponse.time, others: virtualResponse.e[0] }
+      {
+        matcher: virtualResponse.matcher,
+        time: virtualResponse.time,
+        other1: virtualResponse.extra.other1,
+        other2: virtualResponse.extra.other2,
+        other3: virtualResponse.extra.other3
+      }
     );
     const silentMethodInstance = new SilentMethod(
       methodInstance,
@@ -155,7 +159,6 @@ describe('serializers', () => {
     silentMethodInstance.cache = true;
     silentMethodInstance.virtualResponse = virtualResponse;
     const serializedString = serializeSilentMethod(silentMethodInstance);
-
     const deserizlizedSilentMethodInstance = deserializeSilentMethod(serializedString);
 
     expect(deserizlizedSilentMethodInstance.id).toBe(silentMethodInstance.id);
@@ -169,8 +172,23 @@ describe('serializers', () => {
     expect(params.id[symbolVDataId]).toBe(virtualResponse.id[symbolVDataId]);
     expect(dehydrateVData(params.id)).toBe(dehydrateVData(virtualResponse.id));
     expect(params.content).toBe('I am a content');
-    expect(params.other[symbolVDataId]).toBe(virtualResponse.extra.other1[symbolVDataId]);
-    expect(dehydrateVData(params.other)).toBe(dehydrateVData(virtualResponse.extra.other1));
+    expect(params.other1[symbolVDataId]).toBe(virtualResponse.extra.other1[symbolVDataId]);
+    expect(dehydrateVData(params.other1)).toBe(dehydrateVData(virtualResponse.extra.other1));
+
+    const requestBody = (deserizlizedSilentMethodInstance.entity.requestBody || {}) as any;
+    expect(requestBody.matcher[symbolVDataId]).toBe(virtualResponse.matcher[symbolVDataId]);
+    expect(requestBody.matcher.source).toBe('^123[a-z]+(.*?)$');
+    expect(requestBody.time[symbolVDataId]).toBe(virtualResponse.time[symbolVDataId]);
+    expect(requestBody.other1).toBeInstanceOf(Null);
+    expect(requestBody.other2).toBeInstanceOf(Undefined);
+    expect(requestBody.other3).toBeUndefined();
+    // {
+    //   matcher: virtualResponse.matcher,
+    //   time: virtualResponse.time,
+    //   other1: virtualResponse.extra.other1,
+    //   other2: virtualResponse.extra.other2,
+    //   other3: virtualResponse.extra.other3
+    // }
 
     expect((deserizlizedSilentMethodInstance.retryError as RegExp).source).toBe('.*');
     expect(deserizlizedSilentMethodInstance.maxRetryTimes).toBe(2);
@@ -182,12 +200,11 @@ describe('serializers', () => {
     expect(deserizlizedSilentMethodInstance.handlerArgs?.[0][symbolVDataId]).toBe(
       virtualResponse.extra.other2[symbolVDataId]
     );
-    expect(deserizlizedSilentMethodInstance.virtualResponse?.text[symbolVDataId]).toBe(
-      virtualResponse.text[symbolVDataId]
+    expect(deserizlizedSilentMethodInstance.virtualResponse?.matcher[symbolVDataId]).toBe(
+      virtualResponse.matcher[symbolVDataId]
     );
     expect(deserizlizedSilentMethodInstance.virtualResponse?.time[symbolVDataId]).toBe(
       virtualResponse.time[symbolVDataId]
     );
-    globalVirtualResponseLock.v = 2;
   });
 });

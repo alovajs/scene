@@ -1,5 +1,5 @@
 import { Method } from 'alova';
-import { falseValue, nullValue, ObjectCls, PromiseCls } from './variables';
+import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls } from './variables';
 
 export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
 export const promiseThen = <T, TResult1 = T, TResult2 = never>(
@@ -98,7 +98,7 @@ export const createAssert = (prefix: string) => {
   };
 };
 
-export const valueObject = <T>(value: T, writable = false) => ({
+export const valueObject = <T>(value: T, writable = falseValue) => ({
   value,
   writable
 });
@@ -149,6 +149,13 @@ export const isString = (arg: any): arg is string => typeOf(arg) === 'string';
 export const isObject = (arg: any) => arg !== nullValue && typeOf(arg) === 'object';
 
 /**
+ * 判断是否为纯对象或自定义类的对象
+ * @param arg 任意参数
+ * @returns 该参数是否为纯对象或自定义类的对象
+ */
+export const isPlainOrCustomObject = (arg: any) => ObjectCls.prototype.toString.call(arg) === '[object Object]';
+
+/**
  * 深层遍历目标对象
  * @param target 目标对象
  */
@@ -162,7 +169,7 @@ export const walkObject = (
   parent && key && (target = parent[key] = callback(target, key, parent));
   if (isObject(target)) {
     for (const i in target) {
-      if (!instanceOf(target, String)) {
+      if (!instanceOf(target, StringCls)) {
         target[i] = walkObject(target[i], callback, i, target);
       }
     }

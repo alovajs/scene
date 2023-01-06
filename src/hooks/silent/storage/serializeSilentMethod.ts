@@ -1,9 +1,8 @@
 import { SilentMethod } from '../../../../typings/general';
 import { instanceOf, isArray, JSONStringify, len, objectKeys, walkObject } from '../../../helper';
-import { falseValue, trueValue, undefinedValue } from '../../../helper/variables';
-import { globalVirtualResponseLock } from '../globalVariables';
+import { falseValue, ObjectCls, StringCls, trueValue, undefinedValue } from '../../../helper/variables';
 import { serializers } from '../serializer';
-import dehydrateVData from '../virtualResponse/dehydrateVData';
+import { dehydrateVDataUnified } from '../virtualResponse/dehydrateVData';
 import { symbolVDataId } from '../virtualResponse/variables';
 import { vDataKey, vDataValueKey } from './helper';
 
@@ -15,8 +14,6 @@ import { vDataKey, vDataValueKey } from './helper';
  */
 export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>) => {
   // 序列化时需要解锁，否则将访问不到虚拟响应数据内的虚拟数据id
-  const prevResponseLockValue = globalVirtualResponseLock.v;
-  globalVirtualResponseLock.v = 1;
   const transformedData = walkObject({ ...silentMethodInstance }, (value, key, parent) => {
     if (key === vDataValueKey && parent[vDataKey]) {
       return value;
@@ -28,7 +25,7 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
     }
 
     const vDataId = value?.[symbolVDataId];
-    let primitiveValue = dehydrateVData(value);
+    let primitiveValue = dehydrateVDataUnified(value, falseValue);
     let finallyApplySerializer = undefinedValue as string | undefined;
     // 找到匹配的序列化器并进行值的序列化，未找到则返回原值
     primitiveValue = objectKeys(serializers).reduce((currentValue, serializerName) => {
@@ -43,7 +40,7 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
     }, primitiveValue);
 
     // 需要用原始值判断，否则像new Number(1)等包装类也会是[object Object]
-    const toStringTag = toString.call(primitiveValue);
+    const toStringTag = ObjectCls.prototype.toString.call(primitiveValue);
     let isExpanded = trueValue;
     if (toStringTag === '[object Object]') {
       value = { ...value };
@@ -66,7 +63,7 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
         ...value
       };
       // 如果是String类型，将会有像数组一样的如0、1、2为下标，值为字符的项，需将他们过滤掉
-      if (instanceOf(value, String)) {
+      if (instanceOf(value, StringCls)) {
         for (let i = 0; i < len(value as string); i++) {
           delete valueWithVData?.[i];
         }
@@ -80,6 +77,5 @@ export default <S, E, R, T, RC, RE, RH>(silentMethodInstance: SilentMethod<S, E,
     return value;
   });
   const serializedString = JSONStringify(transformedData);
-  globalVirtualResponseLock.v = prevResponseLockValue; // 恢复原值，需要先序列化json串后再锁定
   return serializedString;
 };
