@@ -33,7 +33,7 @@ jobs:
       - run: npm run test:coverage
 
       # 打包发布
-      - run: yarn workspaces run build
-      - run: yarn workspaces run publish
+      - run: npm run build
+      - run: npm run release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ALOVA_PUBLISH_TOKEN }}

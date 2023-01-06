@@ -11,6 +11,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "build": "yarn workspaces run build",
+    "release": "yarn workspaces run release",
     "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info"
   },
   "author": "JOU-amjs",
