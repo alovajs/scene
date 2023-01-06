@@ -10,6 +10,7 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "cp:dts": "yarn workspaces run cp:dts",
     "build": "yarn workspaces run build",
     "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info"
   },
