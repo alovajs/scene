@@ -1,6 +1,5 @@
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
-import { globalVirtualResponseLock } from '../../../src/hooks/silent/globalVariables';
 import { bootSilentFactory, onSilentSubmitSuccess } from '../../../src/hooks/silent/silentFactory';
 import { SilentMethod } from '../../../src/hooks/silent/SilentMethod';
 import { silentQueueMap } from '../../../src/hooks/silent/silentQueue';
@@ -9,8 +8,9 @@ import useSQRequest from '../../../src/hooks/silent/useSQRequest';
 import createVirtualResponse from '../../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import dehydrateVData from '../../../src/hooks/silent/virtualResponse/dehydrateVData';
 import stringifyVData from '../../../src/hooks/silent/virtualResponse/stringifyVData';
+import Undefined from '../../../src/hooks/silent/virtualResponse/Undefined';
 import updateStateEffect from '../../../src/hooks/silent/virtualResponse/updateStateEffect';
-import { symbolIsProxy, symbolVDataId } from '../../../src/hooks/silent/virtualResponse/variables';
+import { symbolVDataId } from '../../../src/hooks/silent/virtualResponse/variables';
 import { mockRequestAdapter } from '../../../test/mockData';
 import { untilCbCalled } from '../../../test/utils';
 import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '../../../typings/general';
@@ -279,8 +279,10 @@ describe('useSQRequest', () => {
       behavior: () => behaviorStr
     });
     let event: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess);
-    expect(data.value[symbolIsProxy]).toBeTruthy();
-    expect(event.data[symbolIsProxy]).toBeTruthy();
+    expect(data.value).toBeInstanceOf(Undefined);
+    expect(data.value[symbolVDataId]).not.toBeUndefined();
+    expect(event.data).toBeInstanceOf(Undefined);
+    expect(event.data[symbolVDataId]).not.toBeUndefined();
     expect(event.behavior).toBe('silent');
     expect(event.sendArgs).toStrictEqual([]);
 
@@ -295,9 +297,7 @@ describe('useSQRequest', () => {
 
   test('should be intercpeted when has virtual data in method instance', async () => {
     const virtualResponse = createVirtualResponse(undefined);
-    globalVirtualResponseLock.v = 0;
     const vDataId = virtualResponse.id;
-    globalVirtualResponseLock.v = 2;
 
     const poster = (id: number) => alovaInst.Post<any>('/detail', { id });
     const { data, onSuccess } = useSQRequest(() => poster(vDataId), {
@@ -327,9 +327,7 @@ describe('useSQRequest', () => {
 
   test('should be intercpeted when has virtual data id string in method instance', async () => {
     const virtualResponse = createVirtualResponse(undefined);
-    globalVirtualResponseLock.v = 0;
     const vDataId = virtualResponse.id;
-    globalVirtualResponseLock.v = 2;
 
     const poster = (id: number) =>
       alovaInst.Post<any>('/detail', {
@@ -351,10 +349,8 @@ describe('useSQRequest', () => {
 
   test('should be intercpeted when use virtual data to calculate in method instance', async () => {
     const virtualResponse = createVirtualResponse(undefined);
-    globalVirtualResponseLock.v = 0;
     const vDataId = virtualResponse.id;
     const obj = { vDataId };
-    globalVirtualResponseLock.v = 2;
 
     const poster = (o: { vDataId: any }) =>
       alovaInst.Post<any>('/detail', {
@@ -385,7 +381,7 @@ describe('useSQRequest', () => {
     expect(event.method).not.toBeUndefined();
     expect(event.silentMethod).not.toBeUndefined();
     expect(event.sendArgs).toStrictEqual([]);
-    expect(data.value[symbolIsProxy]).toBeTruthy();
+    expect(data.value[symbolVDataId]).toBeTruthy();
     expect(dehydrateVData(event.data)).toBeUndefined();
     expect(dehydrateVData(data.value)).toBeUndefined();
 
@@ -393,16 +389,16 @@ describe('useSQRequest', () => {
       behavior: 'silent',
       silentDefaultResponse: () => ({
         a: 1,
-        b: 2
+        b: 'bb'
       })
     });
     const event2: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess2);
-    expect(data2.value[symbolIsProxy]).toBeTruthy();
-    expect(data2.value.a).toBe(1);
-    expect(data2.value.b).toBe(2);
+    expect(data2.value[symbolVDataId]).not.toBeUndefined();
+    expect(data2.value.a.toFixed(2)).toBe('1.00');
+    expect(data2.value.b.replace('b', 'a')).toBe('ab');
 
-    expect(dehydrateVData(event2.data)).toStrictEqual({ a: 1, b: 2 });
-    expect(dehydrateVData(data2.value)).toStrictEqual({ a: 1, b: 2 });
+    expect(dehydrateVData(event2.data)).toStrictEqual({ a: 1, b: 'bb' });
+    expect(dehydrateVData(data2.value)).toStrictEqual({ a: 1, b: 'bb' });
   });
 
   test('should be delay update states when call `updateStateEffect` in onSuccess handler', async () => {
@@ -487,7 +483,14 @@ describe('useSQRequest', () => {
           status: 1
         }),
       {
-        behavior: 'silent'
+        behavior: 'silent',
+        silentDefaultResponse() {
+          return {
+            id: null,
+            text: null,
+            status: null
+          };
+        }
       }
     );
 
@@ -508,7 +511,14 @@ describe('useSQRequest', () => {
           status: 2
         }),
       {
-        behavior: 'silent'
+        behavior: 'silent',
+        silentDefaultResponse() {
+          return {
+            id: undefined,
+            text: undefined,
+            status: undefined
+          };
+        }
       }
     );
 

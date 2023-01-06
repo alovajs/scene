@@ -23,7 +23,7 @@ import {
   SQHookReturnType,
   SQRequestHookConfig,
   StringifyVDataFunction
-} from '../../typings/general';
+} from './general';
 
 interface UsePaginationReturnType<LD, R> {
   loading: Writable<boolean>;

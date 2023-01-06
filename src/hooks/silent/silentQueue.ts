@@ -15,19 +15,13 @@ import {
   shift,
   walkObject
 } from '../../helper';
-import { behaviorSilent, defaultQueueName, undefinedValue } from '../../helper/variables';
+import { behaviorSilent, defaultQueueName, falseValue, undefinedValue } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import {
-  completeHandlers,
-  errorHandlers,
-  globalVirtualResponseLock,
-  silentFactoryStatus,
-  successHandlers
-} from './globalVariables';
+import { completeHandlers, errorHandlers, silentFactoryStatus, successHandlers } from './globalVariables';
 import { SilentMethod } from './SilentMethod';
 import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
 import stringifyVData from './virtualResponse/stringifyVData';
-import { regVDataId, symbolIsProxy, symbolOriginalValue } from './virtualResponse/variables';
+import { regVDataId } from './virtualResponse/variables';
 
 /** 静默方法队列集合 */
 export let silentQueueMap = {} as SilentQueueMap;
@@ -67,7 +61,7 @@ export const deepReplaceVData = (target: any, vDataResponse: Record<string, any>
     }
     return value;
   };
-  if (isObject(target) && !target?.[symbolIsProxy]) {
+  if (isObject(target) && !stringifyVData(target, falseValue)) {
     walkObject(target, replaceVData);
   } else {
     target = replaceVData(target);
@@ -97,8 +91,8 @@ const updateQueueMethodEntities = (vDataResponse: Record<string, any>, targetQue
  */
 const replaceVirtualResponseWithResponse = (virtualResponse: any, response: any) => {
   let vDataResponse = {} as Record<string, any>;
-  const vDataId = stringifyVData(virtualResponse);
-  vDataId !== virtualResponse && (vDataResponse[vDataId] = virtualResponse[symbolOriginalValue] = response);
+  const vDataId = stringifyVData(virtualResponse, falseValue);
+  vDataId && (vDataResponse[vDataId] = response);
 
   if (isObject(virtualResponse)) {
     for (const i in virtualResponse) {
@@ -152,9 +146,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
         if (behavior === behaviorSilent) {
           // 替换队列中后面方法实例中的虚拟数据为真实数据
           // 开锁后才能正常访问virtualResponse的层级结构
-          globalVirtualResponseLock.v = 1;
           const vDataResponse = replaceVirtualResponseWithResponse(virtualResponse, data);
-          globalVirtualResponseLock.v = 2;
 
           const { targetRefMethod, updateStates } = silentMethodInstance; // 实时获取才准确
           // 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据

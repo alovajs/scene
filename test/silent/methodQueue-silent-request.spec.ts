@@ -1,6 +1,5 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
-import { globalVirtualResponseLock } from '../../src/hooks/silent/globalVariables';
 import {
   bootSilentFactory,
   onSilentSubmitComplete,
@@ -10,7 +9,7 @@ import {
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { pushNewSilentMethod2Queue } from '../../src/hooks/silent/silentQueue';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
-import { GlobalSQErrorEvent, GlobalSQSuccessEvent } from '../../typings';
+import { GlobalSQErrorEvent, GlobalSQSuccessEvent } from '../../typings/general';
 import { mockRequestAdapter } from '../mockData';
 
 describe('silent method request in queue with silent behavior', () => {
@@ -25,7 +24,6 @@ describe('silent method request in queue with silent behavior', () => {
     const retryMockFn = jest.fn();
     const methodInstance = new Method('POST', alovaInst, '/detail');
     const pms = new Promise<void>(resolve => {
-      globalVirtualResponseLock.v = 0;
       const virtualResponse = createVirtualResponse({
         id: ''
       });
@@ -54,7 +52,6 @@ describe('silent method request in queue with silent behavior', () => {
         ]
       );
       silentMethodInstance.virtualResponse = virtualResponse;
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false);
 
       // 启动silentFactory
@@ -110,7 +107,6 @@ describe('silent method request in queue with silent behavior', () => {
       failTimes: 1
     });
     const pms = new Promise(resolve => {
-      globalVirtualResponseLock.v = 0;
       const virtualResponse = createVirtualResponse({
         id: ''
       });
@@ -139,7 +135,6 @@ describe('silent method request in queue with silent behavior', () => {
         ]
       );
       silentMethodInstance.virtualResponse = virtualResponse;
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false, 't1'); // 多个用例需要分别放到不同队列，否则会造成冲突
 
       // 启动silentFactory
@@ -178,7 +173,6 @@ describe('silent method request in queue with silent behavior', () => {
     const executeOrder = [] as string[]; // 用于记录执行顺序，后续验证
     const methodInstance = new Method('POST', alovaInst, '/detail-error', {}, { id: 'b' });
     const pms = new Promise<void>(resolve => {
-      globalVirtualResponseLock.v = 0;
       const virtualResponse = createVirtualResponse({
         id: ''
       });
@@ -219,7 +213,6 @@ describe('silent method request in queue with silent behavior', () => {
         ]
       );
       silentMethodInstance.virtualResponse = virtualResponse;
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false, 't2');
 
       // 启动silentFactory
@@ -271,7 +264,6 @@ describe('silent method request in queue with silent behavior', () => {
     const retryMockFn = jest.fn();
     const methodInstance = new Method('POST', alovaInst, '/detail-error', {}, { id: 'c' });
     const pms = new Promise<void>(resolve => {
-      globalVirtualResponseLock.v = 0;
       const virtualResponse = createVirtualResponse({
         id: ''
       });
@@ -290,7 +282,6 @@ describe('silent method request in queue with silent behavior', () => {
         ]
       );
       silentMethodInstance.virtualResponse = virtualResponse;
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false, 't3');
 
       // 启动silentFactory
@@ -320,7 +311,6 @@ describe('silent method request in queue with silent behavior', () => {
     const retryMockFn = jest.fn();
     const methodInstance = new Method('POST', alovaInst, '/detail');
     const pms = new Promise<void>(resolve => {
-      globalVirtualResponseLock.v = 0;
       const virtualResponse = createVirtualResponse({
         id: ''
       });
@@ -350,7 +340,6 @@ describe('silent method request in queue with silent behavior', () => {
         ]
       );
       silentMethodInstance.virtualResponse = virtualResponse;
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false, 't4'); // 多个用例需要分别放到不同队列，否则会造成冲突
 
       // 启动silentFactory
@@ -376,7 +365,6 @@ describe('silent method request in queue with silent behavior', () => {
     const retryMockFn = jest.fn();
     const methodInstance = new Method('POST', alovaInst, '/detail-error');
     const pms = new Promise<void>(resolve => {
-      globalVirtualResponseLock.v = 0;
       const virtualResponse = createVirtualResponse({
         id: ''
       });
@@ -408,7 +396,6 @@ describe('silent method request in queue with silent behavior', () => {
         ]
       );
       silentMethodInstance.virtualResponse = virtualResponse;
-      globalVirtualResponseLock.v = 2;
       pushNewSilentMethod2Queue(silentMethodInstance, false, 't5');
       bootSilentFactory({
         alova: alovaInst,

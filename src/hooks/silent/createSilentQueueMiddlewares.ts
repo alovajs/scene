@@ -27,12 +27,7 @@ import {
   undefinedValue
 } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import {
-  globalVirtualResponseLock,
-  setVDataIdCollectBasket,
-  silentAssert,
-  vDataIdCollectBasket
-} from './globalVariables';
+import { setVDataIdCollectBasket, silentAssert, vDataIdCollectBasket } from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';
 import { pushNewSilentMethod2Queue } from './silentQueue';
 import createVirtualResponse from './virtualResponse/createVirtualResponse';
@@ -92,9 +87,7 @@ export default <S, E, R, T, RC, RE, RH>(
     // 将响应对应的事件实例创建函数暂存到createFinishedEvent中，在complete事件触发时直接调用此函数即可获得对应状态的事件实例
     let createFinishedEvent: GeneralFn | undefined = undefinedValue;
     decorateSuccess((handler, args, index, length) => {
-      // 开锁，详情请看globalVirtualResponseLock
       if (index === 0) {
-        globalVirtualResponseLock.v = 0;
         currentSilentMethod = silentMethodInstance;
       }
       createFinishedEvent =
@@ -115,8 +108,6 @@ export default <S, E, R, T, RC, RE, RH>(
       // 所有成功回调执行完后再锁定虚拟数据，锁定后虚拟响应数据内不能再访问任意层级
       // 锁定操作只在silent模式下，用于锁定虚拟数据的生成操作
       if (index === length - 1) {
-        // 锁定，详情请看globalVirtualResponseLock
-        globalVirtualResponseLock.v = 2;
         currentSilentMethod = undefinedValue;
       }
     });
