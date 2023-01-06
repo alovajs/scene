@@ -6,10 +6,10 @@
   "main": "dist/alova-scene.umd.min.js",
   "jsnext:main": "dist/alova-scene.esm.js",
   "module": "dist/alova-scene.esm.js",
-  "types": "index.d.ts",
+  "types": "typings/index.d.ts",
   "scripts": {
     "clean": "rimraf ./dist",
-    "cp:dts": "cpy general.d.ts ./dist",
+    "cp:dts": "node ../../config/cp-dts.js",
     "build:esm": "cross-env NODE_ENV=development EXTENSION=sveltehooks rollup -c ../../config/rollup.config.esm.js",
     "build:umd": "cross-env NODE_ENV=development EXTENSION=sveltehooks rollup -c ../../config/rollup.config.umd.js",
     "build:umd.min": "cross-env NODE_ENV=production EXTENSION=sveltehooks rollup -c ../../config/rollup.config.umd.js",

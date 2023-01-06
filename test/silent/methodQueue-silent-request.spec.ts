@@ -191,7 +191,6 @@ describe('silent method request in queue with silent behavior', () => {
           () => {
             fallbackMockFn();
             executeOrder.push('fallback');
-            console.log('fallback...');
             resolve();
           }
         ],
