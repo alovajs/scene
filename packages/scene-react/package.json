@@ -14,10 +14,11 @@
     "build:umd": "cross-env NODE_ENV=development EXTENSION=reacthooks rollup -c ../../config/rollup.config.umd.js",
     "build:umd.min": "cross-env NODE_ENV=production EXTENSION=reacthooks rollup -c ../../config/rollup.config.umd.js",
     "build": "npm run clean && npm run build:esm && npm run build:umd && npm run build:umd.min && npm run cp:dts",
-    "publish": "npm publish"
+    "release": "npm publish"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "author": "JOU-amjs",
   "license": "MIT",

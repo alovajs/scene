@@ -17,7 +17,8 @@
     "release": "npm publish"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "author": "JOU-amjs",
   "license": "MIT",
