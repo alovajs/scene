@@ -31,8 +31,9 @@ export let silentQueueMap = {} as SilentQueueMap;
  * @param queueMap silentMethod队列集合
  */
 export const merge2SilentQueueMap = (queueMap: SilentQueueMap) => {
-  forEach(objectKeys(queueMap), queueName => {
-    silentQueueMap[queueName] = [...(silentQueueMap[queueName] || []), ...queueMap[queueName]];
+  forEach(objectKeys(queueMap), targetQueueName => {
+    const currentQueue = (silentQueueMap[targetQueueName] = silentQueueMap[targetQueueName] || []);
+    pushItem(currentQueue, ...queueMap[targetQueueName]);
   });
 };
 
