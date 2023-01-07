@@ -166,11 +166,16 @@ export const walkObject = (
   key?: AttrKey,
   parent?: any
 ) => {
-  parent && key && (target = parent[key] = callback(target, key, parent));
+  if (parent && key) {
+    target = callback(target, key, parent);
+    if (target !== parent[key]) {
+      parent[key] = target;
+    }
+  }
   if (isObject(target)) {
     for (const i in target) {
       if (!instanceOf(target, StringCls)) {
-        target[i] = walkObject(target[i], callback, i, target);
+        walkObject(target[i], callback, i, target);
       }
     }
   }
