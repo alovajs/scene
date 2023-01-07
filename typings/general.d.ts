@@ -116,7 +116,7 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /** 避让策略 */
   readonly backoff?: {
     /** 再次请求的延迟时间，单位毫秒，默认为1000 */
-    delay: number;
+    delay?: number;
     /** 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒，默认为0 */
     multiplier?: number;
 

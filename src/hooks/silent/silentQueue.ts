@@ -115,6 +115,7 @@ const replaceVirtualResponseWithResponse = (virtualResponse: any, response: any)
  *
  * @param queue SilentMethod队列
  */
+const defaultBackoffDelay = 1000;
 export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
   const silentMethodRequest = (silentMethodInstance: SilentMethod, retryTimes = 0) => {
     const {
@@ -124,7 +125,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
       entity,
       retryError = 0,
       maxRetryTimes = 0,
-      backoff = { delay: 1000 },
+      backoff = { delay: defaultBackoffDelay },
       resolveHandler = noop,
       rejectHandler = noop,
       fallbackHandlers = [],
@@ -209,7 +210,7 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
           (regRetryErrorMsg && regRetryErrorMsg.test(errorMsg));
         // 如果还有重试次数则进行重试
         if (retryTimes < maxRetryTimes && matchRetryError) {
-          let { delay, multiplier = 1, startQuiver, endQuiver } = backoff;
+          let { delay = defaultBackoffDelay, multiplier = 1, startQuiver, endQuiver } = backoff;
           let retryDelayFinally = delay * Math.pow(multiplier, retryTimes);
           // 如果startQuiver或endQuiver有值，则需要增加指定范围的随机抖动值
           if (startQuiver || endQuiver) {
