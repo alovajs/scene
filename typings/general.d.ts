@@ -253,7 +253,10 @@ type FallbackHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T,
 type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, T, RC, RE, RH>) => void;
 type BeforePushQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type PushedQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
-type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<R, S> & {
+type SQHookReturnType<S, E, R, T, RC, RE, RH> = Omit<
+  UseHookReturnType<R, S>,
+  'onSuccess' | 'onError' | 'onComplete'
+> & {
   /**
    * 回退事件绑定函数，它将在以下情况触发：
    * 1. 重试指定次数都无响应而停止继续请求后
@@ -333,33 +336,4 @@ type SilentSubmitSuccessHandler = (event: GlobalSQSuccessEvent) => void;
 type SilentSubmitErrorHandler = (event: GlobalSQErrorEvent) => void;
 type SilentSubmitCompleteHandler = (event: GlobalSQSuccessEvent | GlobalSQErrorEvent) => void;
 type OffEventCallback = () => void;
-
 type SilentQueueMap = Record<string, SilentMethod[]>;
-
-interface BootSilentFactoryFunction {
-  (options: SilentFactoryBootOptions): void;
-}
-interface OnSilentSubmitBootFunction {
-  (handler: SilentSubmitBootHandler): OffEventCallback;
-}
-interface OnSilentSubmitSuccessFunction {
-  (handler: SilentSubmitSuccessHandler): OffEventCallback;
-}
-interface OnSilentSubmitErrorFunction {
-  (handler: SilentSubmitErrorHandler): OffEventCallback;
-}
-interface OnSilentSubmitCompleteFunction {
-  (handler: SilentSubmitCompleteHandler): OffEventCallback;
-}
-interface DehydrateVDataFunction<T> {
-  (target: T): T;
-}
-interface StringifyVDataFunction {
-  (target: any, returnOriginalIfNotVData?: boolean): any;
-}
-interface FilterSilentMethodsFunction {
-  (methodNameMatcher: string | RegExp, queueName?: string): SilentMethod<any, any, any, any, any, any, any>[];
-}
-interface GetSilentMethodFunction {
-  (methodNameMatcher: string | RegExp, queueName?: string): SilentMethod<any, any, any, any, any, any, any>;
-}

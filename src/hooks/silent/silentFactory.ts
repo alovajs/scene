@@ -73,9 +73,9 @@ export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
   if (silentFactoryStatus === 0) {
     setDependentAlova(options.alova);
     mergeSerializer(options.serializers);
-    merge2SilentQueueMap(loadSilentQueueMapFromStorage());
-
     setTimeoutFn(() => {
+      // 延时加载，让页面的queue放在最前面
+      merge2SilentQueueMap(loadSilentQueueMapFromStorage());
       // 循环启动队列静默提交
       // 多条队列是并行执行的
       forEach(objectKeys(silentQueueMap), queueName => {

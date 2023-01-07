@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene",
-  "version": "1.0.0-beta.16",
+  "version": "1.0.0-beta.18",
   "description": "scenario hooks with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "private": true,
@@ -10,6 +10,7 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "cp:dts": "yarn workspaces run cp:dts",
     "build": "yarn workspaces run build",
     "release": "yarn workspaces run release",
     "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info"

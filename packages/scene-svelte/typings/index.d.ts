@@ -9,20 +9,18 @@ import {
 } from 'alova';
 import { Readable, Writable } from 'svelte/store';
 import {
-  BootSilentFactoryFunction,
-  DehydrateVDataFunction,
-  FilterSilentMethodsFunction,
-  GetSilentMethodFunction,
   IsUnknown,
-  OnSilentSubmitBootFunction,
-  OnSilentSubmitCompleteFunction,
-  OnSilentSubmitErrorFunction,
-  OnSilentSubmitSuccessFunction,
+  OffEventCallback,
   PaginationConfig,
+  SilentFactoryBootOptions,
+  SilentMethod,
   SilentQueueMap,
+  SilentSubmitBootHandler,
+  SilentSubmitCompleteHandler,
+  SilentSubmitErrorHandler,
+  SilentSubmitSuccessHandler,
   SQHookReturnType,
-  SQRequestHookConfig,
-  StringifyVDataFunction
+  SQRequestHookConfig
 } from './general';
 
 interface UsePaginationReturnType<LD, R> {
@@ -121,14 +119,14 @@ declare function useSQRequest<S, E, R, T, RC, RE, RH>(
   handler: AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config?: SQRequestHookConfig<S, E, R, T, RC, RE, RH>
 ): SQHookReturnType<S, E, R, T, RC, RE, RH>;
-declare const bootSilentFactory: BootSilentFactoryFunction;
-declare const onSilentSubmitBoot: OnSilentSubmitBootFunction;
-declare const onSilentSubmitSuccess: OnSilentSubmitSuccessFunction;
-declare const onSilentSubmitError: OnSilentSubmitErrorFunction;
-declare const onSilentSubmitComplete: OnSilentSubmitCompleteFunction;
-declare const dehydrateVData: DehydrateVDataFunction;
-declare const stringifyVData: StringifyVDataFunction;
-declare const filterSilentMethods: FilterSilentMethodsFunction;
-declare const getSilentMethod: GetSilentMethodFunction;
+declare function bootSilentFactory(options: SilentFactoryBootOptions): void;
+declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): OffEventCallback;
+declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): OffEventCallback;
+declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): OffEventCallback;
+declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): OffEventCallback;
+declare function dehydrateVData<T>(target: T): T;
+declare function stringifyVData(target: any, returnOriginalIfNotVData?: boolean): any;
+declare function filterSilentMethods(methodNameMatcher: string | RegExp, queueName?: string): SilentMethod[];
+declare function getSilentMethod(methodNameMatcher: string | RegExp, queueName?: string): SilentMethod;
 declare const updateStateEffect: typeof updateState;
 declare const silentQueueMap: SilentQueueMap;

@@ -1,4 +1,4 @@
-import { JSONParse, JSONStringify, len, pushItem, splice } from '../../../helper';
+import { JSONParse, JSONStringify, len, objectKeys, pushItem, splice } from '../../../helper';
 import { SilentMethod } from '../SilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,
@@ -57,9 +57,15 @@ export const removeSilentMethod = (targetSilentMethodId: string, queueName: stri
     const index = currentQueue.findIndex(id => id === targetSilentMethodId);
     if (index >= 0) {
       splice(currentQueue, index, 1);
-      len(currentQueue) <= 0 && delete silentMethodIdQueueMap[queueName]; // 队列为空时删除此队列
-      storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
+      // 队列为空时删除此队列
+      len(currentQueue) <= 0 && delete silentMethodIdQueueMap[queueName];
       storageRemoveItem(silentMethodStorageKeyPrefix + targetSilentMethodId);
+      if (len(objectKeys(silentMethodIdQueueMap)) > 0) {
+        storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
+      } else {
+        // 队列集合为空时移除它
+        storageRemoveItem(silentMethodIdQueueMapStorageKey);
+      }
     }
   }
 };
