@@ -1,5 +1,5 @@
 import { Method } from 'alova';
-import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls } from './variables';
+import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
 export const promiseThen = <T, TResult1 = T, TResult2 = never>(
@@ -118,7 +118,14 @@ export type GeneralFn = (...args: any[]) => any;
  * @param handlers 事件回调数组
  * @param args 函数参数
  */
-export const runArgsHandler = (handlers: GeneralFn[], ...args: any[]) => forEach(handlers, handler => handler(...args));
+export const runArgsHandler = (handlers: GeneralFn[], ...args: any[]) => {
+  let ret: any = undefinedValue;
+  forEach(handlers, handler => {
+    const retInner = handler(...args);
+    ret = retInner !== undefinedValue ? retInner : ret;
+  });
+  return ret;
+};
 
 /**
  * typof冗余函数

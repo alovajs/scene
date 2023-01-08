@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene-vue",
-  "version": "1.0.0-beta.19",
+  "version": "1.0.0-beta.20",
   "description": "scenario vue hooks with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "main": "dist/alova-scene.umd.min.js",

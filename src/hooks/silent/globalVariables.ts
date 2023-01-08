@@ -1,8 +1,9 @@
 import { Alova } from 'alova';
 import {
+  BeforeSilentSubmitHandler,
   SilentSubmitBootHandler,
-  SilentSubmitCompleteHandler,
   SilentSubmitErrorHandler,
+  SilentSubmitFailHandler,
   SilentSubmitSuccessHandler
 } from '../../../typings/general';
 import { createAssert } from '../../helper';
@@ -51,9 +52,10 @@ export const setSilentFactoryStatus = (status: 0 | 1) => (silentFactoryStatus = 
 
 /** 事件绑定函数 */
 export const bootHandlers = [] as SilentSubmitBootHandler[];
+export const beforeHandlers = [] as BeforeSilentSubmitHandler[];
 export const successHandlers = [] as SilentSubmitSuccessHandler[];
 export const errorHandlers = [] as SilentSubmitErrorHandler[];
-export const completeHandlers = [] as SilentSubmitCompleteHandler[];
+export const failHandlers = [] as SilentSubmitFailHandler[];
 
 /** silentAssert */
 export const silentAssert = createAssert('useSQHook');

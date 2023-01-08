@@ -9,6 +9,7 @@ import {
 } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
 import {
+  BeforeSilentSubmitHandler,
   IsUnknown,
   OffEventCallback,
   PaginationConfig,
@@ -16,8 +17,8 @@ import {
   SilentMethod,
   SilentQueueMap,
   SilentSubmitBootHandler,
-  SilentSubmitCompleteHandler,
   SilentSubmitErrorHandler,
+  SilentSubmitFailHandler,
   SilentSubmitSuccessHandler,
   SQHookReturnType,
   SQRequestHookConfig
@@ -113,7 +114,8 @@ declare function bootSilentFactory(options: SilentFactoryBootOptions): void;
 declare function onSilentSubmitBoot(handler: SilentSubmitBootHandler): OffEventCallback;
 declare function onSilentSubmitSuccess(handler: SilentSubmitSuccessHandler): OffEventCallback;
 declare function onSilentSubmitError(handler: SilentSubmitErrorHandler): OffEventCallback;
-declare function onSilentSubmitComplete(handler: SilentSubmitCompleteHandler): OffEventCallback;
+declare function onSilentSubmitFail(handler: SilentSubmitFailHandler): OffEventCallback;
+declare function onBeforeSilentSubmit(handler: BeforeSilentSubmitHandler): OffEventCallback;
 declare function dehydrateVData<T>(target: T): T;
 declare function stringifyVData(target: any, returnOriginalIfNotVData?: boolean): any;
 declare function filterSilentMethods(methodNameMatcher: string | RegExp, queueName?: string): SilentMethod[];

@@ -1,15 +1,17 @@
 import {
+  BeforeSilentSubmitHandler,
   SilentFactoryBootOptions,
   SilentSubmitBootHandler,
-  SilentSubmitCompleteHandler,
   SilentSubmitErrorHandler,
+  SilentSubmitFailHandler,
   SilentSubmitSuccessHandler
 } from '../../../typings/general';
 import { forEach, objectKeys, pushItem, runArgsHandler, setTimeoutFn, splice } from '../../helper';
 import {
+  beforeHandlers,
   bootHandlers,
-  completeHandlers,
   errorHandlers,
+  failHandlers,
   setDependentAlova,
   setSilentFactoryStatus,
   silentFactoryStatus,
@@ -46,6 +48,7 @@ export const onSilentSubmitSuccess = (handler: SilentSubmitSuccessHandler) => {
 
 /**
  * 绑定silentSubmit错误事件
+ * 每次请求错误，触发错误回调
  * @param {SilentSubmitErrorHandler} handler 事件回调函数
  * @returns 解绑函数
  */
@@ -55,13 +58,24 @@ export const onSilentSubmitError = (handler: SilentSubmitErrorHandler) => {
 };
 
 /**
- * 绑定silentSubmit完成事件
- * @param {SilentSubmitCompleteHandler} handler 事件回调函数
+ * 绑定silentSubmit失败事件
+ * 失败事件将在最大请求次数到达，或不匹配错误信息时触发
+ * @param {SilentSubmitFailHandler} handler 事件回调函数
  * @returns 解绑函数
  */
-export const onSilentSubmitComplete = (handler: SilentSubmitCompleteHandler) => {
-  pushItem(completeHandlers, handler);
-  return offEventCallback(handler, completeHandlers);
+export const onSilentSubmitFail = (handler: SilentSubmitFailHandler) => {
+  pushItem(failHandlers, handler);
+  return offEventCallback(handler, failHandlers);
+};
+
+/**
+ * 绑定silentSubmit发起请求前事件
+ * @param {BeforeSilentSubmitHandler} handler 事件回调函数
+ * @returns 解绑函数
+ */
+export const onBeforeSilentSubmit = (handler: BeforeSilentSubmitHandler) => {
+  pushItem(beforeHandlers, handler);
+  return offEventCallback(handler, beforeHandlers);
 };
 
 /**
