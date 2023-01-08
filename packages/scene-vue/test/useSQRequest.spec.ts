@@ -29,7 +29,6 @@ beforeAll(() => {
     alova: alovaInst
   });
 });
-// jest.setTimeout(100000);
 describe('useSQRequest', () => {
   test('request immediately with queue behavior', async () => {
     const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
@@ -193,6 +192,41 @@ describe('useSQRequest', () => {
     });
   });
 
+  test('should prevent to push silentMethod when return false in onBeforePushQueue', async () => {
+    const Get = () => alovaInst.Get<any>('/list');
+    const { onBeforePushQueue, onSuccess } = useSQRequest(Get, {
+      behavior: 'queue',
+      queue: 'a22'
+    });
+    onBeforePushQueue(() => {
+      return false;
+    });
+
+    const successMockFn = jest.fn();
+    onSuccess(successMockFn);
+    await untilCbCalled(setTimeout, 0);
+    expect(silentQueueMap.a22).toStrictEqual([]);
+    expect(silentQueueMap.a22?.requesting).toBeUndefined();
+    await untilCbCalled(setTimeout, 500);
+    expect(successMockFn).not.toBeCalled();
+
+    const { onBeforePushQueue: onBeforePushQueue2, onSuccess: onSuccess2 } = useSQRequest(Get, {
+      behavior: 'queue',
+      queue: 'a22'
+    });
+    onBeforePushQueue2(() => {
+      return false;
+    });
+    onBeforePushQueue2(() => {
+      return true;
+    });
+    onSuccess2(successMockFn);
+    await untilCbCalled(setTimeout, 0);
+    expect(silentQueueMap.a22?.requesting).not.toBeUndefined();
+    await untilCbCalled(setTimeout, 500);
+    expect(successMockFn).toBeCalledTimes(1);
+  });
+
   test('should be the same as useRequest when behavior is static', async () => {
     const Get = () => alovaInst.Get<never>('/list');
     const { loading, data, error, onSuccess, onBeforePushQueue, onPushedQueue } = useSQRequest(Get, {
@@ -245,8 +279,8 @@ describe('useSQRequest', () => {
     });
 
     await untilCbCalled(setTimeout, 0);
-    // static行为模式下不会进入队列，需异步检查
-    expect(silentQueueMap.a11).toHaveLength(1);
+    expect(silentQueueMap.a11).toHaveLength(0);
+    expect(silentQueueMap.a11.requesting).toBeInstanceOf(SilentMethod);
     let persistentSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(persistentSilentQueueMap.a11).toHaveLength(1);
 
@@ -265,8 +299,8 @@ describe('useSQRequest', () => {
     });
 
     await untilCbCalled(setTimeout, 0);
-    // static行为模式下不会进入队列，需异步检查
-    expect(silentQueueMap.a11.length).toBe(2);
+    expect(silentQueueMap.a11.length).toBe(1);
+    expect(silentQueueMap.a11.requesting).toBeInstanceOf(SilentMethod);
     persistentSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(persistentSilentQueueMap.a11.length).toBe(1); // 绑定了onFallback时不会持久化
     await untilCbCalled(onFallback);

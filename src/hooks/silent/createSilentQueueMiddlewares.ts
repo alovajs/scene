@@ -192,10 +192,9 @@ export default <S, E, R, T, RC, RE, RH>(
           // onFallback会同步调用，因此需要异步判断是否存在fallbackHandlers
           len(fallbackHandlers) <= 0 && behaviorFinally === behaviorSilent,
           queue,
-          () => {
-            // 执行放入队列前回调
-            runArgsHandler(beforePushQueueHandlers, createPushEvent());
-          }
+
+          // 执行放入队列前回调，如果返回false则阻止放入队列
+          () => runArgsHandler(beforePushQueueHandlers, createPushEvent())
         );
         // 执行放入队列后回调
         runArgsHandler(pushedQueueHandlers, createPushEvent());

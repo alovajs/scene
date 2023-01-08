@@ -26,9 +26,10 @@ interface PaginationConfig<R, LD, WS> {
 /** 静默提交事件 */
 // 事件：
 // 全局的：
+//  [GlobalSQEvent]请求事件：behavior、silentMethod实例、method实例、retryTimes
 //  [GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、响应数据、虚拟数据和实际值的集合
-//  [GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retryTimes、错误对象
-//  [GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、retryTimes、[?]响应数据、[?]错误对象
+//  [GlobalSQErrorEvent]错误：behavior、silentMethod实例、method实例、retryTimes、错误对象、[?]下次重试间隔时间
+//  [GlobalSQFailEvent]失败事件：behavior、silentMethod实例、method实例、retryTimes、错误对象
 
 // 局部的：
 //  [ScopedSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、send参数、响应数据
@@ -65,6 +66,14 @@ interface GlobalSQSuccessEvent extends GlobalSQEvent {
 interface GlobalSQErrorEvent extends GlobalSQEvent {
   /** 失败时抛出的错误 */
   error: any;
+
+  /** 下次重试间隔时间（毫秒） */
+  retryDelay?: number;
+}
+/** 全局失败事件 */
+interface GlobalSQFailEvent extends GlobalSQEvent {
+  /** 失败时抛出的错误 */
+  error: any;
 }
 
 /** 局部事件 */
@@ -85,7 +94,6 @@ interface ScopedSQErrorEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E,
 /** 局部失败事件 */
 interface ScopedSQRetryEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
   retryTimes: number;
-  /** 失败时抛出的错误 */
   retryDelay: number;
 }
 
@@ -116,7 +124,7 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /** 避让策略 */
   readonly backoff?: {
     /** 再次请求的延迟时间，单位毫秒，默认为1000 */
-    delay: number;
+    delay?: number;
     /** 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒，默认为0 */
     multiplier?: number;
 
@@ -253,7 +261,10 @@ type FallbackHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T,
 type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, T, RC, RE, RH>) => void;
 type BeforePushQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type PushedQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
-type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<R, S> & {
+type SQHookReturnType<S, E, R, T, RC, RE, RH> = Omit<
+  UseHookReturnType<R, S>,
+  'onSuccess' | 'onError' | 'onComplete'
+> & {
   /**
    * 回退事件绑定函数，它将在以下情况触发：
    * 1. 重试指定次数都无响应而停止继续请求后
@@ -269,7 +280,7 @@ type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<R, S> & {
   onFallback: (handler: FallbackHandler<S, E, R, T, RC, RE, RH>) => void;
 
   /** 在入队列前调用，在此可以过滤队列中重复的SilentMethod，在static行为下无效 */
-  onBeforePushQueue: (handler: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>) => void;
+  onBeforePushQueue: (handler: BeforePushQueueHandler<S, E, R, T, RC, RE, RH>) => boolean | void;
 
   /** 在入队列后调用，在static行为下无效 */
   onPushedQueue: (handler: PushedQueueHandler<S, E, R, T, RC, RE, RH>) => void;
@@ -329,8 +340,9 @@ interface SilentFactoryBootOptions {
 }
 
 type SilentSubmitBootHandler = () => void;
+type BeforeSilentSubmitHandler = (event: GlobalSQEvent) => void;
 type SilentSubmitSuccessHandler = (event: GlobalSQSuccessEvent) => void;
 type SilentSubmitErrorHandler = (event: GlobalSQErrorEvent) => void;
-type SilentSubmitCompleteHandler = (event: GlobalSQSuccessEvent | GlobalSQErrorEvent) => void;
+type SilentSubmitFailHandler = (event: GlobalSQFailEvent) => void;
 type OffEventCallback = () => void;
-type SilentQueueMap = Record<string, SilentMethod[]>;
+type SilentQueueMap = Record<string, SilentMethod[] & { requesting?: SilentMethod }>;

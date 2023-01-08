@@ -1,6 +1,7 @@
 import { Method, updateState, UpdateStateCollection } from 'alova';
 import { RetryErrorDetailed, SilentQueueMap } from '../../../typings/general';
 import {
+  defineProperty,
   forEach,
   instanceOf,
   isObject,
@@ -15,9 +16,9 @@ import {
   shift,
   walkObject
 } from '../../helper';
-import { behaviorSilent, defaultQueueName, falseValue, undefinedValue } from '../../helper/variables';
+import { behaviorSilent, defaultQueueName, falseValue, trueValue, undefinedValue } from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import { completeHandlers, errorHandlers, silentFactoryStatus, successHandlers } from './globalVariables';
+import { beforeHandlers, errorHandlers, failHandlers, silentFactoryStatus, successHandlers } from './globalVariables';
 import { SilentMethod } from './SilentMethod';
 import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
 import stringifyVData from './virtualResponse/stringifyVData';
@@ -116,8 +117,14 @@ const replaceVirtualResponseWithResponse = (virtualResponse: any, response: any)
  * @param queue SilentMethod队列
  */
 const defaultBackoffDelay = 1000;
-export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
-  const silentMethodRequest = (silentMethodInstance: SilentMethod, retryTimes = 0) => {
+const requestingKey = 'requesting';
+export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string) => {
+  const silentMethodRequest = (silentMethodInstance?: SilentMethod, retryTimes = 0) => {
+    // 放在队列的requesting字段中
+    defineProperty(queue, requestingKey, silentMethodInstance, trueValue);
+    if (!silentMethodInstance) {
+      return;
+    }
     const {
       cache,
       id,
@@ -134,11 +141,12 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
       virtualResponse
     } = silentMethodInstance;
 
+    // 触发请求前事件
+    runArgsHandler(beforeHandlers, createSQEvent(0, behavior, entity, silentMethodInstance, retryTimes));
     promiseThen(
       entity.send(),
       data => {
-        // 请求成功，移除成功的silentMethod实力，并继续下一个请求
-        shift(queue);
+        // 请求成功，把成功的silentMethod实例在storage中移除，并继续下一个请求
         cache && removeSilentMethod(id, queueName);
         // 如果有resolveHandler则调用它通知外部
         resolveHandler(data);
@@ -149,7 +157,6 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
           // 替换队列中后面方法实例中的虚拟数据为真实数据
           // 开锁后才能正常访问virtualResponse的层级结构
           const vDataResponse = replaceVirtualResponseWithResponse(virtualResponse, data);
-
           const { targetRefMethod, updateStates } = silentMethodInstance; // 实时获取才准确
           // 如果此silentMethod带有targetRefMethod，则再次调用updateState更新数据
           // 此为延迟数据更新的实现
@@ -162,83 +169,12 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
             updateState(targetRefMethod, updateStateCollection);
           }
 
-          // 触发全局的成功事件和完成事件
-          const createGlobalSuccessEvent = () =>
-            createSQEvent(
-              0,
-              behavior,
-              entity,
-              silentMethodInstance,
-              retryTimes,
-              undefinedValue,
-              undefinedValue,
-              data,
-              vDataResponse
-            );
-          runArgsHandler(successHandlers, createGlobalSuccessEvent());
-          runArgsHandler(completeHandlers, createGlobalSuccessEvent());
-
           // 对当前队列的后续silentMethod实例进行虚拟数据替换
           updateQueueMethodEntities(vDataResponse, queue);
-        }
 
-        // 继续下一个silentMethod的处理
-        len(queue) > 0 && silentMethodRequest(queue[0]);
-      },
-      reason => {
-        if (behavior !== behaviorSilent) {
-          // 当behavior不为silent时，请求失败就触发rejectHandler
-          // 且在队列中移除，并不再重试
-          shift(queue);
-          rejectHandler(reason);
-          return;
-        }
-
-        // 在silent行为模式下，判断是否需要重试
-        // 重试只有在响应错误符合retryError正则匹配时有效
-        const { name: errorName = '', message: errorMsg = '' } = reason || {};
-        let regRetryErrorName: RegExp | void, regRetryErrorMsg: RegExp | void;
-        if (instanceOf(retryError, RegExp)) {
-          regRetryErrorMsg = retryError;
-        } else if (isObject(retryError)) {
-          regRetryErrorName = (retryError as RetryErrorDetailed).name;
-          regRetryErrorMsg = (retryError as RetryErrorDetailed).message;
-        }
-
-        const matchRetryError =
-          (regRetryErrorName && regRetryErrorName.test(errorName)) ||
-          (regRetryErrorMsg && regRetryErrorMsg.test(errorMsg));
-        // 如果还有重试次数则进行重试
-        if (retryTimes < maxRetryTimes && matchRetryError) {
-          let { delay = defaultBackoffDelay, multiplier = 1, startQuiver, endQuiver } = backoff;
-          let retryDelayFinally = delay * Math.pow(multiplier, retryTimes);
-          // 如果startQuiver或endQuiver有值，则需要增加指定范围的随机抖动值
-          if (startQuiver || endQuiver) {
-            startQuiver = startQuiver || 0;
-            endQuiver = endQuiver || 1;
-            retryDelayFinally +=
-              retryDelayFinally * startQuiver + Math.random() * retryDelayFinally * (endQuiver - startQuiver);
-            retryDelayFinally = Math.floor(retryDelayFinally); // 取整数延迟
-          }
-
-          setTimeoutFn(
-            () => {
-              silentMethodRequest(silentMethodInstance, ++retryTimes);
-              runArgsHandler(
-                retryHandlers,
-                createSQEvent(5, behavior, entity, silentMethodInstance, retryTimes, retryDelayFinally, handlerArgs)
-              );
-            },
-            // 还有重试次数时使用timeout作为下次请求时间，否则是否nextRound
-            retryDelayFinally
-          );
-        } else {
-          // 达到失败次数，或不匹配重试的错误信息
+          // 触发全局的成功事件
           runArgsHandler(
-            fallbackHandlers,
-            createSQEvent(2, behavior, entity, silentMethodInstance, undefinedValue, undefinedValue, handlerArgs)
-          );
-          const createGlobalErrorEvent = () =>
+            successHandlers,
             createSQEvent(
               1,
               behavior,
@@ -247,17 +183,118 @@ export const bootSilentQueue = (queue: SilentMethod[], queueName: string) => {
               retryTimes,
               undefinedValue,
               undefinedValue,
-              undefinedValue,
-              undefinedValue,
-              reason
-            );
-          runArgsHandler(errorHandlers, createGlobalErrorEvent());
-          runArgsHandler(completeHandlers, createGlobalErrorEvent());
+              data,
+              vDataResponse
+            )
+          );
         }
+
+        // 继续下一个silentMethod的处理
+        silentMethodRequest(shift(queue));
+      },
+      reason => {
+        if (behavior !== behaviorSilent) {
+          // 当behavior不为silent时，请求失败就触发rejectHandler
+          rejectHandler(reason);
+        } else {
+          // 每次请求错误都将触发错误回调
+          const runGlobalErrorEvent = (retryDelay?: number) =>
+            runArgsHandler(
+              errorHandlers,
+              createSQEvent(
+                2,
+                behavior,
+                entity,
+                silentMethodInstance,
+                retryTimes,
+                retryDelay,
+                undefinedValue,
+                undefinedValue,
+                undefinedValue,
+                reason
+              )
+            );
+
+          // 在silent行为模式下，判断是否需要重试
+          // 重试只有在响应错误符合retryError正则匹配时有效
+          const { name: errorName = '', message: errorMsg = '' } = reason || {};
+          let regRetryErrorName: RegExp | void, regRetryErrorMsg: RegExp | void;
+          if (instanceOf(retryError, RegExp)) {
+            regRetryErrorMsg = retryError;
+          } else if (isObject(retryError)) {
+            regRetryErrorName = (retryError as RetryErrorDetailed).name;
+            regRetryErrorMsg = (retryError as RetryErrorDetailed).message;
+          }
+
+          const matchRetryError =
+            (regRetryErrorName && regRetryErrorName.test(errorName)) ||
+            (regRetryErrorMsg && regRetryErrorMsg.test(errorMsg));
+          // 如果还有重试次数则进行重试
+          if (retryTimes < maxRetryTimes && matchRetryError) {
+            let { delay = defaultBackoffDelay, multiplier = 1, startQuiver, endQuiver } = backoff;
+            let retryDelayFinally = delay * Math.pow(multiplier, retryTimes);
+            // 如果startQuiver或endQuiver有值，则需要增加指定范围的随机抖动值
+            if (startQuiver || endQuiver) {
+              startQuiver = startQuiver || 0;
+              endQuiver = endQuiver || 1;
+              retryDelayFinally +=
+                retryDelayFinally * startQuiver + Math.random() * retryDelayFinally * (endQuiver - startQuiver);
+              retryDelayFinally = Math.floor(retryDelayFinally); // 取整数延迟
+            }
+
+            runGlobalErrorEvent(retryDelayFinally);
+            setTimeoutFn(
+              () => {
+                silentMethodRequest(silentMethodInstance, ++retryTimes);
+                runArgsHandler(
+                  retryHandlers,
+                  createSQEvent(7, behavior, entity, silentMethodInstance, retryTimes, retryDelayFinally, handlerArgs)
+                );
+              },
+              // 还有重试次数时使用timeout作为下次请求时间，否则是否nextRound
+              retryDelayFinally
+            );
+          } else {
+            runGlobalErrorEvent();
+            // 达到失败次数，或不匹配重试的错误信息时，触发失败回调
+            runArgsHandler(
+              fallbackHandlers,
+              createSQEvent(
+                6,
+                behavior,
+                entity,
+                silentMethodInstance,
+                undefinedValue,
+                undefinedValue,
+                handlerArgs,
+                undefinedValue,
+                undefinedValue,
+                reason
+              )
+            );
+            runArgsHandler(
+              failHandlers,
+              createSQEvent(
+                3,
+                behavior,
+                entity,
+                silentMethodInstance,
+                retryTimes,
+                undefinedValue,
+                undefinedValue,
+                undefinedValue,
+                undefinedValue,
+                reason
+              )
+            );
+          }
+        }
+        // 清除requesting字段中的值
+        defineProperty(queue, requestingKey, undefinedValue, trueValue);
       }
     );
   };
-  silentMethodRequest(queue[0]);
+  !queue[requestingKey] && silentMethodRequest(shift(queue));
 };
 
 /**
@@ -281,12 +318,14 @@ export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
   silentMethodInstance.cache = cache;
   const currentQueue = (silentQueueMap[targetQueueName] = silentQueueMap[targetQueueName] || []);
   const isNewQueue = len(currentQueue) <= 0;
-
-  onBeforePush();
+  const push2Queue = onBeforePush() as any;
 
   // silent行为下，如果没有绑定fallback事件回调，则持久化
-  cache && push2PersistentSilentQueue(silentMethodInstance, targetQueueName);
-  pushItem(currentQueue, silentMethodInstance);
+  // 如果在onBeforePushQueue返回false，也不再放入队列中
+  if (push2Queue !== falseValue) {
+    cache && push2PersistentSilentQueue(silentMethodInstance, targetQueueName);
+    pushItem(currentQueue, silentMethodInstance);
+  }
 
   // 如果是新的队列且状态为已启动，则执行它
   isNewQueue && silentFactoryStatus === 1 && bootSilentQueue(currentQueue, targetQueueName);

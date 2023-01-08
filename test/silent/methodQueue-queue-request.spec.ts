@@ -1,11 +1,6 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
-import {
-  bootSilentFactory,
-  onSilentSubmitComplete,
-  onSilentSubmitError,
-  onSilentSubmitSuccess
-} from '../../src/hooks/silent/silentFactory';
+import { bootSilentFactory, onSilentSubmitError, onSilentSubmitSuccess } from '../../src/hooks/silent/silentFactory';
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { pushNewSilentMethod2Queue, silentQueueMap } from '../../src/hooks/silent/silentQueue';
 import { mockRequestAdapter } from '../mockData';
@@ -39,12 +34,6 @@ describe('silent method request in queue with queue behavior', () => {
       });
     });
 
-    const completeMockFn = jest.fn();
-    const offComplete = onSilentSubmitComplete(() => {
-      completeMockFn();
-      // 卸载全局事件避免污染其他用例
-      offComplete();
-    });
     const successMockFn = jest.fn();
     const offSuccess = onSilentSubmitSuccess(() => {
       successMockFn();
@@ -54,7 +43,6 @@ describe('silent method request in queue with queue behavior', () => {
 
     const ret = await pms;
     expect(ret).toStrictEqual({ id: 1 });
-    expect(completeMockFn).not.toBeCalled();
     expect(successMockFn).not.toBeCalled();
   });
 
@@ -105,10 +93,6 @@ describe('silent method request in queue with queue behavior', () => {
       });
     });
 
-    const completeMockFn = jest.fn();
-    onSilentSubmitComplete(() => {
-      completeMockFn();
-    });
     const errorMockFn = jest.fn();
     onSilentSubmitError(() => {
       errorMockFn();
@@ -123,7 +107,6 @@ describe('silent method request in queue with queue behavior', () => {
     // queue行为下，onFallback和onRetry，以及全局的silentSubmit事件都不会触发
     expect(fallbackMockFn).toBeCalledTimes(0);
     expect(retryMockFn).toBeCalledTimes(0);
-    expect(completeMockFn).toBeCalledTimes(0);
     expect(errorMockFn).toBeCalledTimes(0);
   });
 });

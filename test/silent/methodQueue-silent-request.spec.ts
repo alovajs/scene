@@ -2,14 +2,13 @@ import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
 import {
   bootSilentFactory,
-  onSilentSubmitComplete,
   onSilentSubmitError,
+  onSilentSubmitFail,
   onSilentSubmitSuccess
 } from '../../src/hooks/silent/silentFactory';
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { pushNewSilentMethod2Queue } from '../../src/hooks/silent/silentQueue';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
-import { GlobalSQErrorEvent, GlobalSQSuccessEvent } from '../../typings/general';
 import { mockRequestAdapter } from '../mockData';
 
 describe('silent method request in queue with silent behavior', () => {
@@ -61,18 +60,6 @@ describe('silent method request in queue with silent behavior', () => {
       });
     });
 
-    const completeMockFn = jest.fn();
-    const offComplete = onSilentSubmitComplete(ev => {
-      completeMockFn();
-      const event = ev as GlobalSQSuccessEvent;
-      expect(event.behavior).toBe('silent');
-      expect(event.data).toStrictEqual({ id: 1 });
-      expect(event.method).toBe(methodInstance);
-      expect(event.silentMethod).toBeInstanceOf(SilentMethod);
-      expect(event.retryTimes).toBe(0);
-      // 卸载全局事件避免污染其他用例
-      offComplete();
-    });
     const successMockFn = jest.fn();
     const offSuccess = onSilentSubmitSuccess(event => {
       successMockFn();
@@ -89,7 +76,6 @@ describe('silent method request in queue with silent behavior', () => {
     // 成功了，onFallback和onRetry都不会触发
     expect(fallbackMockFn).toBeCalledTimes(0);
     expect(retryMockFn).toBeCalledTimes(0);
-    expect(completeMockFn).toBeCalledTimes(1);
     expect(successMockFn).toBeCalledTimes(1);
   });
 
@@ -144,10 +130,6 @@ describe('silent method request in queue with silent behavior', () => {
       });
     });
 
-    const completeMockFn = jest.fn();
-    onSilentSubmitComplete(() => {
-      completeMockFn();
-    });
     const successMockFn = jest.fn();
     onSilentSubmitSuccess(() => {
       successMockFn();
@@ -157,7 +139,6 @@ describe('silent method request in queue with silent behavior', () => {
     // 成功了，onFallback和onRetry都不会触发
     expect(fallbackMockFn).toBeCalledTimes(0);
     expect(retryMockFn).toBeCalledTimes(1);
-    expect(completeMockFn).toBeCalledTimes(1);
     expect(successMockFn).toBeCalledTimes(1);
   });
 
@@ -221,18 +202,6 @@ describe('silent method request in queue with silent behavior', () => {
       });
     });
 
-    const completeMockFn = jest.fn();
-    const offComplete = onSilentSubmitComplete(ev => {
-      completeMockFn();
-      const event = ev as GlobalSQErrorEvent;
-      expect(event.behavior).toBe('silent');
-      expect(event.error.message).toBe('no permission');
-      expect(event.method).toBe(methodInstance);
-      expect(event.silentMethod).toBeInstanceOf(SilentMethod);
-      expect(event.retryTimes).toBe(2);
-      // 卸载全局事件避免污染其他用例
-      offComplete();
-    });
     const errorMockFn = jest.fn();
     const offError = onSilentSubmitError(event => {
       errorMockFn();
@@ -240,16 +209,28 @@ describe('silent method request in queue with silent behavior', () => {
       expect(event.error.message).toBe('no permission');
       expect(event.method).toBe(methodInstance);
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
+      expect(event.retryTimes).toBeLessThanOrEqual(2);
+    });
+    const failMockFn = jest.fn();
+    const offFail = onSilentSubmitFail(event => {
+      failMockFn();
+      expect(event.behavior).toBe('silent');
+      expect(event.error.message).toBe('no permission');
+      expect(event.method).toBe(methodInstance);
+      expect(event.silentMethod).toBeInstanceOf(SilentMethod);
       expect(event.retryTimes).toBe(2);
-      // 卸载全局事件避免污染其他用例
-      offError();
     });
 
     await pms;
     // 有fallback回调时，不会触发nextRound
     expect(fallbackMockFn).toBeCalledTimes(1);
     expect(retryMockFn).toBeCalledTimes(2);
+    expect(errorMockFn).toBeCalledTimes(3); // 每次请求错误都会调用
+    expect(failMockFn).toBeCalledTimes(1);
     expect(executeOrder).toEqual(['retried_1', 'retried_2', 'fallback']);
+    // 卸载全局事件避免污染其他用例
+    offError();
+    offFail();
   });
 
   test('should emit global error event and never retry when retryError not match error message', async () => {
