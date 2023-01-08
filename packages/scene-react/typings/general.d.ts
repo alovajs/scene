@@ -96,6 +96,13 @@ interface ScopedSQRetryEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E,
   retryTimes: number;
   retryDelay: number;
 }
+/** 局部完成事件 */
+interface ScopedSQCompleteEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
+  /** 响应数据 */
+  data?: any;
+  /** 失败时抛出的错误 */
+  error?: any;
+}
 
 interface RetryErrorDetailed {
   name?: RegExp;
@@ -295,9 +302,7 @@ type SQHookReturnType<S, E, R, T, RC, RE, RH> = Omit<
   onError: (handler: (event: ScopedSQErrorEvent<S, E, R, T, RC, RE, RH>) => void) => void;
 
   /** @override 重写alova的onComplete事件 */
-  onComplete: (
-    handler: (event: ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH> | ScopedSQErrorEvent<S, E, R, T, RC, RE, RH>) => void
-  ) => void;
+  onComplete: (handler: (event: ScopedSQCompleteEvent<S, E, R, T, RC, RE, RH>) => void) => void;
 };
 
 /** 静默方法实例匹配器 */

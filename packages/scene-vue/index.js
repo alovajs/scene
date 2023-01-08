@@ -11,9 +11,10 @@ export const useSQRequest = (handler, config = {}) => useSQRequest_unified(handl
 
 export {
   bootSilentFactory,
+  onBeforeSilentSubmit,
   onSilentSubmitBoot,
-  onSilentSubmitComplete,
   onSilentSubmitError,
+  onSilentSubmitFail,
   onSilentSubmitSuccess
 } from '../../src/hooks/silent/silentFactory';
 export { silentQueueMap } from '../../src/hooks/silent/silentQueue';
@@ -21,3 +22,4 @@ export { default as dehydrateVData } from '../../src/hooks/silent/virtualRespons
 export { filterSilentMethods, getSilentMethod } from '../../src/hooks/silent/virtualResponse/filterSilentMethods';
 export { default as stringifyVData } from '../../src/hooks/silent/virtualResponse/stringifyVData';
 export { default as updateStateEffect } from '../../src/hooks/silent/virtualResponse/updateStateEffect';
+
