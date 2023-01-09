@@ -43,10 +43,8 @@ export default (serializedSilentMethodString: string) => {
     fallbackHandlers,
     resolveHandler,
     rejectHandler,
-    virtualResponse,
     handlerArgs,
-    targetRefMethod,
-    updateStates
+    targetRefMethod
   } = payload;
 
   // method类实例化
@@ -68,13 +66,35 @@ export default (serializedSilentMethodString: string) => {
     handlerArgs
   );
   silentMethodInstance.cache = trueValue;
-  silentMethodInstance.virtualResponse = virtualResponse;
 
   // targetRefMethod反序列化
   if (targetRefMethod) {
     silentMethodInstance.targetRefMethod = deserializeMethod(targetRefMethod);
-    silentMethodInstance.updateStates = updateStates;
   }
+
+  // 将额外的内容放到silentMethod实例上
+  forEach(objectKeys(payload), key => {
+    if (
+      !includes(
+        [
+          'id',
+          'behavior',
+          'entity',
+          'retryError',
+          'maxRetryTimes',
+          'backoff',
+          'fallbackHandlers',
+          'resolveHandler',
+          'rejectHandler',
+          'handlerArgs',
+          'targetRefMethod'
+        ],
+        key
+      )
+    ) {
+      (silentMethodInstance as any)[key] = payload[key as keyof typeof payload];
+    }
+  });
 
   return silentMethodInstance;
 };

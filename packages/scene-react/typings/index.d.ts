@@ -26,7 +26,7 @@ import {
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
-interface UsePaginationReturnType<LD, R> {
+interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
   loading: boolean;
   error: Error | undefined;
   downloading: Progress;
@@ -48,14 +48,14 @@ interface UsePaginationReturnType<LD, R> {
 
   abort: () => void;
   send: (...args: any[]) => Promise<R>;
-  onSuccess: (handler: SuccessHandler<R>) => void;
-  onError: (handler: ErrorHandler) => void;
-  onComplete: (handler: CompleteHandler) => void;
+  onSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
+  onError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
+  onComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
 
   fetching: boolean;
-  onFetchSuccess: (handler: SuccessHandler<R>) => void;
-  onFetchError: (handler: ErrorHandler) => void;
-  onFetchComplete: (handler: CompleteHandler) => void;
+  onFetchSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
+  onFetchError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
+  onFetchComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
 
   /**
    * 刷新指定页码数据，此函数将忽略缓存强制发送请求
@@ -97,16 +97,16 @@ interface UsePaginationReturnType<LD, R> {
  * @param config pagination hook配置
  * @returns {UsePaginationReturnType}
  */
-export declare function usePagination<S, E, R, T, RC, RE, RH, LD, WS extends DependencyList>(
+declare function usePagination<S, E, R, T, RC, RE, RH, LD, WS extends DependencyList>(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
   config?: PaginationConfig<R, LD, WS>
-): UsePaginationReturnType<LD, R>;
+): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;
 
 /**
  * 带silentQueue的request hook
  * silentQueue是实现静默提交的核心部件，其中将用于存储silentMethod实例，它们将按顺序串行发送提交
  */
-export declare function useSQRequest<S, E, R, T, RC, RE, RH>(
+declare function useSQRequest<S, E, R, T, RC, RE, RH>(
   handler: AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config?: SQRequestHookConfig<S, E, R, T, RC, RE, RH>
 ): SQHookReturnType<S, E, R, T, RC, RE, RH>;

@@ -24,7 +24,7 @@ import {
   SQRequestHookConfig
 } from './general';
 
-interface UsePaginationReturnType<LD, R> {
+interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
   loading: Ref<boolean>;
   error: Ref<Error | undefined>;
   downloading: Ref<Progress>;
@@ -48,14 +48,14 @@ interface UsePaginationReturnType<LD, R> {
 
   abort: () => void;
   send: (...args: any[]) => Promise<R>;
-  onSuccess: (handler: SuccessHandler<R>) => void;
-  onError: (handler: ErrorHandler) => void;
-  onComplete: (handler: CompleteHandler) => void;
+  onSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
+  onError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
+  onComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
 
   fetching: Ref<boolean>;
-  onFetchSuccess: (handler: SuccessHandler<R>) => void;
-  onFetchError: (handler: ErrorHandler) => void;
-  onFetchComplete: (handler: CompleteHandler) => void;
+  onFetchSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
+  onFetchError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
+  onFetchComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
 
   /**
    * 刷新指定页码数据，此函数将忽略缓存强制发送请求
@@ -100,7 +100,7 @@ interface UsePaginationReturnType<LD, R> {
 declare function usePagination<S extends Ref, E extends Ref, R, T, RC, RE, RH, LD, WS extends WatchSource[]>(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
   config?: PaginationConfig<R, LD, WS>
-): UsePaginationReturnType<LD, R>;
+): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;
 
 /**
  * 带silentQueue的request hook

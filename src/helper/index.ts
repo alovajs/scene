@@ -1,7 +1,7 @@
 import { Method } from 'alova';
 import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, undefinedValue } from './variables';
 
-export const promiseResolve = <T>(value: T) => PromiseCls.resolve(value);
+export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value);
 export const promiseThen = <T, TResult1 = T, TResult2 = never>(
   promise: Promise<T>,
   onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,

@@ -9,6 +9,7 @@ import {
   len,
   noop,
   objectKeys,
+  promiseResolve,
   promiseThen,
   pushItem,
   runArgsHandler,
@@ -190,7 +191,8 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
         }
 
         // 继续下一个silentMethod的处理
-        silentMethodRequest(shift(queue));
+        // 这边需要异步处理，让onSuccess先执行，这样可以获得队列后面的所有silentMethod实例
+        promiseThen(promiseResolve(), () => silentMethodRequest(shift(queue)));
       },
       reason => {
         if (behavior !== behaviorSilent) {
