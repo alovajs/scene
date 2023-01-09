@@ -7,7 +7,6 @@ import {
   SQHookConfig
 } from '../../../typings/general';
 import {
-  GeneralFn,
   isFn,
   len,
   newInstance,
@@ -83,27 +82,23 @@ export default <S, E, R, T, RC, RE, RH>(
     const { silentDefaultResponse, vDataCaptured } = config;
     let silentMethodInstance: any;
 
-    // 首先设置事件回调装饰器
-    // 将响应对应的事件实例创建函数暂存到createFinishedEvent中，在complete事件触发时直接调用此函数即可获得对应状态的事件实例
-    let createFinishedEvent: GeneralFn | undefined = undefinedValue;
-    decorateSuccess((handler, args, index, length) => {
+    // 设置事件回调装饰器
+    decorateSuccess((handler, event, index, length) => {
       if (index === 0) {
         currentSilentMethod = silentMethodInstance;
       }
-      createFinishedEvent =
-        createFinishedEvent ||
-        (() =>
-          createSQEvent(
-            3,
-            behaviorFinally,
-            method,
-            silentMethodInstance,
-            undefinedValue,
-            undefinedValue,
-            sendArgs,
-            args[0]
-          ));
-      handler(createFinishedEvent() as any);
+      handler(
+        createSQEvent(
+          5,
+          behaviorFinally,
+          method,
+          silentMethodInstance,
+          undefinedValue,
+          undefinedValue,
+          event.sendArgs,
+          event.data
+        ) as any
+      );
 
       // 所有成功回调执行完后再锁定虚拟数据，锁定后虚拟响应数据内不能再访问任意层级
       // 锁定操作只在silent模式下，用于锁定虚拟数据的生成操作
@@ -111,26 +106,38 @@ export default <S, E, R, T, RC, RE, RH>(
         currentSilentMethod = undefinedValue;
       }
     });
-    decorateError((handler, args) => {
-      createFinishedEvent =
-        createFinishedEvent ||
-        (() =>
-          createSQEvent(
-            4,
-            behaviorFinally,
-            method,
-            silentMethodInstance,
-            undefinedValue,
-            undefinedValue,
-            sendArgs,
-            undefinedValue,
-            undefinedValue,
-            args[0]
-          ));
-      handler(createFinishedEvent() as any);
+    decorateError((handler, event) => {
+      handler(
+        createSQEvent(
+          6,
+          behaviorFinally,
+          method,
+          silentMethodInstance,
+          undefinedValue,
+          undefinedValue,
+          event.sendArgs,
+          undefinedValue,
+          undefinedValue,
+          event.error
+        ) as any
+      );
     });
-    decorateComplete(handler => {
-      handler(createFinishedEvent?.() as any);
+    decorateComplete((handler, event) => {
+      handler(
+        createSQEvent(
+          7,
+          behaviorFinally,
+          method,
+          silentMethodInstance,
+          undefinedValue,
+          undefinedValue,
+          event.sendArgs,
+          event.data,
+          undefinedValue,
+          event.error,
+          event.status
+        ) as any
+      );
     });
 
     // 置空临时收集变量
@@ -183,7 +190,7 @@ export default <S, E, R, T, RC, RE, RH>(
       // onBeforePush和onPushed事件是同步绑定的，因此需要异步执行入队列才能正常触发事件
       promiseThen(promiseResolve(undefinedValue), () => {
         const createPushEvent = () =>
-          createSQEvent(2, behaviorFinally, method, silentMethodInstance, undefinedValue, undefinedValue, sendArgs);
+          createSQEvent(4, behaviorFinally, method, silentMethodInstance, undefinedValue, undefinedValue, sendArgs);
 
         // 将silentMethod放入队列并持久化
         pushNewSilentMethod2Queue(

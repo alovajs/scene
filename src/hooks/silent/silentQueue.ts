@@ -248,7 +248,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
                 silentMethodRequest(silentMethodInstance, ++retryTimes);
                 runArgsHandler(
                   retryHandlers,
-                  createSQEvent(7, behavior, entity, silentMethodInstance, retryTimes, retryDelayFinally, handlerArgs)
+                  createSQEvent(8, behavior, entity, silentMethodInstance, retryTimes, retryDelayFinally, handlerArgs)
                 );
               },
               // 还有重试次数时使用timeout作为下次请求时间，否则是否nextRound

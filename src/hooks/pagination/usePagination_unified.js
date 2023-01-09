@@ -132,7 +132,11 @@ export default function (
     force: () => isRefresh || forceFetch
   });
   const { fetch, abort: abortFetch } = fetchStates;
-  states.onSuccess((rawData, refreshPage) => {
+  states.onSuccess(event => {
+    const {
+      data: rawData,
+      sendArgs: [refreshPage]
+    } = event;
     upd$(totalLocal, undefinedValue); // 重新加载数据后重置为0，让total使用服务端的total参数
     fetchPreviousPage();
     fetchNextPage();

@@ -203,6 +203,7 @@ describe('boot silent queue', () => {
       let beforeHookCallIndex = 0;
       onBeforeSilentSubmit(event => {
         beforeMockFn();
+        expect((event as any)[Symbol.toStringTag]).toBe('GlobalSQEvent');
         expect(event.behavior).toBe('silent');
         if (beforeHookCallIndex === 0) {
           expect(event.retryTimes).toBe(0);
@@ -223,6 +224,7 @@ describe('boot silent queue', () => {
       onSilentSubmitSuccess(event => {
         successMockFn();
         // 验证event内的数据
+        expect((event as any)[Symbol.toStringTag]).toBe('GlobalSQSuccessEvent');
         expect(event.behavior).toBe('silent');
         if (successCallIndex === 0) {
           expect(event.data).toStrictEqual({ id: 1 });

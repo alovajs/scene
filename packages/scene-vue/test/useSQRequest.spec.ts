@@ -37,6 +37,7 @@ describe('useSQRequest', () => {
     const beforePushMockFn = jest.fn();
     onBeforePushQueue(event => {
       beforePushMockFn();
+      expect((event as any)[Symbol.toStringTag]).toBe('ScopedSQEvent');
       expect(event.behavior).toBe('queue');
       expect(event.method).toBe(Get);
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
@@ -46,6 +47,7 @@ describe('useSQRequest', () => {
     const pushedMockFn = jest.fn();
     onPushedQueue(event => {
       pushedMockFn();
+      expect((event as any)[Symbol.toStringTag]).toBe('ScopedSQEvent');
       expect(event.behavior).toBe('queue');
       expect(event.method).toBe(Get);
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
@@ -76,6 +78,7 @@ describe('useSQRequest', () => {
     expect(uploading.value).toEqual({ total: 0, loaded: 0 });
     expect(error.value).toBeUndefined();
 
+    expect((scopedSQSuccessEvent as any)[Symbol.toStringTag]).toBe('ScopedSQSuccessEvent');
     expect(scopedSQSuccessEvent.behavior).toBe('queue');
     expect(scopedSQSuccessEvent.method).toBe(Get);
     expect(scopedSQSuccessEvent.data.total).toBe(300);
@@ -83,7 +86,7 @@ describe('useSQRequest', () => {
     expect(scopedSQSuccessEvent.sendArgs).toStrictEqual([]);
     expect(!!scopedSQSuccessEvent.silentMethod).toBeTruthy();
 
-    onComplete(event => {
+    onComplete((event: any) => {
       expect(event.behavior).toBe('queue');
       expect(event.method).toBe(Get);
       expect(event.data.total).toBe(300);
@@ -178,13 +181,16 @@ describe('useSQRequest', () => {
     expect(loading.value).toBeFalsy();
     expect(data.value).toBeUndefined();
     expect(error.value?.message).toBe('server error');
+
+    expect((scopedSQErrorEvent as any)[Symbol.toStringTag]).toBe('ScopedSQErrorEvent');
     expect(scopedSQErrorEvent.behavior).toBe('queue');
     expect(scopedSQErrorEvent.error.message).toBe('server error');
     expect(scopedSQErrorEvent.sendArgs).toStrictEqual([]);
     expect(scopedSQErrorEvent.silentMethod).not.toBeUndefined();
     expect(silentQueueMap.default).toHaveLength(0); // 在队列中移除了
 
-    onComplete(event => {
+    onComplete((event: any) => {
+      expect((event as any)[Symbol.toStringTag]).toBe('ScopedSQCompleteEvent');
       expect(event.behavior).toBe('queue');
       expect(event.error.message).toBe('server error');
       expect(event.sendArgs).toStrictEqual([]);
@@ -312,7 +318,7 @@ describe('useSQRequest', () => {
     const { data, onSuccess, send } = useSQRequest(poster, {
       behavior: () => behaviorStr
     });
-    let event: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess);
+    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(data.value).toBeInstanceOf(Undefined);
     expect(data.value[symbolVDataId]).not.toBeUndefined();
     expect(event.data).toBeInstanceOf(Undefined);
@@ -322,7 +328,7 @@ describe('useSQRequest', () => {
 
     behaviorStr = 'static';
     send(1, 2, 3);
-    event = await untilCbCalled(onSuccess);
+    event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(data.value).toStrictEqual({ id: 1 });
     expect(event.data).toStrictEqual({ id: 1 });
     expect(event.behavior).toBe('static');
@@ -346,7 +352,7 @@ describe('useSQRequest', () => {
       }
     });
 
-    let event: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess);
+    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ localData: 'abc' });
     expect(data.value).toStrictEqual({ localData: 'abc' });
 
@@ -354,7 +360,7 @@ describe('useSQRequest', () => {
     const { data: data2, onSuccess: onSuccess2 } = useSQRequest(() => poster(vDataId), {
       behavior: 'queue'
     });
-    event = await untilCbCalled(onSuccess2);
+    event = (await untilCbCalled(onSuccess2)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ id: 1 });
     expect(data2.value).toStrictEqual({ id: 1 });
   });
@@ -376,7 +382,7 @@ describe('useSQRequest', () => {
       }
     });
 
-    let event: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess);
+    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ localData: 'abc' });
     expect(data.value).toStrictEqual({ localData: 'abc' });
   });
@@ -399,7 +405,7 @@ describe('useSQRequest', () => {
       }
     });
 
-    let event: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess);
+    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ localData: 'abc' });
     expect(data.value).toStrictEqual({ localData: 'abc' });
   });
@@ -410,7 +416,7 @@ describe('useSQRequest', () => {
       behavior: 'silent'
     });
 
-    const event: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess);
+    const event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.behavior).toBe('silent');
     expect(event.method).not.toBeUndefined();
     expect(event.silentMethod).not.toBeUndefined();
@@ -426,7 +432,7 @@ describe('useSQRequest', () => {
         b: 'bb'
       })
     });
-    const event2: ScopedSQSuccessEvent<any, any, any, any, any, any, any> = await untilCbCalled(onSuccess2);
+    const event2 = (await untilCbCalled(onSuccess2)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(data2.value[symbolVDataId]).not.toBeUndefined();
     expect(data2.value.a.toFixed(2)).toBe('1.00');
     expect(data2.value.b.replace('b', 'a')).toBe('ab');
@@ -463,7 +469,7 @@ describe('useSQRequest', () => {
         id: '--'
       })
     });
-    onPostSuccess(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
+    onPostSuccess(({ data }) => {
       expect(postRes.value[symbolVDataId]).toBeTruthy(); // 此时还是虚拟响应数据
 
       // 调用updateStateEffect后将首先立即更新虚拟数据到listData中
@@ -531,7 +537,7 @@ describe('useSQRequest', () => {
     let vDataId: number | void;
     let vDataStatus: boolean | void;
     let vDataText: string | void;
-    onPostSuccess(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
+    onPostSuccess(({ data }) => {
       vDataId = data.id;
       vDataStatus = data.status;
       vDataText = data.text;
@@ -559,7 +565,7 @@ describe('useSQRequest', () => {
     let vDataId2: number | void;
     let vDataStatus2: boolean | void;
     let vDataText2: string | void;
-    onPostSuccess2(({ data }: ScopedSQSuccessEvent<any, any, any, any, any, any, any>) => {
+    onPostSuccess2(({ data }) => {
       vDataId2 = data.id;
       vDataStatus2 = data.status;
       vDataText2 = data.text;

@@ -129,7 +129,7 @@ describe('serializers', () => {
         },
         localCache: {
           expire: new Date('2022-12-31 00:00:00'),
-          mode: 0
+          mode: 'memory'
         },
         transformData: (data: any) => data[0]
       },

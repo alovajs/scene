@@ -184,6 +184,7 @@ describe('silent method request in queue with silent behavior', () => {
             executeOrder.push(`retried_${event.retryTimes}`);
             retryMockFn();
 
+            expect((event as any)[Symbol.toStringTag]).toBe('ScopedSQRetryEvent');
             expect(event.behavior).toBe('silent');
             expect(event.method).toBe(methodInstance);
             expect(event.silentMethod).toBe(silentMethodInstance);
@@ -214,6 +215,7 @@ describe('silent method request in queue with silent behavior', () => {
     const failMockFn = jest.fn();
     const offFail = onSilentSubmitFail(event => {
       failMockFn();
+      expect((event as any)[Symbol.toStringTag]).toBe('GlobalSQFailEvent');
       expect(event.behavior).toBe('silent');
       expect(event.error.message).toBe('no permission');
       expect(event.method).toBe(methodInstance);

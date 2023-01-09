@@ -94,7 +94,8 @@ describe('silent method request in queue with queue behavior', () => {
     });
 
     const errorMockFn = jest.fn();
-    onSilentSubmitError(() => {
+    onSilentSubmitError(event => {
+      expect((event as any)[Symbol.toStringTag]).toBe('GlobalSQErrorEvent');
       errorMockFn();
     });
 

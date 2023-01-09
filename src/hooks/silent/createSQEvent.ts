@@ -1,4 +1,4 @@
-import { Method } from 'alova';
+import { AlovaCompleteEvent, Method } from 'alova';
 import { SilentMethod, SQHookBehavior } from '../../../typings/general';
 import { defineProperty, forEach, objectKeys } from '../../helper';
 import { symbolToStringTag, undefinedValue } from '../../helper/variables';
@@ -30,7 +30,8 @@ export default <S, E, R, T, RC, RE, RH>(
   sendArgs?: any[],
   data?: R,
   vDataResponse?: Record<string, any>,
-  error?: any
+  error?: any,
+  status?: AlovaCompleteEvent<S, E, R, T, RC, RE, RH>['status']
 ) => {
   const allPropsEvent = {
     /** 事件对应的请求行为 */
@@ -58,7 +59,10 @@ export default <S, E, R, T, RC, RE, RH>(
     vDataResponse,
 
     /** 失败时抛出的错误，只在失败时有值 */
-    error
+    error,
+
+    /** 响应状态 */
+    status
   };
   const sqEvent: Record<string, any> = {};
   forEach(objectKeys(allPropsEvent), key => {
@@ -76,6 +80,7 @@ export default <S, E, R, T, RC, RE, RH>(
     'ScopedSQEvent',
     'ScopedSQSuccessEvent',
     'ScopedSQErrorEvent',
+    'ScopedSQCompleteEvent',
     'ScopedSQRetryEvent'
   ][eventType];
   typeName && defineProperty(sqEvent, symbolToStringTag, typeName);
