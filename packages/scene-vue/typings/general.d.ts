@@ -1,4 +1,4 @@
-import { Alova, Method, RequestHookConfig, UseHookReturnType, WatcherHookConfig } from 'alova';
+import { Alova, AlovaCompleteEvent, Method, RequestHookConfig, UseHookReturnType, WatcherHookConfig } from 'alova';
 
 /** 判断是否为any */
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
@@ -98,8 +98,10 @@ interface ScopedSQRetryEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E,
 }
 /** 局部完成事件 */
 interface ScopedSQCompleteEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
+  /** 响应状态 */
+  status: AlovaCompleteEvent<S, E, R, T, RC, RE, RH>['status'];
   /** 响应数据 */
-  data?: any;
+  data?: R;
   /** 失败时抛出的错误 */
   error?: any;
 }

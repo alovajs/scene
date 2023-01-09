@@ -23,8 +23,12 @@ describe('silentMethods filter', () => {
     pushNewSilentMethod2Queue(silentMethodInstance2, false);
     pushNewSilentMethod2Queue(silentMethodInstance3, false);
 
+    // 匹配全部
+    let smAry = filterSilentMethods();
+    expect(smAry).toHaveLength(3);
+
     // 匹配第二个
-    let smAry = filterSilentMethods('bb');
+    smAry = filterSilentMethods('bb');
     expect(smAry).toHaveLength(1);
     expect(smAry[0]).toBe(silentMethodInstance2);
 

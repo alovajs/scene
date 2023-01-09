@@ -128,7 +128,7 @@ declare function onSilentSubmitFail(handler: SilentSubmitFailHandler): OffEventC
 declare function onBeforeSilentSubmit(handler: BeforeSilentSubmitHandler): OffEventCallback;
 declare function dehydrateVData<T>(target: T): T;
 declare function stringifyVData(target: any, returnOriginalIfNotVData?: boolean): any;
-declare function filterSilentMethods(methodNameMatcher: string | RegExp, queueName?: string): SilentMethod[];
-declare function getSilentMethod(methodNameMatcher: string | RegExp, queueName?: string): SilentMethod;
+declare function filterSilentMethods(methodNameMatcher?: string | RegExp, queueName?: string): SilentMethod[];
+declare function getSilentMethod(methodNameMatcher?: string | RegExp, queueName?: string): SilentMethod | undefined;
 declare const updateStateEffect: typeof updateState;
 declare const silentQueueMap: SilentQueueMap;

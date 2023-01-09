@@ -1,5 +1,5 @@
 import { getConfig, instanceOf } from '../../../helper';
-import { defaultQueueName } from '../../../helper/variables';
+import { defaultQueueName, trueValue, undefinedValue } from '../../../helper/variables';
 import { SilentMethod } from '../SilentMethod';
 import { silentQueueMap } from '../silentQueue';
 
@@ -9,8 +9,11 @@ import { silentQueueMap } from '../silentQueue';
  * @param queueName 查找队列名，默认为default队列
  * @returns silentMethod实例数组
  */
-export const filterSilentMethods = (methodNameMatcher: string | RegExp, queueName = defaultQueueName) =>
+export const filterSilentMethods = (methodNameMatcher?: string | RegExp, queueName = defaultQueueName) =>
   (silentQueueMap[queueName] || []).filter(silentMethodItem => {
+    if (methodNameMatcher === undefinedValue) {
+      return trueValue;
+    }
     const name = getConfig(silentMethodItem.entity).name || '';
     return instanceOf(methodNameMatcher, RegExp) ? methodNameMatcher.test(name) : name === methodNameMatcher;
   });
@@ -22,6 +25,6 @@ export const filterSilentMethods = (methodNameMatcher: string | RegExp, queueNam
  * @returns silentMethod实例，未找到时为undefined
  */
 export const getSilentMethod = (
-  methodNameMatcher: string | RegExp,
+  methodNameMatcher?: string | RegExp,
   queueName = defaultQueueName
 ): SilentMethod | undefined => filterSilentMethods(methodNameMatcher, queueName)[0];
