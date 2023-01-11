@@ -1,7 +1,6 @@
 import { Method, updateState, UpdateStateCollection } from 'alova';
 import { RetryErrorDetailed, SilentQueueMap } from '../../../typings/general';
 import {
-  defineProperty,
   forEach,
   instanceOf,
   isObject,
@@ -9,7 +8,6 @@ import {
   len,
   noop,
   objectKeys,
-  promiseResolve,
   promiseThen,
   pushItem,
   runArgsHandler,
@@ -117,15 +115,18 @@ const replaceVirtualResponseWithResponse = (virtualResponse: any, response: any)
  *
  * @param queue SilentMethod队列
  */
+const setSilentMethodActive = (silentMethodInstance: SilentMethod, active: boolean) => {
+  if (active) {
+    silentMethodInstance.active = active;
+  } else {
+    delete silentMethodInstance.active;
+  }
+};
 const defaultBackoffDelay = 1000;
-const requestingKey = 'requesting';
 export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string) => {
-  const silentMethodRequest = (silentMethodInstance?: SilentMethod, retryTimes = 0) => {
-    // 放在队列的requesting字段中
-    defineProperty(queue, requestingKey, silentMethodInstance, trueValue);
-    if (!silentMethodInstance) {
-      return;
-    }
+  const silentMethodRequest = (silentMethodInstance: SilentMethod, retryTimes = 0) => {
+    // 将当前silentMethod实例设置活跃状态
+    setSilentMethodActive(silentMethodInstance, trueValue);
     const {
       cache,
       id,
@@ -147,6 +148,8 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
     promiseThen(
       entity.send(),
       data => {
+        // 请求成功，移除成功的silentMethod实力，并继续下一个请求
+        shift(queue);
         // 请求成功，把成功的silentMethod实例在storage中移除，并继续下一个请求
         cache && removeSilentMethod(id, queueName);
         // 如果有resolveHandler则调用它通知外部
@@ -190,13 +193,16 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
           );
         }
 
+        // 设为非激活状态
+        setSilentMethodActive(silentMethodInstance, falseValue);
         // 继续下一个silentMethod的处理
-        // 这边需要异步处理，让onSuccess先执行，这样可以获得队列后面的所有silentMethod实例
-        promiseThen(promiseResolve(), () => silentMethodRequest(shift(queue)));
+        len(queue) > 0 && silentMethodRequest(queue[0]);
       },
       reason => {
         if (behavior !== behaviorSilent) {
           // 当behavior不为silent时，请求失败就触发rejectHandler
+          // 且在队列中移除，并不再重试
+          shift(queue);
           rejectHandler(reason);
         } else {
           // 每次请求错误都将触发错误回调
@@ -291,12 +297,12 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
             );
           }
         }
-        // 清除requesting字段中的值
-        defineProperty(queue, requestingKey, undefinedValue, trueValue);
+        // 设为非激活状态
+        setSilentMethodActive(silentMethodInstance, falseValue);
       }
     );
   };
-  !queue[requestingKey] && silentMethodRequest(shift(queue));
+  len(queue) > 0 && silentMethodRequest(queue[0]);
 };
 
 /**

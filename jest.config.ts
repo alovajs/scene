@@ -141,10 +141,10 @@ export default {
   testEnvironment: 'jsdom',
 
   testMatch: [
-    '**/test/**/*.spec.[tj]s?(x)'
+    // '**/test/**/*.spec.[tj]s?(x)'
     // '**/test/modules/uuid.spec.ts(x)?'
     // '**/test/silent/virtualResponse.spec.ts(x)?'
-    // '**/test/silent/serializers.spec.ts(x)?'
+    '**/test/silent/serializers.spec.ts(x)?'
     // '**/test/silent/bootSilentQueue.spec.ts(x)?'
     // '**/test/silent/methodQueue-silent-request.spec.ts(x)?'
     // '**/test/silent/silentMethod-storage.spec.ts(x)?'

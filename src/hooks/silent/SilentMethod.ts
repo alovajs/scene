@@ -63,6 +63,9 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 
   /** 重试回调函数 */
   public retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[];
+
+  /** 当前是否正在请求中 */
+  public active?: boolean;
   constructor(
     entity: Method<S, E, R, T, RC, RE, RH>,
     behavior: SQHookBehavior,

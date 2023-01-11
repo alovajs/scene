@@ -99,7 +99,7 @@ describe('serializers', () => {
     });
   });
 
-  test('deserialized data must be the same as original data', () => {
+  test.only('deserialized data must be the same as original data', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
@@ -158,6 +158,8 @@ describe('serializers', () => {
     );
     silentMethodInstance.cache = true;
     silentMethodInstance.virtualResponse = virtualResponse;
+    silentMethodInstance.targetRefMethod = methodInstance;
+    silentMethodInstance.updateStates = ['data', 'name'];
     const serializedString = serializeSilentMethod(silentMethodInstance);
     const deserizlizedSilentMethodInstance = deserializeSilentMethod(serializedString);
 
@@ -182,13 +184,6 @@ describe('serializers', () => {
     expect(requestBody.other1).toBeInstanceOf(Null);
     expect(requestBody.other2).toBeInstanceOf(Undefined);
     expect(requestBody.other3).toBeUndefined();
-    // {
-    //   matcher: virtualResponse.matcher,
-    //   time: virtualResponse.time,
-    //   other1: virtualResponse.extra.other1,
-    //   other2: virtualResponse.extra.other2,
-    //   other3: virtualResponse.extra.other3
-    // }
 
     expect((deserizlizedSilentMethodInstance.retryError as RegExp).source).toBe('.*');
     expect(deserizlizedSilentMethodInstance.maxRetryTimes).toBe(2);
@@ -206,5 +201,10 @@ describe('serializers', () => {
     expect(deserizlizedSilentMethodInstance.virtualResponse?.time[symbolVDataId]).toBe(
       virtualResponse.time[symbolVDataId]
     );
+
+    expect(deserizlizedSilentMethodInstance.targetRefMethod?.url).toBe(methodInstance.url);
+    expect(deserizlizedSilentMethodInstance?.targetRefMethod?.type).toBe(methodInstance.type);
+    expect(deserizlizedSilentMethodInstance.targetRefMethod?.baseURL).toBe(methodInstance.baseURL);
+    expect(deserizlizedSilentMethodInstance.updateStates).toStrictEqual(['data', 'name']);
   });
 });

@@ -212,7 +212,6 @@ describe('useSQRequest', () => {
     onSuccess(successMockFn);
     await untilCbCalled(setTimeout, 0);
     expect(silentQueueMap.a22).toStrictEqual([]);
-    expect(silentQueueMap.a22?.requesting).toBeUndefined();
     await untilCbCalled(setTimeout, 500);
     expect(successMockFn).not.toBeCalled();
 
@@ -228,7 +227,7 @@ describe('useSQRequest', () => {
     });
     onSuccess2(successMockFn);
     await untilCbCalled(setTimeout, 0);
-    expect(silentQueueMap.a22?.requesting).not.toBeUndefined();
+    expect(silentQueueMap.a22?.[0]?.active).toBeTruthy();
     await untilCbCalled(setTimeout, 500);
     expect(successMockFn).toBeCalledTimes(1);
   });
@@ -285,8 +284,7 @@ describe('useSQRequest', () => {
     });
 
     await untilCbCalled(setTimeout, 0);
-    expect(silentQueueMap.a11).toHaveLength(0);
-    expect(silentQueueMap.a11.requesting).toBeInstanceOf(SilentMethod);
+    expect(silentQueueMap.a11).toHaveLength(1);
     let persistentSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(persistentSilentQueueMap.a11).toHaveLength(1);
 
@@ -305,8 +303,7 @@ describe('useSQRequest', () => {
     });
 
     await untilCbCalled(setTimeout, 0);
-    expect(silentQueueMap.a11.length).toBe(1);
-    expect(silentQueueMap.a11.requesting).toBeInstanceOf(SilentMethod);
+    expect(silentQueueMap.a11.length).toBe(2);
     persistentSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(persistentSilentQueueMap.a11.length).toBe(1); // 绑定了onFallback时不会持久化
     await untilCbCalled(onFallback);

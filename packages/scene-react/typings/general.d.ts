@@ -114,7 +114,7 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /** silentMethod实例id */
   readonly id: string;
   /** 是否为持久化实例 */
-  readonly cache;
+  readonly cache: boolean;
   /** 实例的行为，queue或silent */
   readonly behavior: SQHookBehavior;
   /** method实例 */
@@ -207,6 +207,9 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /** 重试回调函数 */
   retryHandlers?: RetryHandler<S, E, R, T, RC, RE, RH>[];
 
+  /** 当前是否正在请求中 */
+  active?: boolean;
+
   /**
    * 允许缓存时持久化更新当前实例
    */
@@ -271,7 +274,7 @@ type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, 
 type BeforePushQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type PushedQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type SQHookReturnType<S, E, R, T, RC, RE, RH> = Omit<
-  UseHookReturnType<R, S>,
+  UseHookReturnType<S, E, R, T, RC, RE, RH>,
   'onSuccess' | 'onError' | 'onComplete'
 > & {
   /**
@@ -306,15 +309,6 @@ type SQHookReturnType<S, E, R, T, RC, RE, RH> = Omit<
   /** @override 重写alova的onComplete事件 */
   onComplete: (handler: (event: ScopedSQCompleteEvent<S, E, R, T, RC, RE, RH>) => void) => void;
 };
-
-/** 静默方法实例匹配器 */
-type SilentMethodFilter =
-  | string
-  | RegExp
-  | {
-      name: string | RegExp;
-      filter: (method: SilentMethod, index: number, methods: SilentMethod[]) => boolean;
-    };
 
 interface DataSerializer {
   forward: (data: any) => any | undefined | void;
@@ -352,4 +346,4 @@ type SilentSubmitSuccessHandler = (event: GlobalSQSuccessEvent) => void;
 type SilentSubmitErrorHandler = (event: GlobalSQErrorEvent) => void;
 type SilentSubmitFailHandler = (event: GlobalSQFailEvent) => void;
 type OffEventCallback = () => void;
-type SilentQueueMap = Record<string, SilentMethod[] & { requesting?: SilentMethod }>;
+type SilentQueueMap = Record<string, SilentMethod[]>;

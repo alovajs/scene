@@ -98,8 +98,8 @@ describe('boot silent queue', () => {
     const targetQueue = silentQueueMap[targetQueueName];
     // silentMethodInstance2会先进入队列
     // 而持久化的silentMethodInstance将会在bootSilentFactory时异步合并到队列中
-    expect(targetQueue.requesting).toBe(silentMethodInstance2);
-    expect(targetQueue[0].id).toBe(silentMethodInstance.id); // silentMethodInstance因为会持久化再读取，因此只能通过id对比是否一致
+    expect(targetQueue[0]).toBe(silentMethodInstance2);
+    expect(targetQueue[1].id).toBe(silentMethodInstance.id); // silentMethodInstance因为会持久化再读取，因此只能通过id对比是否一致
 
     expect(bootMockFn).toBeCalled();
 

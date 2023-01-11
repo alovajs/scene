@@ -7,6 +7,7 @@ import {
   SQHookConfig
 } from '../../../typings/general';
 import {
+  getConfig,
   isFn,
   len,
   newInstance,
@@ -21,6 +22,7 @@ import {
   behaviorQueue,
   behaviorSilent,
   behaviorStatic,
+  falseValue,
   PromiseCls,
   trueValue,
   undefinedValue
@@ -146,12 +148,14 @@ export default <S, E, R, T, RC, RE, RH>(
       setVDataIdCollectBasket((handlerArgs = undefinedValue));
     };
 
-    // 如果设置了vDataCaptured，则先判断内是否包含虚拟数据
+    // 如果设置了vDataCaptured，则先判断请求相关的数据是否包含虚拟数据
     if (isFn(vDataCaptured)) {
       let hasVData = vDataIdCollectBasket && len(objectKeys(vDataIdCollectBasket)) > 0;
       if (!hasVData) {
-        walkObject(method, value => {
-          if (!hasVData && (stringifyVData(value) || regVDataId.test(value))) {
+        const { url, requestBody } = method;
+        const { params, headers } = getConfig(method);
+        walkObject({ url, params, requestBody, headers }, value => {
+          if (!hasVData && (stringifyVData(value, falseValue) || regVDataId.test(value))) {
             hasVData = trueValue;
           }
           return value;

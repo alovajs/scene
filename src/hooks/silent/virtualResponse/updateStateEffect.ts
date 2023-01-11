@@ -16,6 +16,7 @@ const updateStateEffect: typeof updateState = (matcher, handleUpdate, options = 
     if (currentSilentMethod) {
       currentSilentMethod.targetRefMethod = method;
       currentSilentMethod.updateStates = isFn(updateState) ? ['data'] : objectKeys(updateState);
+      currentSilentMethod.save();
     }
     (onMatch || noop)(method);
   };
