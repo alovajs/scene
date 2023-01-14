@@ -10,12 +10,12 @@ const alovaInst = createAlova({
   statesHook: vueHook,
   requestAdapter: mockRequestAdapter
 });
+const createMethod = (name: string) =>
+  new Method('POST', alovaInst, '/detail', {
+    name
+  });
 describe('silentMethods filter', () => {
   test('filterSilentMethods', () => {
-    const createMethod = (name: string) =>
-      new Method('POST', alovaInst, '/detail', {
-        name
-      });
     const silentMethodInstance = new SilentMethod(createMethod('aa'), 'silent');
     const silentMethodInstance2 = new SilentMethod(createMethod('bb'), 'silent');
     const silentMethodInstance3 = new SilentMethod(createMethod('cb'), 'silent');
@@ -52,10 +52,6 @@ describe('silentMethods filter', () => {
   });
 
   test('getSilentMethod', () => {
-    const createMethod = (name: string) =>
-      new Method('POST', alovaInst, '/detail', {
-        name
-      });
     const silentMethodInstance = new SilentMethod(createMethod('aa'), 'silent');
     const silentMethodInstance2 = new SilentMethod(createMethod('bb'), 'silent');
     const silentMethodInstance3 = new SilentMethod(createMethod('cb'), 'silent');
@@ -85,4 +81,30 @@ describe('silentMethods filter', () => {
     matchedSM = getSilentMethod(/b$/, 'emptyQueue');
     expect(matchedSM).toBeUndefined();
   });
+
+  // test.skip('It can match silentMethods in the storage before boot silentFactory', async () => {
+  //   const targetQueueName = 'ttr2';
+  //   // 启动silentFactory
+  //   bootSilentFactory({
+  //     alova: alovaInst,
+  //     delay: 0
+  //   });
+
+  //   // 模拟数据创建
+  //   const silentMethodInstance = new SilentMethod(createMethod('aa'), 'silent');
+  //   push2PersistentSilentQueue(silentMethodInstance, targetQueueName);
+
+  //   // 未启动时，也可以匹配到持久化存储中的值
+  //   let smAry = filterSilentMethods('aa');
+  //   expect(smAry).toHaveLength(1);
+
+  //   await untilCbCalled(onSilentSubmitBoot as any);
+  //   const silentMethodInstance2 = new SilentMethod(createMethod('aa'), 'silent');
+  //   push2PersistentSilentQueue(silentMethodInstance2, targetQueueName);
+
+  //   // 启动后，则不再匹配到持久化存储中的值
+  //   // 因为在启动时会读取持久化存储，因此还是可以匹配到第一个
+  //   smAry = filterSilentMethods('aa');
+  //   expect(smAry).toHaveLength(1);
+  // });
 });

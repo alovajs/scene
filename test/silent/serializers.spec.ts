@@ -99,7 +99,7 @@ describe('serializers', () => {
     });
   });
 
-  test.only('deserialized data must be the same as original data', () => {
+  test('deserialized data must be the same as original data', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,

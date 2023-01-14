@@ -6,6 +6,7 @@ import {
   isObject,
   isString,
   len,
+  newInstance,
   noop,
   objectKeys,
   promiseThen,
@@ -15,9 +16,23 @@ import {
   shift,
   walkObject
 } from '../../helper';
-import { behaviorSilent, defaultQueueName, falseValue, trueValue, undefinedValue } from '../../helper/variables';
+import {
+  behaviorSilent,
+  defaultQueueName,
+  falseValue,
+  RegExpCls,
+  trueValue,
+  undefinedValue
+} from '../../helper/variables';
 import createSQEvent from './createSQEvent';
-import { beforeHandlers, errorHandlers, failHandlers, silentFactoryStatus, successHandlers } from './globalVariables';
+import {
+  beforeHandlers,
+  errorHandlers,
+  failHandlers,
+  setSilentFactoryStatus,
+  silentFactoryStatus,
+  successHandlers
+} from './globalVariables';
 import { SilentMethod } from './SilentMethod';
 import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
 import stringifyVData from './virtualResponse/stringifyVData';
@@ -58,7 +73,9 @@ export const deepReplaceVData = (target: any, vDataResponse: Record<string, any>
     if (vData in vDataResponse) {
       return vDataResponse[vData];
     } else if (isString(value)) {
-      return value.replace(regVDataId, mat => (mat in vDataResponse ? vDataResponse[mat] : mat));
+      return value.replace(newInstance(RegExpCls, regVDataId.source, 'g'), mat =>
+        mat in vDataResponse ? vDataResponse[mat] : mat
+      );
     }
     return value;
   };
@@ -263,6 +280,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
               retryDelayFinally
             );
           } else {
+            setSilentFactoryStatus(2);
             runGlobalErrorEvent();
             // 达到失败次数，或不匹配重试的错误信息时，触发失败回调
             runArgsHandler(

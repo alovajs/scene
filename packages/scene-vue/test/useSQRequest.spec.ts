@@ -31,9 +31,12 @@ beforeAll(() => {
 });
 describe('useSQRequest', () => {
   test('request immediately with queue behavior', async () => {
+    const queue = 'tb1';
     const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
     const { loading, data, error, downloading, uploading, onSuccess, onComplete, onBeforePushQueue, onPushedQueue } =
-      useSQRequest(() => Get);
+      useSQRequest(() => Get, {
+        queue
+      });
     const beforePushMockFn = jest.fn();
     onBeforePushQueue(event => {
       beforePushMockFn();
@@ -42,7 +45,7 @@ describe('useSQRequest', () => {
       expect(event.method).toBe(Get);
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
       expect(event.sendArgs).toStrictEqual([]);
-      expect(Object.keys(silentQueueMap.default)).toHaveLength(0);
+      expect(Object.keys(silentQueueMap[queue])).toHaveLength(0);
     });
     const pushedMockFn = jest.fn();
     onPushedQueue(event => {
@@ -52,8 +55,8 @@ describe('useSQRequest', () => {
       expect(event.method).toBe(Get);
       expect(event.silentMethod).toBeInstanceOf(SilentMethod);
       expect(event.sendArgs).toStrictEqual([]);
-      expect(Object.keys(silentQueueMap.default)).toHaveLength(1);
-      expect(silentQueueMap.default[0]).toBe(event.silentMethod);
+      expect(Object.keys(silentQueueMap[queue])).toHaveLength(1);
+      expect(silentQueueMap[queue][0]).toBe(event.silentMethod);
     });
 
     expect(loading.value).toBeTruthy();
@@ -95,10 +98,11 @@ describe('useSQRequest', () => {
       expect(!!event.silentMethod).toBeTruthy();
     });
 
-    expect(Object.keys(silentQueueMap.default)).toHaveLength(0);
+    expect(Object.keys(silentQueueMap[queue])).toHaveLength(0);
   });
 
   test('use send function to request with queue behavior', async () => {
+    const queue = 'tb2';
     const Get = (page: number, pageSize: number) =>
       alovaInst.Get<{ total: number; list: number[] }>('/list', {
         params: {
@@ -109,7 +113,7 @@ describe('useSQRequest', () => {
     const { loading, data, error, downloading, uploading, send, onSuccess, onBeforePushQueue, onPushedQueue } =
       useSQRequest((page, pageSize) => Get(page, pageSize), {
         immediate: false,
-        queue: 'test_1'
+        queue
       });
 
     const beforePushMockFn = jest.fn();
@@ -163,9 +167,11 @@ describe('useSQRequest', () => {
   });
 
   test('should emit onError immediately while request error and never retry', async () => {
+    const queue = 'tb3';
     const Get = () => alovaInst.Get<never>('/list-error');
     const { loading, data, error, onError, onComplete } = useSQRequest(Get, {
-      behavior: 'queue'
+      behavior: 'queue',
+      queue
     });
 
     // 通过decorateSuccess将成功回调参数改为事件对象了，因此强转为此对象
@@ -187,7 +193,7 @@ describe('useSQRequest', () => {
     expect(scopedSQErrorEvent.error.message).toBe('server error');
     expect(scopedSQErrorEvent.sendArgs).toStrictEqual([]);
     expect(scopedSQErrorEvent.silentMethod).not.toBeUndefined();
-    expect(silentQueueMap.default).toHaveLength(0); // 在队列中移除了
+    expect(silentQueueMap[queue]).toHaveLength(0); // 在队列中移除了
 
     onComplete((event: any) => {
       expect((event as any)[Symbol.toStringTag]).toBe('ScopedSQCompleteEvent');
@@ -199,10 +205,11 @@ describe('useSQRequest', () => {
   });
 
   test('should prevent to push silentMethod when return false in onBeforePushQueue', async () => {
+    const queue = 'tb4';
     const Get = () => alovaInst.Get<any>('/list');
     const { onBeforePushQueue, onSuccess } = useSQRequest(Get, {
       behavior: 'queue',
-      queue: 'a22'
+      queue
     });
     onBeforePushQueue(() => {
       return false;
@@ -211,13 +218,13 @@ describe('useSQRequest', () => {
     const successMockFn = jest.fn();
     onSuccess(successMockFn);
     await untilCbCalled(setTimeout, 0);
-    expect(silentQueueMap.a22).toStrictEqual([]);
+    expect(silentQueueMap[queue]).toStrictEqual([]);
     await untilCbCalled(setTimeout, 500);
     expect(successMockFn).not.toBeCalled();
 
     const { onBeforePushQueue: onBeforePushQueue2, onSuccess: onSuccess2 } = useSQRequest(Get, {
       behavior: 'queue',
-      queue: 'a22'
+      queue
     });
     onBeforePushQueue2(() => {
       return false;
@@ -227,16 +234,17 @@ describe('useSQRequest', () => {
     });
     onSuccess2(successMockFn);
     await untilCbCalled(setTimeout, 0);
-    expect(silentQueueMap.a22?.[0]?.active).toBeTruthy();
+    expect(silentQueueMap[queue]?.[0]?.active).toBeTruthy();
     await untilCbCalled(setTimeout, 500);
     expect(successMockFn).toBeCalledTimes(1);
   });
 
   test('should be the same as useRequest when behavior is static', async () => {
+    const queue = 'tb5';
     const Get = () => alovaInst.Get<never>('/list');
     const { loading, data, error, onSuccess, onBeforePushQueue, onPushedQueue } = useSQRequest(Get, {
       behavior: () => 'static',
-      queue: 'a10'
+      queue
     });
 
     const pushMockFn = jest.fn();
@@ -277,21 +285,22 @@ describe('useSQRequest', () => {
   });
 
   test('should be persisted when has no fallbackHandlers in silent behavior', async () => {
+    const queue = 'tb6';
     const Get = () => alovaInst.Get<never>('/list');
     useSQRequest(Get, {
       behavior: () => 'silent',
-      queue: 'a11'
+      queue
     });
 
     await untilCbCalled(setTimeout, 0);
-    expect(silentQueueMap.a11).toHaveLength(1);
+    expect(silentQueueMap[queue]).toHaveLength(1);
     let persistentSilentQueueMap = loadSilentQueueMapFromStorage();
-    expect(persistentSilentQueueMap.a11).toHaveLength(1);
+    expect(persistentSilentQueueMap[queue]).toHaveLength(1);
 
     // 第二个请求
     const { onFallback } = useSQRequest(() => alovaInst.Get<any>('/list-error'), {
       behavior: () => 'silent',
-      queue: 'a11',
+      queue,
       retryError: /.*/,
       maxRetryTimes: 2
     });
@@ -303,17 +312,19 @@ describe('useSQRequest', () => {
     });
 
     await untilCbCalled(setTimeout, 0);
-    expect(silentQueueMap.a11.length).toBe(2);
+    expect(silentQueueMap[queue].length).toBe(2);
     persistentSilentQueueMap = loadSilentQueueMapFromStorage();
-    expect(persistentSilentQueueMap.a11.length).toBe(1); // 绑定了onFallback时不会持久化
+    expect(persistentSilentQueueMap[queue].length).toBe(1); // 绑定了onFallback时不会持久化
     await untilCbCalled(onFallback);
   });
 
   test('should be change behavior when param behavior set to a function that return different value', async () => {
+    const queue = 'tb7';
     const poster = () => alovaInst.Post<any>('/detail');
     let behaviorStr: SQHookBehavior = 'silent';
     const { data, onSuccess, send } = useSQRequest(poster, {
-      behavior: () => behaviorStr
+      behavior: () => behaviorStr,
+      queue
     });
     let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(data.value).toBeInstanceOf(Undefined);
@@ -333,12 +344,12 @@ describe('useSQRequest', () => {
   });
 
   test('should be intercpeted when has virtual data in method instance', async () => {
-    const virtualResponse = createVirtualResponse(undefined);
-    const vDataId = virtualResponse.id;
-
+    const queue = 'tb8';
+    const vDataId = createVirtualResponse(undefined);
     const poster = (id: number) => alovaInst.Post<any>('/detail', { id });
     const { data, onSuccess } = useSQRequest(() => poster(vDataId), {
       behavior: 'queue',
+      queue,
       vDataCaptured(method) {
         expect(method.url).toBe('/detail');
         expect(method.type).toBe('POST');
@@ -355,7 +366,8 @@ describe('useSQRequest', () => {
 
     // 第二：测试未设置vDataCaptured的情况，将发送请求
     const { data: data2, onSuccess: onSuccess2 } = useSQRequest(() => poster(vDataId), {
-      behavior: 'queue'
+      behavior: 'queue',
+      queue
     });
     event = (await untilCbCalled(onSuccess2)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ id: 1 });
@@ -363,15 +375,15 @@ describe('useSQRequest', () => {
   });
 
   test('should be intercpeted when has virtual data id string in method instance', async () => {
-    const virtualResponse = createVirtualResponse(undefined);
-    const vDataId = virtualResponse.id;
-
+    const queue = 'tb9';
+    const vDataId = createVirtualResponse(undefined);
     const poster = (id: number) =>
       alovaInst.Post<any>('/detail', {
         id: 'id is ' + stringifyVData(id)
       });
     const { data, onSuccess } = useSQRequest(() => poster(vDataId), {
       behavior: 'static', // vDataCaptured在任何行为模式下都有效
+      queue,
       vDataCaptured() {
         return {
           localData: 'abc'
@@ -385,8 +397,8 @@ describe('useSQRequest', () => {
   });
 
   test('should be intercpeted when use virtual data to calculate in method instance', async () => {
-    const virtualResponse = createVirtualResponse(undefined);
-    const vDataId = virtualResponse.id;
+    const queue = 'tb10';
+    const vDataId = createVirtualResponse(undefined);
     const obj = { vDataId };
 
     const poster = (o: { vDataId: any }) =>
@@ -395,6 +407,7 @@ describe('useSQRequest', () => {
       });
     const { data, onSuccess } = useSQRequest(() => poster(obj), {
       behavior: 'queue',
+      queue,
       vDataCaptured() {
         return {
           localData: 'abc'
@@ -408,9 +421,11 @@ describe('useSQRequest', () => {
   });
 
   test('the onSuccess should be emit immediately with virtualResponse, perhaps has default response', async () => {
+    const queue = 'tb11';
     const poster = () => alovaInst.Post<any>('/detail');
     const { data, onSuccess } = useSQRequest(poster, {
-      behavior: 'silent'
+      behavior: 'silent',
+      queue
     });
 
     const event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
@@ -424,6 +439,7 @@ describe('useSQRequest', () => {
 
     const { data: data2, onSuccess: onSuccess2 } = useSQRequest(poster, {
       behavior: 'silent',
+      queue,
       silentDefaultResponse: () => ({
         a: 1,
         b: 'bb'
@@ -440,8 +456,11 @@ describe('useSQRequest', () => {
 
   test('should be delay update states when call `updateStateEffect` in onSuccess handler', async () => {
     // 获取列表
+    const queue = 'tb12';
     const getter = () => alovaInst.Get<any>('/info-list');
-    const { data: listData, onSuccess } = useSQRequest(getter);
+    const { data: listData, onSuccess } = useSQRequest(getter, {
+      queue
+    });
     await untilCbCalled(onSuccess);
     expect(listData.value).toStrictEqual([
       {
@@ -462,6 +481,7 @@ describe('useSQRequest', () => {
     const poster = () => alovaInst.Post<any>('/detail');
     const { data: postRes, onSuccess: onPostSuccess } = useSQRequest(poster, {
       behavior: 'silent',
+      queue,
       silentDefaultResponse: () => ({
         id: '--'
       })
@@ -512,6 +532,7 @@ describe('useSQRequest', () => {
 
   test('should replace virtual data to real value that method instances after requesting method instance', async () => {
     // 提交数据并立即更新
+    const queue = 'tb13';
     const poster = (data: Record<string, any>) => alovaInst.Post<any>('/detail2', data);
     const { onSuccess: onPostSuccess } = useSQRequest(
       () =>
@@ -521,6 +542,7 @@ describe('useSQRequest', () => {
         }),
       {
         behavior: 'silent',
+        queue,
         silentDefaultResponse() {
           return {
             id: null,
@@ -549,6 +571,7 @@ describe('useSQRequest', () => {
         }),
       {
         behavior: 'silent',
+        queue,
         silentDefaultResponse() {
           return {
             id: undefined,
@@ -576,7 +599,8 @@ describe('useSQRequest', () => {
         status: [vDataStatus, vDataStatus2]
       });
     const { onSuccess: onDeleteSuccess } = useSQRequest(deleter, {
-      behavior: 'queue'
+      behavior: 'queue',
+      queue
     });
 
     // 使用全局事件来检查上面的请求数据

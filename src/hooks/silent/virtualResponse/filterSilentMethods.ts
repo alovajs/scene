@@ -1,7 +1,10 @@
+import { SilentQueueMap } from '../../../../typings/general';
 import { getConfig, instanceOf } from '../../../helper';
 import { defaultQueueName, falseValue, trueValue, undefinedValue } from '../../../helper/variables';
+import { silentFactoryStatus } from '../globalVariables';
 import { SilentMethod } from '../SilentMethod';
 import { silentQueueMap } from '../silentQueue';
+import loadSilentQueueMapFromStorage from '../storage/loadSilentQueueMapFromStorage';
 
 /**
  * 按method名称或正则表达式筛选满足条件的所有silentMethod实例
@@ -14,15 +17,24 @@ export const filterSilentMethods = (
   methodNameMatcher?: string | number | RegExp,
   queueName = defaultQueueName,
   filterActive = falseValue
-) =>
-  (silentQueueMap[queueName] || []).filter(silentMethodItem => {
-    if (methodNameMatcher === undefinedValue) {
-      return trueValue;
-    }
-    const name = getConfig(silentMethodItem.entity).name || '';
-    const retain = instanceOf(methodNameMatcher, RegExp) ? methodNameMatcher.test(name) : name === methodNameMatcher;
-    return retain && (filterActive ? silentMethodItem.active : trueValue);
-  });
+) => {
+  const matchSilentMethods = (targetQueue: SilentQueueMap[string] = []) =>
+    targetQueue.filter(silentMethodItem => {
+      if (methodNameMatcher === undefinedValue) {
+        return trueValue;
+      }
+      const name = getConfig(silentMethodItem.entity).name || '';
+      const retain = instanceOf(methodNameMatcher, RegExp) ? methodNameMatcher.test(name) : name === methodNameMatcher;
+      return retain && (filterActive ? silentMethodItem.active : trueValue);
+    });
+
+  return [
+    ...matchSilentMethods(silentQueueMap[queueName]),
+
+    // 如果当前未启动silentFactory，则还需要去持久化存储中匹配silentMethods
+    ...(silentFactoryStatus === 0 ? matchSilentMethods(loadSilentQueueMapFromStorage()[queueName]) : [])
+  ];
+};
 
 /**
  * 按method名称或正则表达式查找第一个满足条件的silentMethod实例

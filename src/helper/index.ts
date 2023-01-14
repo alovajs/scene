@@ -2,11 +2,11 @@ import { Method } from 'alova';
 import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value);
-export const promiseThen = <T, TResult1 = T, TResult2 = never>(
+export const promiseThen = <T, T2 = never>(
   promise: Promise<T>,
-  onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
-  onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
-): Promise<TResult1 | TResult2> => promise.then(onFulfilled, onrejected);
+  onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined | null,
+  onrejected?: ((reason: any) => T2 | PromiseLike<T2>) | undefined | null
+): Promise<T | T2> => promise.then(onFulfilled, onrejected);
 
 export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn);
 export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);

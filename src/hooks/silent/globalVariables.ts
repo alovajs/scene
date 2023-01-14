@@ -44,11 +44,11 @@ export const setDependentAlova = (alovaInst: Alova<any, any, any, any, any>) => 
 /**
  * silentFactory状态
  * 0表示未启动
- * 1表示已启动
- * 调用bootSilentFactory后状态为1
+ * 1表示进行中，调用bootSilentFactory后变更
+ * 2表示请求失败，即按重试规则请求达到最大次数时，或不匹配重试规则时变更
  */
 export let silentFactoryStatus = 0;
-export const setSilentFactoryStatus = (status: 0 | 1) => (silentFactoryStatus = status);
+export const setSilentFactoryStatus = (status: 0 | 1 | 2) => (silentFactoryStatus = status);
 
 /** 事件绑定函数 */
 export const bootHandlers = [] as SilentSubmitBootHandler[];

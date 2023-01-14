@@ -76,12 +76,12 @@ export default <S, E, R, T, RC, RE, RH>(
    * @returns {Promise}
    */
   const middleware: AlovaMiddleware<S, E, R, T, RC, RE, RH> = (
-    { method, sendArgs, statesUpdate, decorateSuccess, decorateError, decorateComplete, config },
+    { method, sendArgs, cachedResponse, update, decorateSuccess, decorateError, decorateComplete, config },
     next
   ) => {
     // 因为behavior返回值可能会变化，因此每次请求都应该调用它重新获取返回值
     const behaviorFinally = isFn(behavior) ? behavior() : behavior;
-    const { silentDefaultResponse, vDataCaptured } = config;
+    const { silentDefaultResponse, vDataCaptured, force = falseValue } = config;
     let silentMethodInstance: any;
 
     // 设置事件回调装饰器
@@ -172,60 +172,72 @@ export default <S, E, R, T, RC, RE, RH>(
 
     if (behaviorFinally !== behaviorStatic) {
       // 等待队列中的method执行完毕
-      const queueResolvePromise = newInstance(PromiseCls, (resolveHandler, rejectHandler) => {
-        silentMethodInstance = newInstance(
-          SilentMethod,
-          method as Method<any, any, any, any, any, any, any>,
-          behaviorFinally,
-          undefinedValue,
-          retryError,
-          maxRetryTimes,
-          backoff,
-          fallbackHandlers as any[],
-          resolveHandler,
-          rejectHandler,
-          handlerArgs,
-          vDataIdCollectBasket && objectKeys(vDataIdCollectBasket),
-          retryHandlers as any[]
-        );
-        resetCollectBasket(); // behavior为queue和silent时的重置
-      });
 
-      // onBeforePush和onPushed事件是同步绑定的，因此需要异步执行入队列才能正常触发事件
-      promiseThen(promiseResolve(undefinedValue), () => {
-        const createPushEvent = () =>
-          createSQEvent(4, behaviorFinally, method, silentMethodInstance, undefinedValue, undefinedValue, sendArgs);
+      const createSilentMethodPromise = () => {
+        const queueResolvePromise = newInstance(PromiseCls, (resolveHandler, rejectHandler) => {
+          silentMethodInstance = newInstance(
+            SilentMethod,
+            method as Method<any, any, any, any, any, any, any>,
+            behaviorFinally,
+            undefinedValue,
+            retryError,
+            maxRetryTimes,
+            backoff,
+            fallbackHandlers as any[],
+            resolveHandler,
+            rejectHandler,
+            handlerArgs,
+            vDataIdCollectBasket && objectKeys(vDataIdCollectBasket),
+            retryHandlers as any[]
+          );
+          resetCollectBasket(); // behavior为queue和silent时的重置
+        });
 
-        // 将silentMethod放入队列并持久化
-        pushNewSilentMethod2Queue(
-          silentMethodInstance,
-          // onFallback绑定了事件后，即使是silent行为模式也不再存储
-          // onFallback会同步调用，因此需要异步判断是否存在fallbackHandlers
-          len(fallbackHandlers) <= 0 && behaviorFinally === behaviorSilent,
-          queue,
+        // onBeforePush和onPushed事件是同步绑定的，因此需要异步执行入队列才能正常触发事件
+        promiseThen(promiseResolve(), () => {
+          const createPushEvent = () =>
+            createSQEvent(4, behaviorFinally, method, silentMethodInstance, undefinedValue, undefinedValue, sendArgs);
 
-          // 执行放入队列前回调，如果返回false则阻止放入队列
-          () => runArgsHandler(beforePushQueueHandlers, createPushEvent())
-        );
-        // 执行放入队列后回调
-        runArgsHandler(pushedQueueHandlers, createPushEvent());
-      });
+          // 将silentMethod放入队列并持久化
+          pushNewSilentMethod2Queue(
+            silentMethodInstance,
+            // onFallback绑定了事件后，即使是silent行为模式也不再存储
+            // onFallback会同步调用，因此需要异步判断是否存在fallbackHandlers
+            len(fallbackHandlers) <= 0 && behaviorFinally === behaviorSilent,
+            queue,
+
+            // 执行放入队列前回调，如果返回false则阻止放入队列
+            () => runArgsHandler(beforePushQueueHandlers, createPushEvent())
+          );
+          // 执行放入队列后回调
+          runArgsHandler(pushedQueueHandlers, createPushEvent());
+        });
+
+        return queueResolvePromise;
+      };
 
       if (behaviorFinally === behaviorQueue) {
-        statesUpdate({
-          // 手动设置为true
-          loading: trueValue
-        });
-        return queueResolvePromise;
+        const forceRequest = isFn(force) ? force() : force;
+        // 强制请求，或命中缓存时需要更新loading状态
+        const needSendRequest = forceRequest || !cachedResponse;
+        if (needSendRequest) {
+          update({
+            // 手动设置为true
+            loading: trueValue
+          });
+        }
+
+        // 当使用缓存时，直接使用缓存，否则再进入请求队列
+        return needSendRequest ? createSilentMethodPromise() : promiseThen(promiseResolve(cachedResponse));
       }
 
       // 在silent模式下创建虚拟响应数据，虚拟响应数据可生成任意的虚拟数据
       const virtualResponse = (silentMethodInstance.virtualResponse = createVirtualResponse(
         isFn(silentDefaultResponse) ? silentDefaultResponse() : undefinedValue
       ));
-      promiseThen(queueResolvePromise, realResponse => {
+      promiseThen(createSilentMethodPromise(), realResponse => {
         // 获取到真实数据后更新过去
-        statesUpdate({
+        update({
           data: realResponse
         });
       });
