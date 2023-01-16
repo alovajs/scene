@@ -231,11 +231,12 @@ export default <S, E, R, T, RC, RE, RH>(
         return needSendRequest ? createSilentMethodPromise() : promiseThen(promiseResolve(cachedResponse));
       }
 
+      const silentMethodPromise = createSilentMethodPromise();
       // 在silent模式下创建虚拟响应数据，虚拟响应数据可生成任意的虚拟数据
       const virtualResponse = (silentMethodInstance.virtualResponse = createVirtualResponse(
         isFn(silentDefaultResponse) ? silentDefaultResponse() : undefinedValue
       ));
-      promiseThen(createSilentMethodPromise(), realResponse => {
+      promiseThen<any>(silentMethodPromise, realResponse => {
         // 获取到真实数据后更新过去
         update({
           data: realResponse
