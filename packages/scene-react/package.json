@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene-react",
-  "version": "1.0.0-beta.23",
+  "version": "1.0.0-beta.24",
   "description": "scenario react hooks with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "main": "dist/alova-scene.umd.min.js",

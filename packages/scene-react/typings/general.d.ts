@@ -51,6 +51,9 @@ interface SQEvent<S, E, R, T, RC, RE, RH> {
 interface GlobalSQEvent extends SQEvent<any, any, any, any, any, any, any> {
   /** 重试次数，在beforePush和pushed事件中没有值 */
   retryTimes: number;
+
+  /** silentMethod所在的队列名 */
+  queueName: string;
 }
 /** 全局成功事件 */
 interface GlobalSQSuccessEvent extends GlobalSQEvent {
