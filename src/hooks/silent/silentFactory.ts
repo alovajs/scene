@@ -14,6 +14,7 @@ import {
   failHandlers,
   setDependentAlova,
   setSilentFactoryStatus,
+  setSilentMethodRequestDelay,
   silentFactoryStatus,
   successHandlers
 } from './globalVariables';
@@ -87,6 +88,7 @@ export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
   if (silentFactoryStatus === 0) {
     setDependentAlova(options.alova);
     mergeSerializer(options.serializers);
+    setSilentMethodRequestDelay(options.queueRequestDelay);
     setTimeoutFn(() => {
       // 延时加载，让页面的queue放在最前面
       merge2SilentQueueMap(loadSilentQueueMapFromStorage());

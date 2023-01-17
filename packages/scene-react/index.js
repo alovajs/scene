@@ -21,4 +21,3 @@ export { default as dehydrateVData } from '../../src/hooks/silent/virtualRespons
 export { filterSilentMethods, getSilentMethod } from '../../src/hooks/silent/virtualResponse/filterSilentMethods';
 export { default as stringifyVData } from '../../src/hooks/silent/virtualResponse/stringifyVData';
 export { default as updateStateEffect } from '../../src/hooks/silent/virtualResponse/updateStateEffect';
-

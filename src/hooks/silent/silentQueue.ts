@@ -31,10 +31,15 @@ import {
   failHandlers,
   setSilentFactoryStatus,
   silentFactoryStatus,
+  silentMethodRequestDelay,
   successHandlers
 } from './globalVariables';
 import { SilentMethod } from './SilentMethod';
-import { persistSilentMethod, push2PersistentSilentQueue, removeSilentMethod } from './storage/silentMethodStorage';
+import {
+  persistSilentMethod,
+  push2PersistentSilentQueue,
+  spliceStorageSilentMethod
+} from './storage/silentMethodStorage';
 import stringifyVData from './virtualResponse/stringifyVData';
 import { regVDataId } from './virtualResponse/variables';
 
@@ -139,8 +144,29 @@ const setSilentMethodActive = (silentMethodInstance: SilentMethod, active: boole
     delete silentMethodInstance.active;
   }
 };
+
 const defaultBackoffDelay = 1000;
 export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string) => {
+  /**
+   * 根据请求延迟控制回调函数的调用，如果未设置或小于等于0则立即触发
+   * @param queueName 队列名称
+   * @param callback 回调函数
+   */
+  const emitWithRequestDelay = (queueName: string) => {
+    const requestDelay = silentMethodRequestDelay[queueName];
+    const callback = () => len(queue) > 0 && silentMethodRequest(queue[0]);
+    if (requestDelay > 0) {
+      setTimeoutFn(callback, requestDelay);
+    } else {
+      callback();
+    }
+  };
+
+  /**
+   * 运行单个silentMethod实例
+   * @param silentMethodInstance silentMethod实例
+   * @param retryTimes 重试的次数
+   */
   const silentMethodRequest = (silentMethodInstance: SilentMethod, retryTimes = 0) => {
     // 将当前silentMethod实例设置活跃状态
     setSilentMethodActive(silentMethodInstance, trueValue);
@@ -161,14 +187,14 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
     } = silentMethodInstance;
 
     // 触发请求前事件
-    runArgsHandler(beforeHandlers, createSQEvent(0, behavior, entity, silentMethodInstance, retryTimes));
+    runArgsHandler(beforeHandlers, createSQEvent(0, behavior, entity, silentMethodInstance, queueName, retryTimes));
     promiseThen(
       entity.send(),
       data => {
         // 请求成功，移除成功的silentMethod实力，并继续下一个请求
         shift(queue);
         // 请求成功，把成功的silentMethod实例在storage中移除，并继续下一个请求
-        cache && removeSilentMethod(id, queueName);
+        cache && spliceStorageSilentMethod(queueName, id);
         // 如果有resolveHandler则调用它通知外部
         resolveHandler(data);
 
@@ -201,6 +227,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
               behavior,
               entity,
               silentMethodInstance,
+              queueName,
               retryTimes,
               undefinedValue,
               undefinedValue,
@@ -212,8 +239,9 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
 
         // 设为非激活状态
         setSilentMethodActive(silentMethodInstance, falseValue);
+
         // 继续下一个silentMethod的处理
-        len(queue) > 0 && silentMethodRequest(queue[0]);
+        emitWithRequestDelay(queueName);
       },
       reason => {
         if (behavior !== behaviorSilent) {
@@ -231,6 +259,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
                 behavior,
                 entity,
                 silentMethodInstance,
+                queueName,
                 retryTimes,
                 retryDelay,
                 undefinedValue,
@@ -273,7 +302,16 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
                 silentMethodRequest(silentMethodInstance, ++retryTimes);
                 runArgsHandler(
                   retryHandlers,
-                  createSQEvent(8, behavior, entity, silentMethodInstance, retryTimes, retryDelayFinally, handlerArgs)
+                  createSQEvent(
+                    8,
+                    behavior,
+                    entity,
+                    silentMethodInstance,
+                    undefinedValue,
+                    retryTimes,
+                    retryDelayFinally,
+                    handlerArgs
+                  )
                 );
               },
               // 还有重试次数时使用timeout作为下次请求时间，否则是否nextRound
@@ -292,6 +330,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
                 silentMethodInstance,
                 undefinedValue,
                 undefinedValue,
+                undefinedValue,
                 handlerArgs,
                 undefinedValue,
                 undefinedValue,
@@ -305,6 +344,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
                 behavior,
                 entity,
                 silentMethodInstance,
+                queueName,
                 retryTimes,
                 undefinedValue,
                 undefinedValue,
@@ -320,7 +360,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
       }
     );
   };
-  len(queue) > 0 && silentMethodRequest(queue[0]);
+  emitWithRequestDelay(queueName);
 };
 
 /**

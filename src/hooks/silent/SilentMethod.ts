@@ -3,11 +3,14 @@ import {
   FallbackHandler,
   RetryHandler,
   SilentMethod as SilentMethodInterface,
+  SilentQueueMap,
   SQHookBehavior
 } from '../../../typings/general';
 import { splice, uuid } from '../../helper';
+import { undefinedValue } from '../../helper/variables';
+import { silentAssert } from './globalVariables';
 import { silentQueueMap } from './silentQueue';
-import { persistSilentMethod, removeSilentMethod } from './storage/silentMethodStorage';
+import { persistSilentMethod, spliceStorageSilentMethod } from './storage/silentMethodStorage';
 
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
 export type MethodHandler<S, E, R, T, RC, RE, RH> = (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
@@ -15,6 +18,29 @@ export type BackoffPolicy = NonNullable<SilentMethodInterface['backoff']>;
 export type MaxRetryTimes = NonNullable<SilentMethodInterface['maxRetryTimes']>;
 export type RetryError = NonNullable<SilentMethodInterface['retryError']>;
 
+/**
+ * 定位silentMethod实例所在的位置
+ * @param silentMethodInstance silentMethod实例
+ */
+const getBelongQueuePosition = (silentMethodInstance: SilentMethod) => {
+  let queue: SilentQueueMap[string] | undefined = undefinedValue;
+  let queueName = '';
+  let position = 0;
+  for (const queueNameLoop in silentQueueMap) {
+    position = silentQueueMap[queueNameLoop].indexOf(silentMethodInstance);
+    if (position >= 0) {
+      queue = silentQueueMap[queueNameLoop];
+      queueName = queueNameLoop;
+      break;
+    }
+  }
+  return [queue, queueName, position] as const;
+};
+
+/**
+ * silentMethod实例
+ * 需要进入silentQueue的请求都将被包装成silentMethod实例，它将带有请求策略的各项参数
+ */
 export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
   public id: string;
   /** 是否为持久化实例 */
@@ -103,17 +129,32 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
   }
 
   /**
-   * 移除当前实例，它将在持久化存储中同步移除
+   * 在队列中使用一个新的silentMethod实例替换当前实例
+   * 如果有持久化缓存也将会更新缓存
+   * @param newSilentMethod 新的silentMethod实例
+   */
+  public replace(newSilentMethod: SilentMethod) {
+    const targetSilentMethod = this;
+    silentAssert(
+      newSilentMethod.cache === targetSilentMethod.cache,
+      'the cache of new silentMethod must equal with this silentMethod'
+    );
+    const [queue, queueName, position] = getBelongQueuePosition(targetSilentMethod);
+    if (queue) {
+      splice(queue, position, 1, newSilentMethod);
+      targetSilentMethod.cache && spliceStorageSilentMethod(queueName, targetSilentMethod.id, newSilentMethod);
+    }
+  }
+
+  /**
+   * 移除当前实例，如果有持久化数据，也会同步移除
    */
   public remove() {
-    for (const queueName in silentQueueMap) {
-      const index = silentQueueMap[queueName].indexOf(this);
-      if (index >= 0) {
-        const targetSilentMethod = silentQueueMap[queueName][index];
-        splice(silentQueueMap[queueName], index, 1);
-        this.cache && targetSilentMethod && removeSilentMethod(targetSilentMethod.id, queueName);
-        break;
-      }
+    const targetSilentMethod = this;
+    const [queue, queueName, position] = getBelongQueuePosition(targetSilentMethod);
+    if (queue) {
+      splice(queue, position, 1);
+      targetSilentMethod.cache && spliceStorageSilentMethod(queueName, targetSilentMethod.id);
     }
   }
 }

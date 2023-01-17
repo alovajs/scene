@@ -6,7 +6,7 @@ import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { clearSilentQueueMap, pushNewSilentMethod2Queue, silentQueueMap } from '../../src/hooks/silent/silentQueue';
 import { silentMethodIdQueueMapStorageKey, silentMethodStorageKeyPrefix } from '../../src/hooks/silent/storage/helper';
 import loadSilentQueueMapFromStorage from '../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
-import { removeSilentMethod } from '../../src/hooks/silent/storage/silentMethodStorage';
+import { spliceStorageSilentMethod } from '../../src/hooks/silent/storage/silentMethodStorage';
 import { mockRequestAdapter } from '../mockData';
 
 beforeEach(clearSilentQueueMap); // 每次清除队列，保证测试正确
@@ -115,13 +115,13 @@ describe('silent method storage manipulate', () => {
     expect(Object.keys(loadedSilentQueueMap)).toHaveLength(1);
     expect(loadedSilentQueueMap.default).toHaveLength(2);
 
-    removeSilentMethod(silentMethodInstance.id, defaultQueueName);
+    spliceStorageSilentMethod(defaultQueueName, silentMethodInstance.id);
     loadedSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(Object.keys(loadedSilentQueueMap)).toHaveLength(1);
     expect(loadedSilentQueueMap.default).toHaveLength(1);
     expect(storageMock[silentMethodStorageKeyPrefix + silentMethodInstance.id]).toBeUndefined(); // 检查存储中的silentMethod
 
-    removeSilentMethod(silentMethodInstance2.id, defaultQueueName);
+    spliceStorageSilentMethod(defaultQueueName, silentMethodInstance2.id);
     loadedSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(Object.keys(loadedSilentQueueMap)).toHaveLength(0);
     expect(storageMock[silentMethodStorageKeyPrefix + silentMethodInstance2.id]).toBeUndefined();

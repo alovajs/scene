@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene",
-  "version": "1.0.0-beta.23",
+  "version": "1.0.0-beta.24",
   "description": "scenario hooks with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "private": true,
@@ -10,9 +10,9 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "cp:dts": "yarn workspaces run cp:dts",
-    "build": "yarn workspaces run build",
-    "release": "yarn workspaces run release",
+    "cp:dts": "npm run cp:dts --workspaces",
+    "build": "npm run build --workspaces",
+    "release": "npm run release --workspaces",
     "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info"
   },
   "author": "JOU-amjs",
@@ -38,7 +38,7 @@
     "@types/testing-library__jest-dom": "^5.14.5",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "alova": "^1.5.0-beta.5",
+    "alova": "^1.5.0-beta.6",
     "babel-jest": "^29.2.2",
     "coveralls": "^3.1.1",
     "cpy": "^8.1.2",

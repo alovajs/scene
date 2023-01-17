@@ -6,9 +6,9 @@ import { symbolToStringTag, undefinedValue } from '../../helper/variables';
 /**
  * 创建统一的事件对象，它将承载以下事件
  * 全局的：
- * 	[GlobalSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、响应数据、虚拟数据和实际值的集合
- * 	[GlobalSQErrorEvent]失败：behavior、silentMethod实例、method实例、retryTimes、错误对象
- * 	[GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、method实例、* retryTimes、[?]响应数据、[?]错误对象
+ * 	[GlobalSQSuccessEvent]成功：behavior、silentMethod实例、queue名称、method实例、retryTimes、响应数据、虚拟数据和实际值的集合
+ * 	[GlobalSQErrorEvent]失败：behavior、silentMethod实例、queue名称、method实例、retryTimes、错误对象
+ * 	[GlobalSQSuccessEvent | GlobalSQErrorEvent]完成事件：behavior、silentMethod实例、queue名称、method实例、* retryTimes、[?]响应数据、[?]错误对象
  *
  * 局部的：
  * 	[ScopedSQSuccessEvent]成功：behavior、silentMethod实例、method实例、retryTimes、send参数、响应数据
@@ -25,6 +25,7 @@ export default <S, E, R, T, RC, RE, RH>(
   behavior: SQHookBehavior,
   method: Method<S, E, R, T, RC, RE, RH>,
   silentMethod?: SilentMethod<S, E, R, T, RC, RE, RH>,
+  queueName?: string,
   retryTimes?: number,
   retryDelay?: number,
   sendArgs?: any[],
@@ -62,7 +63,10 @@ export default <S, E, R, T, RC, RE, RH>(
     error,
 
     /** 响应状态 */
-    status
+    status,
+
+    /** silentMethod所在的队列名，全局事件有值 */
+    queueName
   };
   const sqEvent: Record<string, any> = {};
   forEach(objectKeys(allPropsEvent), key => {

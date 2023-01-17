@@ -1,5 +1,6 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
+import { defaultQueueName } from '../../src/helper/variables';
 import {
   bootSilentFactory,
   onBeforeSilentSubmit,
@@ -224,6 +225,7 @@ describe('boot silent queue', () => {
       onSilentSubmitSuccess(event => {
         successMockFn();
         // 验证event内的数据
+        expect(event.queueName).toBe(defaultQueueName);
         expect((event as any)[Symbol.toStringTag]).toBe('GlobalSQSuccessEvent');
         expect(event.behavior).toBe('silent');
         if (successCallIndex === 0) {

@@ -1,5 +1,6 @@
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
+import { setSilentFactoryStatus } from '../../../src/hooks/silent/globalVariables';
 import { bootSilentFactory, onSilentSubmitSuccess } from '../../../src/hooks/silent/silentFactory';
 import { SilentMethod } from '../../../src/hooks/silent/SilentMethod';
 import { silentQueueMap } from '../../../src/hooks/silent/silentQueue';
@@ -24,11 +25,21 @@ const alovaInst = createAlova({
     GET: 0
   }
 });
+
+let testNum = 0;
+beforeEach(() => {
+  // 每次运行用例前将状态重置为1，否则上面的请求错误会将状态改为2而不再执行下面的silentMethod了
+  // 第一次因为还未启动，则不需要重置
+  testNum > 0 && setSilentFactoryStatus(1);
+  testNum++;
+});
+
 beforeAll(() => {
   bootSilentFactory({
     alova: alovaInst
   });
 });
+jest.setTimeout(1000000);
 describe('useSQRequest', () => {
   test('request immediately with queue behavior', async () => {
     const queue = 'tb1';
@@ -486,18 +497,20 @@ describe('useSQRequest', () => {
         id: '--'
       })
     });
-    onPostSuccess(({ data }) => {
+    onPostSuccess(event => {
+      const data = event.data;
       expect(postRes.value[symbolVDataId]).toBeTruthy(); // 此时还是虚拟响应数据
 
       // 调用updateStateEffect后将首先立即更新虚拟数据到listData中
       // 等到请求响应后再次更新实际数据到listData中
-      updateStateEffect(getter(), listDataRaw => {
+      const updated = updateStateEffect(getter(), listDataRaw => {
         listDataRaw.push({
           id: data.id,
           text: 'abc'
         });
         return listDataRaw;
       });
+      expect(updated).toBeTruthy();
 
       const listDataLastItem = listData.value[listData.value.length - 1];
       expect(stringifyVData(listDataLastItem?.id)).toBe(stringifyVData(data.id));
@@ -505,7 +518,13 @@ describe('useSQRequest', () => {
       expect(listDataLastItem?.text).toBe('abc');
     });
 
-    await untilCbCalled(onSilentSubmitSuccess);
+    await new Promise<void>(resolve => {
+      onSilentSubmitSuccess(event => {
+        if (event.queueName === queue) {
+          resolve();
+        }
+      });
+    });
     // 已替换为实际数据
     expect(postRes.value).toStrictEqual({ id: 1 });
 

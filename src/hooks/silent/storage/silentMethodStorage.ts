@@ -43,29 +43,38 @@ export const push2PersistentSilentQueue = <S, E, R, T, RC, RE, RH>(
 };
 
 /**
- * 移除静默方法实例
- * @param targetSilentMethodId 目标silentMethod实例id
+ * 对缓存中的silentMethod实例移除或替换
  * @param queue 操作的队列名
+ * @param targetSilentMethodId 目标silentMethod实例id
+ * @param newSilentMethod 替换的新silentMethod实例，未传则表示删除
  */
-export const removeSilentMethod = (targetSilentMethodId: string, queueName: string) => {
+export const spliceStorageSilentMethod = (
+  queueName: string,
+  targetSilentMethodId: string,
+  newSilentMethod?: SilentMethod
+) => {
   // 将silentMethod实例id从queue中移除
   const silentMethodIdQueueMap = JSONParse(
     storageGetItem(silentMethodIdQueueMapStorageKey) || '{}'
   ) as SerializedSilentMethodIdQueueMap;
-  const currentQueue = silentMethodIdQueueMap[queueName];
-  if (currentQueue) {
-    const index = currentQueue.findIndex(id => id === targetSilentMethodId);
-    if (index >= 0) {
+  const currentQueue = silentMethodIdQueueMap[queueName] || [];
+  const index = currentQueue.findIndex(id => id === targetSilentMethodId);
+  if (index >= 0) {
+    if (newSilentMethod) {
+      splice(currentQueue, index, 1, newSilentMethod.id);
+      persistSilentMethod(newSilentMethod);
+    } else {
       splice(currentQueue, index, 1);
-      // 队列为空时删除此队列
-      len(currentQueue) <= 0 && delete silentMethodIdQueueMap[queueName];
-      storageRemoveItem(silentMethodStorageKeyPrefix + targetSilentMethodId);
-      if (len(objectKeys(silentMethodIdQueueMap)) > 0) {
-        storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
-      } else {
-        // 队列集合为空时移除它
-        storageRemoveItem(silentMethodIdQueueMapStorageKey);
-      }
+    }
+
+    storageRemoveItem(silentMethodStorageKeyPrefix + targetSilentMethodId);
+    // 队列为空时删除此队列
+    len(currentQueue) <= 0 && delete silentMethodIdQueueMap[queueName];
+    if (len(objectKeys(silentMethodIdQueueMap)) > 0) {
+      storageSetItem(silentMethodIdQueueMapStorageKey, JSONStringify(silentMethodIdQueueMap));
+    } else {
+      // 队列集合为空时移除它
+      storageRemoveItem(silentMethodIdQueueMapStorageKey);
     }
   }
 };

@@ -1,5 +1,6 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
+import { setSilentFactoryStatus } from '../../src/hooks/silent/globalVariables';
 import {
   bootSilentFactory,
   onSilentSubmitError,
@@ -11,6 +12,8 @@ import { pushNewSilentMethod2Queue } from '../../src/hooks/silent/silentQueue';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import { mockRequestAdapter } from '../mockData';
 
+// 每次需重置状态，因为上一个用例可能因为失败而被设置为2，导致下面的用例不运行
+beforeEach(() => setSilentFactoryStatus(0));
 describe('silent method request in queue with silent behavior', () => {
   test("it wouldn't retry when request is success", async () => {
     const alovaInst = createAlova({
@@ -206,6 +209,7 @@ describe('silent method request in queue with silent behavior', () => {
     const errorMockFn = jest.fn();
     const offError = onSilentSubmitError(event => {
       errorMockFn();
+      expect(event.queueName).toBe('t2');
       expect(event.behavior).toBe('silent');
       expect(event.error.message).toBe('no permission');
       expect(event.method).toBe(methodInstance);
@@ -215,6 +219,7 @@ describe('silent method request in queue with silent behavior', () => {
     const failMockFn = jest.fn();
     const offFail = onSilentSubmitFail(event => {
       failMockFn();
+      expect(event.queueName).toBe('t2');
       expect((event as any)[Symbol.toStringTag]).toBe('GlobalSQFailEvent');
       expect(event.behavior).toBe('silent');
       expect(event.error.message).toBe('no permission');

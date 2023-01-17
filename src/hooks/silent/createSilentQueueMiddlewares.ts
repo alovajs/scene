@@ -97,6 +97,7 @@ export default <S, E, R, T, RC, RE, RH>(
           silentMethodInstance,
           undefinedValue,
           undefinedValue,
+          undefinedValue,
           event.sendArgs,
           event.data
         ) as any
@@ -117,6 +118,7 @@ export default <S, E, R, T, RC, RE, RH>(
           silentMethodInstance,
           undefinedValue,
           undefinedValue,
+          undefinedValue,
           event.sendArgs,
           undefinedValue,
           undefinedValue,
@@ -131,6 +133,7 @@ export default <S, E, R, T, RC, RE, RH>(
           behaviorFinally,
           method,
           silentMethodInstance,
+          undefinedValue,
           undefinedValue,
           undefinedValue,
           event.sendArgs,
@@ -196,7 +199,16 @@ export default <S, E, R, T, RC, RE, RH>(
         // onBeforePush和onPushed事件是同步绑定的，因此需要异步执行入队列才能正常触发事件
         promiseThen(promiseResolve(), () => {
           const createPushEvent = () =>
-            createSQEvent(4, behaviorFinally, method, silentMethodInstance, undefinedValue, undefinedValue, sendArgs);
+            createSQEvent(
+              4,
+              behaviorFinally,
+              method,
+              silentMethodInstance,
+              undefinedValue,
+              undefinedValue,
+              undefinedValue,
+              sendArgs
+            );
 
           // 将silentMethod放入队列并持久化
           pushNewSilentMethod2Queue(

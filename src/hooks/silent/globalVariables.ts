@@ -6,7 +6,8 @@ import {
   SilentSubmitFailHandler,
   SilentSubmitSuccessHandler
 } from '../../../typings/general';
-import { createAssert } from '../../helper';
+import { createAssert, isObject } from '../../helper';
+import { defaultQueueName } from '../../helper/variables';
 
 /**
  * 全局的虚拟数据收集数组
@@ -49,6 +50,23 @@ export const setDependentAlova = (alovaInst: Alova<any, any, any, any, any>) => 
  */
 export let silentFactoryStatus = 0;
 export const setSilentFactoryStatus = (status: 0 | 1 | 2) => (silentFactoryStatus = status);
+
+/**
+ * silentQueue内的请求延迟时间，单位为毫秒（ms）
+ * 即表示第一个silentMethod，或下一个silentMethod发起请求的延迟时间
+ * 如果未设置，或设置为0表示立即触发silentMethod请求
+ * 直接设置为数字时对default queue有效
+ * 如果需要对其他queue设置可设置为对象，示例：
+ * { customName: 5000 } 是对名为customWName的queue设置请求延迟时间
+ *
+ * >>> 它只在请求成功时起作用，如果失败则会使用重试策略参数
+ */
+export let silentMethodRequestDelay: Record<string, number> = {};
+export const setSilentMethodRequestDelay = (requestInterval: number | Record<string, number> = 0) => {
+  silentMethodRequestDelay = isObject(requestInterval)
+    ? (requestInterval as Record<string, number>)
+    : { [defaultQueueName]: requestInterval as number };
+};
 
 /** 事件绑定函数 */
 export const bootHandlers = [] as SilentSubmitBootHandler[];

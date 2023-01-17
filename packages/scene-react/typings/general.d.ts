@@ -110,6 +110,11 @@ interface RetryErrorDetailed {
   name?: RegExp;
   message?: RegExp;
 }
+
+/**
+ * silentMethod实例
+ * 需要进入silentQueue的请求都将被包装成silentMethod实例，它将带有请求策略的各项参数
+ */
 interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any> {
   /** silentMethod实例id */
   readonly id: string;
@@ -214,6 +219,13 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
    * 允许缓存时持久化更新当前实例
    */
   save(): void;
+
+  /**
+   * 在队列中使用一个新的silentMethod实例替换当前实例
+   * 如果有持久化缓存也将会更新缓存
+   * @param newSilentMethod 新的silentMethod实例
+   */
+  replace(newSilentMethod: SilentMethod): void;
 
   /**
    * 移除当前实例，它将在持久化存储中同步移除
@@ -338,6 +350,18 @@ interface SilentFactoryBootOptions {
    * >>> 可以通过设置同名序列化器来覆盖内置序列化器
    */
   serializers?: Record<string | number, DataSerializer>;
+
+  /**
+   * silentQueue内的请求延迟时间，单位为毫秒（ms）
+   * 即表示第一个silentMethod，或下一个silentMethod发起请求的延迟时间
+   * 如果未设置，或设置为0表示立即触发silentMethod请求
+   * 直接设置为数字时对default queue有效
+   * 如果需要对其他queue设置可设置为对象，示例：
+   * { customName: 5000 } 是对名为customWName的queue设置请求延迟时间
+   *
+   * >>> 它只在请求成功时起作用，如果失败则会使用重试策略参数
+   */
+  queueRequestDelay?: number | Record<string, number>;
 }
 
 type SilentSubmitBootHandler = () => void;
