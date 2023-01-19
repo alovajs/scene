@@ -1,5 +1,5 @@
 import { SilentQueueMap } from '../../../../typings/general';
-import { forEach, JSONParse, objectKeys, pushItem } from '../../../helper';
+import { forEach, objectKeys, pushItem } from '../../../helper';
 import deserializeSilentMethod from './deserializeSilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,
@@ -13,9 +13,8 @@ import {
  * @returns 所有队列数据
  */
 export default () => {
-  const silentMethodIdQueueMap = JSONParse(
-    storageGetItem(silentMethodIdQueueMapStorageKey) || '{}'
-  ) as SerializedSilentMethodIdQueueMap;
+  const silentMethodIdQueueMap = (storageGetItem(silentMethodIdQueueMapStorageKey) ||
+    {}) as SerializedSilentMethodIdQueueMap;
   const silentQueueMap = {} as SilentQueueMap;
   forEach(objectKeys(silentMethodIdQueueMap), queueName => {
     const currentQueue = (silentQueueMap[queueName] = silentQueueMap[queueName] || []);

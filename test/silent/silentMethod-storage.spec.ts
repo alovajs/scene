@@ -18,13 +18,13 @@ describe('silent method storage manipulate', () => {
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       storageAdapter: {
-        setItem(key, value) {
-          storageMock[key] = JSON.parse(value);
+        set(key, value) {
+          storageMock[key] = value;
         },
-        getItem(key) {
+        get(key) {
           return storageMock[key];
         },
-        removeItem(key) {
+        remove(key) {
           delete storageMock[key];
         }
       }
@@ -39,7 +39,7 @@ describe('silent method storage manipulate', () => {
     pushNewSilentMethod2Queue(silentMethodInstance, true);
     expect(storageMock[silentMethodIdQueueMapStorageKey].default).toHaveLength(1);
     const firstDefaultQueueId = storageMock[silentMethodIdQueueMapStorageKey].default[0];
-    expect(storageMock[silentMethodStorageKeyPrefix + firstDefaultQueueId]?.id).toBe(firstDefaultQueueId);
+    expect(JSON.parse(storageMock[silentMethodStorageKeyPrefix + firstDefaultQueueId])?.id).toBe(firstDefaultQueueId);
   });
 
   test('should restore all persistent silentMethod instances', async () => {
@@ -49,13 +49,13 @@ describe('silent method storage manipulate', () => {
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       storageAdapter: {
-        setItem(key, value) {
+        set(key, value) {
           storageMock[key] = value;
         },
-        getItem(key) {
+        get(key) {
           return storageMock[key];
         },
-        removeItem(key) {
+        remove(key) {
           delete storageMock[key];
         }
       }
@@ -86,13 +86,13 @@ describe('silent method storage manipulate', () => {
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       storageAdapter: {
-        setItem(key, value) {
+        set(key, value) {
           storageMock[key] = value;
         },
-        getItem(key) {
+        get(key) {
           return storageMock[key];
         },
-        removeItem(key) {
+        remove(key) {
           delete storageMock[key];
         }
       }

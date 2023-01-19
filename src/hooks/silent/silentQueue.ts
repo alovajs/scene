@@ -1,4 +1,4 @@
-import { Method, updateState, UpdateStateCollection } from 'alova';
+import { Method, setCacheData, updateState, UpdateStateCollection } from 'alova';
 import { RetryErrorDetailed, SilentQueueMap } from '../../../typings/general';
 import {
   forEach,
@@ -213,7 +213,11 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
               // 请求成功后，将带有虚拟数据的数据替换为实际数据
               updateStateCollection[stateName] = dataRaw => deepReplaceVData(dataRaw, vDataResponse);
             });
-            updateState(targetRefMethod, updateStateCollection);
+            const updated = updateState(targetRefMethod, updateStateCollection);
+            // 修改状态不成功，则去修改缓存数据
+            if (!updated) {
+              setCacheData(targetRefMethod, (dataRaw: any) => deepReplaceVData(dataRaw, vDataResponse));
+            }
           }
 
           // 对当前队列的后续silentMethod实例进行虚拟数据替换

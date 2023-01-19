@@ -8,15 +8,15 @@ export const silentMethodIdQueueMapStorageKey = 'alova.SQ', // silentMethod实�
   silentMethodStorageKeyPrefix = 'alova.SM.', // silentMethod实例缓存key前缀
   vDataKey = '__$k',
   vDataValueKey = '__$v',
-  storageSetItem = (key: string, value: string) => {
+  storageSetItem = (key: string, value: any) => {
     assertStorage();
-    dependentAlovaInstance.storage.setItem(key, value);
+    dependentAlovaInstance.storage.set(key, value);
   },
   storageGetItem = (key: string) => {
     assertStorage();
-    return dependentAlovaInstance.storage.getItem(key);
+    return dependentAlovaInstance.storage.get(key);
   },
   storageRemoveItem = (key: string) => {
     assertStorage();
-    dependentAlovaInstance.storage.removeItem(key);
+    dependentAlovaInstance.storage.remove(key);
   };
