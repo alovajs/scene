@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene",
-  "version": "1.0.0-beta.25",
+  "version": "1.0.0-beta.26",
   "description": "scenario hooks with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "private": true,
