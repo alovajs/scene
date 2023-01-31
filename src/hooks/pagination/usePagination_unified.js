@@ -1,4 +1,4 @@
-import { invalidateCache, setCacheData, useFetcher, useWatcher } from 'alova';
+import { invalidateCache, setCache, useFetcher, useWatcher } from 'alova';
 import {
   createAssert,
   createSyncOnceRunner,
@@ -120,7 +120,7 @@ export default function (
 
   // 更新当前页缓存
   const updateCurrentPageCache = () => {
-    setCacheData(buildMethodName(_$(page)), rawData => {
+    setCache(buildMethodName(_$(page)), rawData => {
       const cachedListData = listDataGetter(rawData) || [];
       splice(cachedListData, 0, cachedListData.length, ..._$(data));
       return rawData;
@@ -244,7 +244,7 @@ export default function (
     // 将pop的项放到下一页缓存的头部，与remove的操作保持一致
     // 这样在同步调用insert和remove时表现才一致
     const nextPage = pageVal + 1;
-    setCacheData(buildMethodName(nextPage), rawData => {
+    setCache(buildMethodName(nextPage), rawData => {
       const cachedListData = listDataGetter(rawData) || [];
       cachedListData.unshift(popItem);
       return rawData;
@@ -261,7 +261,7 @@ export default function (
   const remove = index => {
     const pageVal = _$(page);
     const nextPage = pageVal + 1;
-    setCacheData(buildMethodName(nextPage), data => {
+    setCache(buildMethodName(nextPage), data => {
       const cachedListData = listDataGetter(data);
       // 从下一页列表的头部开始取补位数据
       fillingItem = shift(cachedListData || []);

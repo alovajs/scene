@@ -18,13 +18,13 @@ describe('silent method storage manipulate', () => {
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       storageAdapter: {
-        setItem(key, value) {
+        set(key, value) {
           storageMock[key] = JSON.parse(value);
         },
-        getItem(key) {
+        get(key) {
           return storageMock[key];
         },
-        removeItem(key) {
+        remove(key) {
           delete storageMock[key];
         }
       }
@@ -49,13 +49,13 @@ describe('silent method storage manipulate', () => {
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       storageAdapter: {
-        setItem(key, value) {
+        set(key, value) {
           storageMock[key] = value;
         },
-        getItem(key) {
+        get(key) {
           return storageMock[key];
         },
-        removeItem(key) {
+        remove(key) {
           delete storageMock[key];
         }
       }
@@ -86,13 +86,13 @@ describe('silent method storage manipulate', () => {
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       storageAdapter: {
-        setItem(key, value) {
+        set(key, value) {
           storageMock[key] = value;
         },
-        getItem(key) {
+        get(key) {
           return storageMock[key];
         },
-        removeItem(key) {
+        remove(key) {
           delete storageMock[key];
         }
       }

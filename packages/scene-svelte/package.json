@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene-svelte",
-  "version": "1.0.0-beta.24",
+  "version": "1.0.0-beta.25",
   "description": "scenario svelte hooks with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "main": "dist/alova-scene.umd.min.js",

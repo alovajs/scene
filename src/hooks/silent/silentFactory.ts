@@ -99,6 +99,6 @@ export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
       });
       setSilentFactoryStatus(1); // 设置状态为已启动
       runArgsHandler(bootHandlers);
-    }, options.delay ?? 2000);
+    }, options.delay ?? 500);
   }
 };

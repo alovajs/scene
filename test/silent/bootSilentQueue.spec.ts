@@ -66,6 +66,10 @@ describe('boot silent queue', () => {
     });
   });
 
+  // test('should throw error when not call bootSilentFactory sync', async () => {
+
+  // });
+
   test('silentMethods in storage will be appened to the end of queue, when merge by bootSilentFactory', async () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',

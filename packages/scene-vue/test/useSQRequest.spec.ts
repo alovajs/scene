@@ -39,7 +39,7 @@ beforeAll(() => {
     alova: alovaInst
   });
 });
-jest.setTimeout(1000000);
+// jest.setTimeout(1000000);
 describe('useSQRequest', () => {
   test('request immediately with queue behavior', async () => {
     const queue = 'tb1';

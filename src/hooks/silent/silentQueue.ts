@@ -1,4 +1,4 @@
-import { Method, setCacheData, updateState, UpdateStateCollection } from 'alova';
+import { Method, setCache, updateState, UpdateStateCollection } from 'alova';
 import { RetryErrorDetailed, SilentQueueMap } from '../../../typings/general';
 import {
   forEach,
@@ -217,7 +217,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
 
             // 修改状态不成功，则去修改缓存数据
             if (!updated) {
-              setCacheData(targetRefMethod, (dataRaw: any) => deepReplaceVData(dataRaw, vDataResponse));
+              setCache(targetRefMethod, (dataRaw: any) => deepReplaceVData(dataRaw, vDataResponse));
             }
           }
 

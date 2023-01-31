@@ -1,4 +1,4 @@
-import { createAlova, setCacheData } from 'alova';
+import { createAlova, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import {
@@ -57,13 +57,11 @@ describe('vue usePagination', () => {
 
     // 检查预加载缓存
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(cache.list).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
-      return false;
     });
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(cache).toBeUndefined();
-      return false;
     });
 
     page.value++;
@@ -88,13 +86,11 @@ describe('vue usePagination', () => {
 
     // 检查预加载缓存
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
-      return false;
     });
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
-      return false;
     });
 
     // 最后一页
@@ -103,13 +99,11 @@ describe('vue usePagination', () => {
     expect(isLastPage.value).toBeTruthy();
     // 检查预加载缓存
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
-      return false;
     });
   });
 
@@ -182,9 +176,8 @@ describe('vue usePagination', () => {
     });
     refresh(1); // 在翻页模式下，不是当前页会使用fetch，因此只能使用setTimeout
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(1, pageSize.value), cache => {
+    setCache(getter(1, pageSize.value), cache => {
       expect(cache.list).toEqual([100, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-      return false;
     });
   });
 
@@ -206,13 +199,11 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
 
     // 检查预加载缓存
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
-      return false;
     });
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
-      return false;
     });
 
     let totalPrev = total.value;
@@ -224,30 +215,25 @@ describe('vue usePagination', () => {
       return data;
     });
     // 检查当前页缓存
-    setCacheData(getter(page.value, pageSize.value), cache => {
+    setCache(getter(page.value, pageSize.value), cache => {
       expect(cache.list).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
-      return false;
     });
     // 检查是否重新fetch了前后一页的数据
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-      return false;
     });
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       // insert时不会将缓存末尾去掉，因此剩下11项
       expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
-      return false;
     });
     await untilCbCalled(setTimeout, 150);
     // 检查是否重新fetch了前后一页的数据
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-      return false;
     });
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       // 重新fetch后还是保持pageSize项数据
       expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
-      return false;
     });
 
     insert(400);
@@ -256,9 +242,8 @@ describe('vue usePagination', () => {
     expect(total.value).toBe((totalPrev = totalPrev + 3));
     expect(data.value).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
     // 当前页缓存要保持一致
-    setCacheData(getter(page.value, pageSize.value), cache => {
+    setCache(getter(page.value, pageSize.value), cache => {
       expect(cache.list).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
-      return false;
     });
 
     const mockFn2 = jest.fn();
@@ -293,9 +278,8 @@ describe('vue usePagination', () => {
     replace(300, 0);
     expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     // 检查当前页缓存
-    setCacheData(getter(page.value, pageSize.value), cache => {
+    setCache(getter(page.value, pageSize.value), cache => {
       expect(cache.list).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-      return false;
     });
 
     // 正向顺序替换
@@ -326,13 +310,11 @@ describe('vue usePagination', () => {
     await untilCbCalled(onSuccess, 150); // 预留请求和fetch的时间
 
     // 检查预加载缓存
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
 
     setMockListData(data => {
@@ -344,13 +326,11 @@ describe('vue usePagination', () => {
 
     // 预加载设置为false了，因此不会fetch前后一页的数据
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
   });
 
@@ -373,13 +353,11 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
 
     // 检查预加载缓存
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
-      return false;
     });
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
-      return false;
     });
 
     let totalPrev = total.value;
@@ -394,9 +372,8 @@ describe('vue usePagination', () => {
       return data;
     });
     // 当前页缓存要保持一致
-    setCacheData(getter(page.value, pageSize.value), cache => {
+    setCache(getter(page.value, pageSize.value), cache => {
       expect(cache.list).toEqual([4, 7, 8, 9]);
-      return false;
     });
 
     const mockFn = jest.fn();
@@ -412,9 +389,8 @@ describe('vue usePagination', () => {
     expect(data.value).toEqual([4, 7, 9, 10]);
     expect(total.value).toBe((totalPrev = totalPrev - 1));
     // 检查下一页缓存
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(cache.list).toEqual([11]); // 已经被使用了3项了
-      return false;
     });
 
     await untilCbCalled(setTimeout, 100); // 等待重新fetch
@@ -422,13 +398,11 @@ describe('vue usePagination', () => {
     expect(mockFn.mock.calls.length).toBe(1); // 有一次下页的fetch被取消，因此只有一次
     // 检查是否重新fetch了前后一页的数据
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(cache.list).toEqual([0, 1, 2, 3]);
-      return false;
     });
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(cache.list).toEqual([11, 12, 13, 14]);
-      return false;
     });
 
     // 同步操作的项数超过pageSize时，移除的数据将被恢复，并重新请求当前页数据
@@ -450,13 +424,11 @@ describe('vue usePagination', () => {
     expect(data.value).toEqual([12, 13, 14, 15]);
     expect(total.value).toBe((totalPrev = totalPrev - 5));
     expect(mockFn2.mock.calls.length).toBe(1); // 只有下页的预加载触发
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(cache.list).toEqual([0, 1, 2, 3]);
-      return false;
     });
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(cache.list).toEqual([16, 17, 18, 19]);
-      return false;
     });
   });
 
@@ -490,9 +462,8 @@ describe('vue usePagination', () => {
     expect(data.value).toEqual([8]);
     expect(total.value).toBe((totalPrev = totalPrev - 1));
     // 当前页缓存要保持一致
-    setCacheData(getter(page.value, pageSize.value), cache => {
+    setCache(getter(page.value, pageSize.value), cache => {
       expect(cache.list).toEqual([8]);
-      return false;
     });
 
     remove(0);
@@ -534,9 +505,8 @@ describe('vue usePagination', () => {
 
     // 检查预加载缓存
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
 
     page.value++;
@@ -550,9 +520,8 @@ describe('vue usePagination', () => {
 
     // 检查预加载缓存
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
 
     // 最后一页
@@ -715,13 +684,11 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout, 100);
     expect(data.value).toEqual([2, 3, 4, 5]);
     expect(mockFn.mock.calls.length).toBe(0);
-    setCacheData(getter(page.value - 1, pageSize.value), cache => {
+    setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
-      return false;
     });
   });
 
@@ -788,7 +755,7 @@ describe('vue usePagination', () => {
 
     // 已经到最后一页了，不需要再预加载下一页数据了
     await untilCbCalled(setTimeout, 100);
-    setCacheData(getter(page.value + 1, pageSize.value), cache => {
+    setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(cache).toBeUndefined();
     });
   });
