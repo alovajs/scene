@@ -1,4 +1,4 @@
-import { Method } from 'alova';
+import { matchSnapshotMethod, Method, MethodFilter, MethodMatcher } from 'alova';
 import {
   FallbackHandler,
   RetryHandler,
@@ -6,8 +6,8 @@ import {
   SilentQueueMap,
   SQHookBehavior
 } from '../../../typings/general';
-import { splice, uuid } from '../../helper';
-import { undefinedValue } from '../../helper/variables';
+import { instanceOf, isArray, splice, uuid } from '../../helper';
+import { falseValue, undefinedValue } from '../../helper/variables';
 import { silentAssert } from './globalVariables';
 import { silentQueueMap } from './silentQueue';
 import { persistSilentMethod, spliceStorageSilentMethod } from './storage/silentMethodStorage';
@@ -155,6 +155,23 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     if (queue) {
       splice(queue, position, 1);
       targetSilentMethod.cache && spliceStorageSilentMethod(queueName, targetSilentMethod.id);
+    }
+  }
+
+  /**
+   * 设置延迟更新状态对应的method实例以及对应的状态名
+   * 它将在此silentMethod响应后，找到对应的状态数据并将vData更新为实际数据
+   *
+   * @param matcher method实例匹配器
+   * @param updateStateName 更新的状态名，默认为data，也可以设置多个
+   */
+  public setUpdateState(matcher: MethodMatcher<S, E, R, T, RC, RE, RH>, updateStateName: string | string[] = 'data') {
+    const methodInstance = instanceOf(matcher, Method)
+      ? matcher
+      : matchSnapshotMethod(matcher as MethodFilter, falseValue);
+    if (methodInstance) {
+      this.targetRefMethod = methodInstance;
+      this.updateStates = isArray(updateStateName) ? (updateStateName as string[]) : [updateStateName as string];
     }
   }
 }

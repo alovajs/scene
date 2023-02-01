@@ -1,4 +1,12 @@
-import { Alova, AlovaCompleteEvent, Method, RequestHookConfig, UseHookReturnType, WatcherHookConfig } from 'alova';
+import {
+  Alova,
+  AlovaCompleteEvent,
+  Method,
+  MethodMatcher,
+  RequestHookConfig,
+  UseHookReturnType,
+  WatcherHookConfig
+} from 'alova';
 
 /** 判断是否为any */
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
@@ -234,6 +242,15 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
    * 移除当前实例，它将在持久化存储中同步移除
    */
   remove(): void;
+
+  /**
+   * 设置延迟更新状态对应的method实例以及对应的状态名
+   * 它将在此silentMethod响应后，找到对应的状态数据并将vData更新为实际数据
+   *
+   * @param matcher method实例匹配器
+   * @param updateStateName 更新的状态名，默认为data，也可以设置多个
+   */
+  setUpdateState(matcher: MethodMatcher<S, E, R, T, RC, RE, RH>, updateStateName?: string | string[]): void;
 }
 
 // 静默队列hooks相关
