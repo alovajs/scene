@@ -128,6 +128,7 @@ declare function onSilentSubmitFail(handler: SilentSubmitFailHandler): OffEventC
 declare function onBeforeSilentSubmit(handler: BeforeSilentSubmitHandler): OffEventCallback;
 declare function dehydrateVData<T>(target: T): T;
 declare function stringifyVData(target: any, returnOriginalIfNotVData?: boolean): any;
+declare function isVData(target: any): boolean;
 declare function filterSilentMethods(
   methodNameMatcher?: string | number | RegExp,
   queueName?: string,

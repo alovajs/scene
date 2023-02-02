@@ -4,13 +4,14 @@ import { defaultQueueName } from '../../src/helper/variables';
 import { setDependentAlova } from '../../src/hooks/silent/globalVariables';
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { clearSilentQueueMap, pushNewSilentMethod2Queue, silentQueueMap } from '../../src/hooks/silent/silentQueue';
+import decorateStorageAdapter from '../../src/hooks/silent/storage/decorateStorageAdapter';
 import { silentMethodIdQueueMapStorageKey, silentMethodStorageKeyPrefix } from '../../src/hooks/silent/storage/helper';
 import loadSilentQueueMapFromStorage from '../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
 import { spliceStorageSilentMethod } from '../../src/hooks/silent/storage/silentMethodStorage';
 import { mockRequestAdapter } from '../mockData';
 
-beforeEach(clearSilentQueueMap); // 每次清除队列，保证测试正确
-describe('silent method storage manipulate', () => {
+beforeEach(clearSilentQueueMap); // 每次清除队列，保证测试数据正确
+describe('manipulate silent method storage', () => {
   test('should persist when cache is true', async () => {
     const storageMock = {} as Record<string, any>;
     const alovaInst = createAlova({
@@ -30,6 +31,7 @@ describe('silent method storage manipulate', () => {
       }
     });
     // 设置依赖的alova实例
+    decorateStorageAdapter(alovaInst.storage);
     setDependentAlova(alovaInst);
     const methodInstance = new Method('POST', alovaInst, '/detail');
     const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, /.*/, 2, {
@@ -39,7 +41,7 @@ describe('silent method storage manipulate', () => {
     pushNewSilentMethod2Queue(silentMethodInstance, true);
     expect(storageMock[silentMethodIdQueueMapStorageKey].default).toHaveLength(1);
     const firstDefaultQueueId = storageMock[silentMethodIdQueueMapStorageKey].default[0];
-    expect(JSON.parse(storageMock[silentMethodStorageKeyPrefix + firstDefaultQueueId])?.id).toBe(firstDefaultQueueId);
+    expect(storageMock[silentMethodStorageKeyPrefix + firstDefaultQueueId]?.id).toBe(firstDefaultQueueId);
   });
 
   test('should restore all persistent silentMethod instances', async () => {

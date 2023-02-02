@@ -153,6 +153,7 @@ export default {
     // '**/test/silent/dehydrateVData.spec.ts(x)?'
     // '**/test/silent/silentMethod-filter.spec.ts(x)?'
     // '**/test/silent/silentMethod-instance.spec.ts(x)?'
+    // '**/test/silent/response-serialize.spec.ts(x)?'
 
     // vue
     // '**/packages/scene-vue/test/usePagination.spec.js(x)?'

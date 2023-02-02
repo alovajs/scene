@@ -8,7 +8,6 @@ import {
   storageRemoveItem,
   storageSetItem
 } from './helper';
-import serializeSilentMethod from './serializeSilentMethod';
 
 /**
  * 序列化并保存silentMethod实例
@@ -17,9 +16,7 @@ import serializeSilentMethod from './serializeSilentMethod';
 export const persistSilentMethod = <S, E, R, T, RC, RE, RH>(
   silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>
 ) => {
-  const silentMethodId = silentMethodInstance.id;
-  const silentMethodStorageKey = silentMethodStorageKeyPrefix + silentMethodId;
-  storageSetItem(silentMethodStorageKey, serializeSilentMethod(silentMethodInstance));
+  storageSetItem(silentMethodStorageKeyPrefix + silentMethodInstance.id, silentMethodInstance);
 };
 
 /**

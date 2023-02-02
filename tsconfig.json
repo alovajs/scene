@@ -27,6 +27,6 @@
   "paths": {
     "@/*": ["src/*"]
   },
-  "include": ["src/**/*.ts", "typings/*.d.ts", "packages/**/*.ts", "packages/**.d.ts"],
+  "include": ["src/**/*.ts", "typings/*.d.ts", "packages/**/*.ts"],
   "exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]
 }

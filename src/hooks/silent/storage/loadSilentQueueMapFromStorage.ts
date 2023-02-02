@@ -1,6 +1,6 @@
 import { SilentQueueMap } from '../../../../typings/general';
 import { forEach, objectKeys, pushItem } from '../../../helper';
-import deserializeSilentMethod from './deserializeSilentMethod';
+import convertPayload2SilentMethod from './convertPayload2SilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,
   silentMethodIdQueueMapStorageKey,
@@ -19,8 +19,9 @@ export default () => {
   forEach(objectKeys(silentMethodIdQueueMap), queueName => {
     const currentQueue = (silentQueueMap[queueName] = silentQueueMap[queueName] || []);
     forEach(silentMethodIdQueueMap[queueName], silentMethodId => {
-      const serializedSilentMethodString = storageGetItem(silentMethodStorageKeyPrefix + silentMethodId);
-      serializedSilentMethodString && pushItem(currentQueue, deserializeSilentMethod(serializedSilentMethodString));
+      const serializedSilentMethodPayload = storageGetItem(silentMethodStorageKeyPrefix + silentMethodId);
+      serializedSilentMethodPayload &&
+        pushItem(currentQueue, convertPayload2SilentMethod(serializedSilentMethodPayload));
     });
   });
   return silentQueueMap;

@@ -95,7 +95,7 @@ interface ScopedSQEvent<S, E, R, T, RC, RE, RH> extends SQEvent<S, E, R, T, RC, 
 /** 局部成功事件 */
 interface ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
   /** 响应数据 */
-  data: any;
+  data: R;
 }
 /** 局部失败事件 */
 interface ScopedSQErrorEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
@@ -305,7 +305,10 @@ type FallbackHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T,
 type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, T, RC, RE, RH>) => void;
 type BeforePushQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type PushedQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
-type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+type SQHookReturnType<S, E, R, T, RC, RE, RH> = Pick<
+  UseHookReturnType<S, E, R, T, RC, RE, RH>,
+  'loading' | 'data' | 'error' | 'downloading' | 'uploading' | 'abort' | 'update' | 'send'
+> & {
   /**
    * 回退事件绑定函数，它将在以下情况触发：
    * 1. 重试指定次数都无响应而停止继续请求后

@@ -20,6 +20,7 @@ import {
 } from './globalVariables';
 import { mergeSerializer } from './serializer';
 import { bootSilentQueue, merge2SilentQueueMap, silentQueueMap } from './silentQueue';
+import decorateStorageAdapter from './storage/decorateStorageAdapter';
 import loadSilentQueueMapFromStorage from './storage/loadSilentQueueMapFromStorage';
 
 const offEventCallback = (offHandler: any, handlers: any[]) => () => {
@@ -86,7 +87,9 @@ export const onBeforeSilentSubmit = (handler: BeforeSilentSubmitHandler) => {
  */
 export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
   if (silentFactoryStatus === 0) {
-    setDependentAlova(options.alova);
+    const { alova } = options;
+    decorateStorageAdapter(alova.storage);
+    setDependentAlova(alova);
     mergeSerializer(options.serializers);
     setSilentMethodRequestDelay(options.queueRequestDelay);
     setTimeoutFn(() => {

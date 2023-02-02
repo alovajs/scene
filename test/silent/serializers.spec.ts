@@ -4,8 +4,9 @@ import VueHook from 'alova/vue';
 import { setDependentAlova } from '../../src/hooks/silent/globalVariables';
 import { mergeSerializer, serializers } from '../../src/hooks/silent/serializer';
 import { SerializedSilentMethod, SilentMethod } from '../../src/hooks/silent/SilentMethod';
-import deserializeSilentMethod from '../../src/hooks/silent/storage/deserializeSilentMethod';
-import serializeSilentMethod from '../../src/hooks/silent/storage/serializeSilentMethod';
+import convertPayload2SilentMethod from '../../src/hooks/silent/storage/convertPayload2SilentMethod';
+import decorateStorageAdapter from '../../src/hooks/silent/storage/decorateStorageAdapter';
+import { storageGetItem, storageSetItem } from '../../src/hooks/silent/storage/helper';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import dehydrateVData from '../../src/hooks/silent/virtualResponse/dehydrateVData';
 import Null from '../../src/hooks/silent/virtualResponse/Null';
@@ -27,6 +28,25 @@ describe('serializers', () => {
   });
 
   test('serialized data must be the same as original data', () => {
+    const mockStorage = {} as Record<string, any>;
+    const alovaInst = createAlova({
+      baseURL: 'http://xxx',
+      statesHook: VueHook,
+      requestAdapter: GlobalFetch(),
+      storageAdapter: {
+        set(key, value) {
+          mockStorage[key] = value;
+        },
+        get(key) {
+          return mockStorage[key];
+        },
+        remove(key) {
+          delete mockStorage[key];
+        }
+      }
+    });
+    decorateStorageAdapter(alovaInst.storage);
+    setDependentAlova(alovaInst);
     mergeSerializer({
       custom: {
         forward: data => (data === 'a,a' ? '2a' : undefined),
@@ -62,10 +82,10 @@ describe('serializers', () => {
     });
     silentMethodInstance.cache = true;
     silentMethodInstance.virtualResponse = virtualResponse;
-    const serializedString = serializeSilentMethod(silentMethodInstance);
-    expect(typeof serializedString).toBe('string');
 
-    const serializedObj = JSON.parse(serializedString) as SerializedSilentMethod;
+    const storageKey = 'sm.test.1';
+    storageSetItem(storageKey, silentMethodInstance);
+    const serializedObj = mockStorage[storageKey] as SerializedSilentMethod;
     expect(typeof serializedObj.id).toBe('string');
 
     // 序列化的内容需要和原始数据一致，包括虚拟数据id
@@ -100,14 +120,24 @@ describe('serializers', () => {
   });
 
   test('deserialized data must be the same as original data', () => {
+    const mockStorage = {} as Record<string, any>;
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: GlobalFetch()
+      requestAdapter: GlobalFetch(),
+      storageAdapter: {
+        set(key, value) {
+          mockStorage[key] = value;
+        },
+        get(key) {
+          return mockStorage[key];
+        },
+        remove(key) {
+          delete mockStorage[key];
+        }
+      }
     });
-
-    mergeSerializer();
-    setDependentAlova(alovaInst); // 内部重建method实例时需要依赖alova实例
+    setDependentAlova(alovaInst);
     const virtualResponse = createVirtualResponse({
       id: 1,
       time: new Date('2022-10-01 00:00:00'),
@@ -160,8 +190,11 @@ describe('serializers', () => {
     silentMethodInstance.virtualResponse = virtualResponse;
     silentMethodInstance.targetRefMethod = methodInstance;
     silentMethodInstance.updateStates = ['data', 'name'];
-    const serializedString = serializeSilentMethod(silentMethodInstance);
-    const deserizlizedSilentMethodInstance = deserializeSilentMethod(serializedString);
+
+    const storageKey = 'sm.test.2';
+    storageSetItem(storageKey, silentMethodInstance);
+    const serializedObj = storageGetItem(storageKey);
+    const deserizlizedSilentMethodInstance = convertPayload2SilentMethod(serializedObj);
 
     expect(deserizlizedSilentMethodInstance.id).toBe(silentMethodInstance.id);
     expect(deserizlizedSilentMethodInstance.behavior).toBe(silentMethodInstance.behavior);

@@ -19,5 +19,6 @@ export {
 export { silentQueueMap } from '../../src/hooks/silent/silentQueue';
 export { default as dehydrateVData } from '../../src/hooks/silent/virtualResponse/dehydrateVData';
 export { filterSilentMethods, getSilentMethod } from '../../src/hooks/silent/virtualResponse/filterSilentMethods';
+export { default as isVData } from '../../src/hooks/silent/virtualResponse/isVData';
 export { default as stringifyVData } from '../../src/hooks/silent/virtualResponse/stringifyVData';
 export { default as updateStateEffect } from '../../src/hooks/silent/virtualResponse/updateStateEffect';

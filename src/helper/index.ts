@@ -1,5 +1,5 @@
 import { Method } from 'alova';
-import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, undefinedValue } from './variables';
+import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, trueValue, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value);
 export const promiseThen = <T, T2 = never>(
@@ -165,27 +165,39 @@ export const isPlainOrCustomObject = (arg: any) => ObjectCls.prototype.toString.
 /**
  * 深层遍历目标对象
  * @param target 目标对象
+ * @param callback 遍历回调
+ * @param preorder 是否前序遍历，默认为true
+ * @param key 当前遍历的key
+ * @param parent 当前遍历的父节点
  */
 type AttrKey = string | number | symbol;
 export const walkObject = (
   target: any,
   callback: (value: any, key: string | number | symbol, parent: any) => void,
+  preorder = trueValue,
   key?: AttrKey,
   parent?: any
 ) => {
-  if (parent && key) {
-    target = callback(target, key, parent);
-    if (target !== parent[key]) {
-      parent[key] = target;
+  const callCallback = () => {
+    if (parent && key) {
+      target = callback(target, key, parent);
+      if (target !== parent[key]) {
+        parent[key] = target;
+      }
     }
-  }
+  };
+
+  // 前序遍历
+  preorder && callCallback();
   if (isObject(target)) {
     for (const i in target) {
       if (!instanceOf(target, StringCls)) {
-        walkObject(target[i], callback, i, target);
+        walkObject(target[i], callback, preorder, i, target);
       }
     }
   }
+  // 后序遍历
+  !preorder && callCallback();
   return target;
 };
 
