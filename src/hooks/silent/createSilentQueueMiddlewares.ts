@@ -15,7 +15,9 @@ import {
   promiseResolve,
   promiseThen,
   pushItem,
+  regexpTest,
   runArgsHandler,
+  sloughConfig,
   walkObject
 } from '../../helper';
 import {
@@ -80,7 +82,8 @@ export default <S, E, R, T, RC, RE, RH>(
     next
   ) => {
     // 因为behavior返回值可能会变化，因此每次请求都应该调用它重新获取返回值
-    const behaviorFinally = isFn(behavior) ? behavior() : behavior;
+    const behaviorFinally = sloughConfig(behavior, sendArgs);
+    const queueFinally = sloughConfig(queue, sendArgs);
     const { silentDefaultResponse, vDataCaptured, force = falseValue } = config;
     let silentMethodInstance: any;
 
@@ -158,7 +161,7 @@ export default <S, E, R, T, RC, RE, RH>(
         const { url, requestBody } = method;
         const { params, headers } = getConfig(method);
         walkObject({ url, params, requestBody, headers }, value => {
-          if (!hasVData && (stringifyVData(value, falseValue) || regVDataId.test(value))) {
+          if (!hasVData && (stringifyVData(value, falseValue) || regexpTest(regVDataId, value))) {
             hasVData = trueValue;
           }
           return value;
@@ -216,7 +219,7 @@ export default <S, E, R, T, RC, RE, RH>(
             // onFallback绑定了事件后，即使是silent行为模式也不再存储
             // onFallback会同步调用，因此需要异步判断是否存在fallbackHandlers
             len(fallbackHandlers) <= 0 && behaviorFinally === behaviorSilent,
-            queue,
+            queueFinally,
 
             // 执行放入队列前回调，如果返回false则阻止放入队列
             () => runArgsHandler(beforePushQueueHandlers, createPushEvent())
@@ -229,7 +232,7 @@ export default <S, E, R, T, RC, RE, RH>(
       };
 
       if (behaviorFinally === behaviorQueue) {
-        const forceRequest = isFn(force) ? force() : force;
+        const forceRequest = sloughConfig(force, sendArgs);
         // 强制请求，或命中缓存时需要更新loading状态
         const needSendRequest = forceRequest || !cachedResponse;
         if (needSendRequest) {

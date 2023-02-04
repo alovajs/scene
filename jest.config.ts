@@ -141,13 +141,13 @@ export default {
   testEnvironment: 'jsdom',
 
   testMatch: [
-    '**/test/**/*.spec.[tj]s?(x)'
+    // '**/test/**/*.spec.[tj]s?(x)'
     // '**/test/modules/uuid.spec.ts(x)?'
     // '**/test/silent/virtualResponse.spec.ts(x)?'
     // '**/test/silent/serializers.spec.ts(x)?'
     // '**/test/silent/bootSilentQueue.spec.ts(x)?'
     // '**/test/silent/methodQueue-silent-request.spec.ts(x)?'
-    // '**/test/silent/methodQueue-requestDelay.spec.ts(x)?'
+    // '**/test/silent/methodQueue-requestWait.spec.ts(x)?'
     // '**/test/silent/silentMethod-storage.spec.ts(x)?'
     // '**/test/silent/methodQueue-queue-request.spec.ts(x)?'
     // '**/test/silent/dehydrateVData.spec.ts(x)?'
@@ -157,7 +157,7 @@ export default {
 
     // vue
     // '**/packages/scene-vue/test/usePagination.spec.js(x)?'
-    // '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
+    '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
   ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped

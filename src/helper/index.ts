@@ -1,34 +1,31 @@
 import { Method } from 'alova';
 import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, trueValue, undefinedValue } from './variables';
 
-export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value);
-export const promiseThen = <T, T2 = never>(
-  promise: Promise<T>,
-  onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined | null,
-  onrejected?: ((reason: any) => T2 | PromiseLike<T2>) | undefined | null
-): Promise<T | T2> => promise.then(onFulfilled, onrejected);
-
-export const forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn);
-export const pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item);
-export const map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn);
-export const includes = <T>(ary: T[], target: T) => ary.includes(target);
-export const len = (data: any[] | Uint8Array | string | string) => data.length;
-export const isArray = (target: any) => Array.isArray(target);
-export const shift = <T>(ary: T[]) => ary.shift();
-export const splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) =>
-  ary.splice(start, deleteCount, ...items);
-
-export const getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
-  methodInstance.config;
-export const JSONStringify = (
-  value: any,
-  replacer?: ((this: any, key: string, value: any) => any) | undefined,
-  space?: string | number | undefined
-) => JSON.stringify(value, replacer, space);
-export const JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
-  JSON.parse(text, reviver);
-export const objectKeys = (obj: any) => Object.keys(obj);
-export const setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay);
+export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
+  promiseThen = <T, T2 = never>(
+    promise: Promise<T>,
+    onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined | null,
+    onrejected?: ((reason: any) => T2 | PromiseLike<T2>) | undefined | null
+  ): Promise<T | T2> => promise.then(onFulfilled, onrejected),
+  forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn),
+  pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item),
+  map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn),
+  includes = <T>(ary: T[], target: T) => ary.includes(target),
+  len = (data: any[] | Uint8Array | string | string) => data.length,
+  isArray = (target: any) => Array.isArray(target),
+  shift = <T>(ary: T[]) => ary.shift(),
+  splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) => ary.splice(start, deleteCount, ...items),
+  getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.config,
+  JSONStringify = (
+    value: any,
+    replacer?: ((this: any, key: string, value: any) => any) | undefined,
+    space?: string | number | undefined
+  ) => JSON.stringify(value, replacer, space),
+  JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
+    JSON.parse(text, reviver),
+  objectKeys = (obj: any) => Object.keys(obj),
+  setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
+  regexpTest = (reg: RegExp, str: string) => reg.test(str);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
@@ -211,3 +208,11 @@ export const newInstance = <T extends { new (...args: any[]): InstanceType<T> }>
   cls: T,
   ...args: ConstructorParameters<T>
 ) => new cls(...args);
+
+/**
+ * 统一配置
+ * @param 数据
+ * @returns 统一的配置
+ */
+export const sloughConfig = <T>(config: T | ((...args: any[]) => T), args: any[] = []) =>
+  isFn(config) ? config(...args) : config;

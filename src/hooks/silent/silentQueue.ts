@@ -11,9 +11,11 @@ import {
   objectKeys,
   promiseThen,
   pushItem,
+  regexpTest,
   runArgsHandler,
   setTimeoutFn,
   shift,
+  sloughConfig,
   walkObject
 } from '../../helper';
 import {
@@ -29,9 +31,9 @@ import {
   beforeHandlers,
   errorHandlers,
   failHandlers,
+  queueRequestWaitSetting,
   setSilentFactoryStatus,
   silentFactoryStatus,
-  silentMethodRequestDelay,
   successHandlers
 } from './globalVariables';
 import { SilentMethod } from './SilentMethod';
@@ -148,17 +150,19 @@ const setSilentMethodActive = (silentMethodInstance: SilentMethod, active: boole
 const defaultBackoffDelay = 1000;
 export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string) => {
   /**
-   * 根据请求延迟控制回调函数的调用，如果未设置或小于等于0则立即触发
+   * 根据请求等待参数控制回调函数的调用，如果未设置或小于等于0则立即触发
    * @param queueName 队列名称
    * @param callback 回调函数
    */
   const emitWithRequestDelay = (queueName: string) => {
-    const requestDelay = silentMethodRequestDelay[queueName];
-    const callback = () => len(queue) > 0 && silentMethodRequest(queue[0]);
-    if (requestDelay > 0) {
-      setTimeoutFn(callback, requestDelay);
-    } else {
-      callback();
+    const nextSilentMethod = queue[0];
+    if (nextSilentMethod) {
+      const targetSetting = queueRequestWaitSetting.find(({ queue }) =>
+        instanceOf(queue, RegExpCls) ? regexpTest(queue, queueName) : queue === queueName
+      );
+      const callback = () => queue[0] && silentMethodRequest(queue[0]);
+      const delay = targetSetting?.wait ? sloughConfig(targetSetting.wait, [nextSilentMethod, queueName]) : 0;
+      delay && delay > 0 ? setTimeoutFn(callback, delay) : callback();
     }
   };
 
@@ -286,8 +290,8 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
           }
 
           const matchRetryError =
-            (regRetryErrorName && regRetryErrorName.test(errorName)) ||
-            (regRetryErrorMsg && regRetryErrorMsg.test(errorMsg));
+            (regRetryErrorName && regexpTest(regRetryErrorName, errorName)) ||
+            (regRetryErrorMsg && regexpTest(regRetryErrorMsg, errorMsg));
           // 如果还有重试次数则进行重试
           if (retryTimes < maxRetryTimes && matchRetryError) {
             let { delay = defaultBackoffDelay, multiplier = 1, startQuiver, endQuiver } = backoff;

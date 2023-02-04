@@ -266,7 +266,7 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
    * 场景1. 手动开关
    * 场景2. 网络状态不好时回退到static，网络状态自行判断
    */
-  behavior?: SQHookBehavior | (() => SQHookBehavior);
+  behavior?: SQHookBehavior | ((...args: any[]) => SQHookBehavior);
 
   /** 重试错误规则
    * 当错误符合以下表达式时才进行重试
@@ -281,8 +281,11 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
   /** 避让策略 */
   backoff?: NonNullable<SilentMethod['backoff']>;
 
-  /** 队列名，不传时选择默认队列 */
-  queue?: string;
+  /**
+   * 队列名，不传时选择默认队列
+   * 如需每次请求动态分配队列，可设为函数并返回队列名称
+   */
+  queue?: string | ((...args: any[]) => string);
 
   /** 静默提交时默认的响应数据 */
   silentDefaultResponse?: () => any;
@@ -347,6 +350,10 @@ interface DataSerializer {
   backward: (data: any) => any | undefined | void;
 }
 
+interface QueueRequestWaitSetting {
+  queue: string | RegExp;
+  wait: number | ((silentMethod: SilentMethod, queueName: string) => number | undefined);
+}
 /** SilentFactory启动选项 */
 interface SilentFactoryBootOptions {
   /**
@@ -372,16 +379,24 @@ interface SilentFactoryBootOptions {
   serializers?: Record<string | number, DataSerializer>;
 
   /**
-   * silentQueue内的请求延迟时间，单位为毫秒（ms）
-   * 即表示第一个silentMethod，或下一个silentMethod发起请求的延迟时间
+   * silentQueue内的请求等待时间，单位为毫秒（ms）
+   * 它表示即将发送请求的silentMethod的等待时间
    * 如果未设置，或设置为0表示立即触发silentMethod请求
-   * 直接设置为数字时对default queue有效
-   * 如果需要对其他queue设置可设置为对象，示例：
-   * { customName: 5000 } 是对名为customWName的queue设置请求延迟时间
+   *
+   * Tips:
+   * 1. 直接设置时默认对default queue有效
+   * 2. 如果需要对其他queue设置可指定为对象，如：
+   * [
+   *   表示对名为customName的队列设置请求等待5000ms
+   *   { name: 'customName', wait: 5000 },
+   *
+   *   // 表示前缀为prefix的所有队列中，method实例名为xxx的请求设置等待5000ms
+   *   { name: /^prefix/, wait: silentMethod => silentMethod.entity.config.name === 'xxx' ? 5000 : 0 },
+   * ]
    *
    * >>> 它只在请求成功时起作用，如果失败则会使用重试策略参数
    */
-  queueRequestDelay?: number | Record<string, number>;
+  requestWait?: QueueRequestWaitSetting[] | QueueRequestWaitSetting['wait'];
 }
 
 type SilentSubmitBootHandler = () => void;

@@ -1,5 +1,5 @@
 import { SilentQueueMap } from '../../../../typings/general';
-import { getConfig, instanceOf } from '../../../helper';
+import { getConfig, instanceOf, regexpTest } from '../../../helper';
 import { defaultQueueName, falseValue, trueValue, undefinedValue } from '../../../helper/variables';
 import { silentFactoryStatus } from '../globalVariables';
 import { SilentMethod } from '../SilentMethod';
@@ -24,7 +24,9 @@ export const filterSilentMethods = (
         return trueValue;
       }
       const name = getConfig(silentMethodItem.entity).name || '';
-      const retain = instanceOf(methodNameMatcher, RegExp) ? methodNameMatcher.test(name) : name === methodNameMatcher;
+      const retain = instanceOf(methodNameMatcher, RegExp)
+        ? regexpTest(methodNameMatcher, name)
+        : name === methodNameMatcher;
       return retain && (filterActive ? silentMethodItem.active : trueValue);
     });
 

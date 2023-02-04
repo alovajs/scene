@@ -1,12 +1,13 @@
 import { Alova } from 'alova';
 import {
   BeforeSilentSubmitHandler,
+  QueueRequestWaitSetting,
   SilentSubmitBootHandler,
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
   SilentSubmitSuccessHandler
 } from '../../../typings/general';
-import { createAssert, isObject } from '../../helper';
+import { createAssert, isArray } from '../../helper';
 import { defaultQueueName } from '../../helper/variables';
 
 /**
@@ -54,20 +55,35 @@ export let silentFactoryStatus = 0;
 export const setSilentFactoryStatus = (status: 0 | 1 | 2) => (silentFactoryStatus = status);
 
 /**
- * silentQueue内的请求延迟时间，单位为毫秒（ms）
- * 即表示第一个silentMethod，或下一个silentMethod发起请求的延迟时间
+ * silentQueue内的请求等待时间，单位为毫秒（ms）
+ * 它表示即将发送请求的silentMethod的等待时间
  * 如果未设置，或设置为0表示立即触发silentMethod请求
- * 直接设置为数字时对default queue有效
- * 如果需要对其他queue设置可设置为对象，示例：
- * { customName: 5000 } 是对名为customWName的queue设置请求延迟时间
+ *
+ * Tips:
+ * 1. 直接设置时默认对default queue有效
+ * 2. 如果需要对其他queue设置可指定为对象，如：
+ * [
+ *   表示对名为customName的队列设置请求等待5000ms
+ *   { name: 'customName', wait: 5000 },
+ *
+ *   // 表示前缀为prefix的所有队列中，method实例名为xxx的请求设置等待5000ms
+ *   { name: /^prefix/, wait: silentMethod => silentMethod.entity.config.name === 'xxx' ? 5000 : 0 },
+ * ]
  *
  * >>> 它只在请求成功时起作用，如果失败则会使用重试策略参数
  */
-export let silentMethodRequestDelay: Record<string, number> = {};
-export const setSilentMethodRequestDelay = (requestInterval: number | Record<string, number> = 0) => {
-  silentMethodRequestDelay = isObject(requestInterval)
-    ? (requestInterval as Record<string, number>)
-    : { [defaultQueueName]: requestInterval as number };
+export let queueRequestWaitSetting: QueueRequestWaitSetting[] = [];
+export const setQueueRequestWaitSetting = (
+  requestWaitSetting: QueueRequestWaitSetting[] | QueueRequestWaitSetting['wait'] = 0
+) => {
+  queueRequestWaitSetting = isArray(requestWaitSetting)
+    ? (requestWaitSetting as QueueRequestWaitSetting[])
+    : [
+        {
+          queue: defaultQueueName,
+          wait: requestWaitSetting as QueueRequestWaitSetting['wait']
+        }
+      ];
 };
 
 /** 全局的silent事件回调函数 */

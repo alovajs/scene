@@ -51,8 +51,11 @@ describe('serialize response data', () => {
     });
 
     // 查看mockStorage内的数据是否如预期
-    const deserializedResponse = storageGetItem(Object.keys(mockStorage)[0])?.[0] || [];
+    const deserializedStoragedData = storageGetItem(Object.keys(mockStorage)[0]);
+    const [deserializedResponse, expireTimestamp, tag] = deserializedStoragedData || [];
     expect(deserializedResponse.pop().source).toBe('tttt');
     expect(deserializedResponse.pop().getTime()).toBe(date.getTime());
+    expect(expireTimestamp).toBeNull(); // 过期时间为null时表示永不过期
+    expect(tag).toBeNull();
   });
 });

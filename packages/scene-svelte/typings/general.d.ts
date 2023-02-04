@@ -1,4 +1,12 @@
-import { Alova, AlovaCompleteEvent, Method, RequestHookConfig, UseHookReturnType, WatcherHookConfig } from 'alova';
+import {
+  Alova,
+  AlovaCompleteEvent,
+  Method,
+  MethodMatcher,
+  RequestHookConfig,
+  UseHookReturnType,
+  WatcherHookConfig
+} from 'alova';
 
 /** 判断是否为any */
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
@@ -87,7 +95,7 @@ interface ScopedSQEvent<S, E, R, T, RC, RE, RH> extends SQEvent<S, E, R, T, RC, 
 /** 局部成功事件 */
 interface ScopedSQSuccessEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
   /** 响应数据 */
-  data: any;
+  data: R;
 }
 /** 局部失败事件 */
 interface ScopedSQErrorEvent<S, E, R, T, RC, RE, RH> extends ScopedSQEvent<S, E, R, T, RC, RE, RH> {
@@ -234,6 +242,15 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
    * 移除当前实例，它将在持久化存储中同步移除
    */
   remove(): void;
+
+  /**
+   * 设置延迟更新状态对应的method实例以及对应的状态名
+   * 它将在此silentMethod响应后，找到对应的状态数据并将vData更新为实际数据
+   *
+   * @param matcher method实例匹配器
+   * @param updateStateName 更新的状态名，默认为data，也可以设置多个
+   */
+  setUpdateState(matcher: MethodMatcher<S, E, R, T, RC, RE, RH>, updateStateName?: string | string[]): void;
 }
 
 // 静默队列hooks相关
@@ -249,7 +266,7 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
    * 场景1. 手动开关
    * 场景2. 网络状态不好时回退到static，网络状态自行判断
    */
-  behavior?: SQHookBehavior | (() => SQHookBehavior);
+  behavior?: SQHookBehavior | ((...args: any[]) => SQHookBehavior);
 
   /** 重试错误规则
    * 当错误符合以下表达式时才进行重试
@@ -264,8 +281,11 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
   /** 避让策略 */
   backoff?: NonNullable<SilentMethod['backoff']>;
 
-  /** 队列名，不传时选择默认队列 */
-  queue?: string;
+  /**
+   * 队列名，不传时选择默认队列
+   * 如需每次请求动态分配队列，可设为函数并返回队列名称
+   */
+  queue?: string | ((...args: any[]) => string);
 
   /** 静默提交时默认的响应数据 */
   silentDefaultResponse?: () => any;
@@ -288,7 +308,10 @@ type FallbackHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T,
 type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, T, RC, RE, RH>) => void;
 type BeforePushQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type PushedQueueHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
-type SQHookReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+type SQHookReturnType<S, E, R, T, RC, RE, RH> = Pick<
+  UseHookReturnType<S, E, R, T, RC, RE, RH>,
+  'loading' | 'data' | 'error' | 'downloading' | 'uploading' | 'abort' | 'update' | 'send'
+> & {
   /**
    * 回退事件绑定函数，它将在以下情况触发：
    * 1. 重试指定次数都无响应而停止继续请求后
@@ -327,6 +350,10 @@ interface DataSerializer {
   backward: (data: any) => any | undefined | void;
 }
 
+interface QueueRequestWaitSetting {
+  queue: string | RegExp;
+  wait: number | ((silentMethod: SilentMethod) => number);
+}
 /** SilentFactory启动选项 */
 interface SilentFactoryBootOptions {
   /**
@@ -352,16 +379,24 @@ interface SilentFactoryBootOptions {
   serializers?: Record<string | number, DataSerializer>;
 
   /**
-   * silentQueue内的请求延迟时间，单位为毫秒（ms）
-   * 即表示第一个silentMethod，或下一个silentMethod发起请求的延迟时间
+   * silentQueue内的请求等待时间，单位为毫秒（ms）
+   * 它表示即将发送请求的silentMethod的等待时间
    * 如果未设置，或设置为0表示立即触发silentMethod请求
-   * 直接设置为数字时对default queue有效
-   * 如果需要对其他queue设置可设置为对象，示例：
-   * { customName: 5000 } 是对名为customWName的queue设置请求延迟时间
+   *
+   * Tips:
+   * 1. 直接设置时默认对default queue有效
+   * 2. 如果需要对其他queue设置可指定为对象，如：
+   * [
+   *   表示对名为customName的队列设置请求等待5000ms
+   *   { name: 'customName', wait: 5000 },
+   *
+   *   // 表示前缀为prefix的所有队列中，method实例名为xxx的请求设置等待5000ms
+   *   { name: /^prefix/, wait: silentMethod => silentMethod.entity.config.name === 'xxx' ? 5000 : 0 },
+   * ]
    *
    * >>> 它只在请求成功时起作用，如果失败则会使用重试策略参数
    */
-  queueRequestDelay?: number | Record<string, number>;
+  requestWait?: QueueRequestWaitSetting[] | QueueRequestWaitSetting['wait'];
 }
 
 type SilentSubmitBootHandler = () => void;

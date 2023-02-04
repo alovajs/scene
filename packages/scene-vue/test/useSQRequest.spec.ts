@@ -112,6 +112,58 @@ describe('useSQRequest', () => {
     expect(Object.keys(silentQueueMap[queue])).toHaveLength(0);
   });
 
+  test('should receive params when call send function by behavior `queue`', async () => {
+    const queue = 'tb21';
+    const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
+    const { send } = useSQRequest(
+      (arg1, arg2) => {
+        expect(arg1).toBe(1);
+        expect(arg2).toBe(2);
+        return Get;
+      },
+      {
+        queue,
+        immediate: false,
+        behavior(arg1, arg2) {
+          expect(arg1).toBe(1);
+          expect(arg2).toBe(2);
+          return 'queue';
+        },
+        force(arg1, arg2) {
+          expect(arg1).toBe(1);
+          expect(arg2).toBe(2);
+          return false;
+        }
+      }
+    );
+
+    const response = await send(1, 2);
+    expect(response).toStrictEqual({
+      total: 300,
+      list: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    });
+  });
+
+  test.only('should force request when set force to true in silent queue', async () => {
+    const queue = 'tb31';
+    const Get = alovaInst.Get<{ total: number; list: number[] }>('/list', {
+      localCache: 1000 * 1000
+    });
+    const { loading, send, onSuccess } = useSQRequest(() => Get, {
+      queue,
+      force() {
+        return true;
+      }
+    });
+
+    await untilCbCalled(onSuccess);
+    const promiseSend = send();
+    expect(loading.value).toBeTruthy();
+    const startTs = Date.now();
+    await promiseSend;
+    expect(Date.now() - startTs).toBeGreaterThan(40);
+  });
+
   test('use send function to request with queue behavior', async () => {
     const queue = 'tb2';
     const Get = (page: number, pageSize: number) =>
