@@ -92,10 +92,14 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
 
   /** 当前是否正在请求中 */
   public active?: boolean;
+
+  /** 是否强制 */
+  public force: boolean;
   constructor(
     entity: Method<S, E, R, T, RC, RE, RH>,
     behavior: SQHookBehavior,
     id = uuid(),
+    force?: boolean,
     retryError?: RetryError,
     maxRetryTimes?: MaxRetryTimes,
     backoff?: BackoffPolicy,
@@ -110,6 +114,7 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
     thisObj.entity = entity;
     thisObj.behavior = behavior;
     thisObj.id = id;
+    thisObj.force = !!force;
     thisObj.retryError = retryError;
     thisObj.maxRetryTimes = maxRetryTimes;
     thisObj.backoff = backoff;

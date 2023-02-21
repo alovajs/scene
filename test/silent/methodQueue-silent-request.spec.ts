@@ -33,6 +33,7 @@ describe('silent method request in queue with silent behavior', () => {
         methodInstance,
         'silent',
         undefined,
+        undefined,
         /.*/,
         2,
         {
@@ -103,6 +104,7 @@ describe('silent method request in queue with silent behavior', () => {
         methodInstance,
         'silent',
         undefined,
+        undefined,
         /^no permission$/,
         2,
         {
@@ -163,6 +165,7 @@ describe('silent method request in queue with silent behavior', () => {
       const silentMethodInstance = new SilentMethod(
         methodInstance,
         'silent',
+        undefined,
         undefined,
         {
           name: /^403$/
@@ -258,6 +261,7 @@ describe('silent method request in queue with silent behavior', () => {
         methodInstance,
         'silent',
         undefined,
+        undefined,
         /api not found/,
         4,
         { delay: 50 },
@@ -304,6 +308,7 @@ describe('silent method request in queue with silent behavior', () => {
       const silentMethodInstance = new SilentMethod(
         methodInstance,
         'silent',
+        undefined,
         undefined,
         /^custom error$/,
         2,
@@ -358,6 +363,7 @@ describe('silent method request in queue with silent behavior', () => {
       const silentMethodInstance = new SilentMethod(
         methodInstance,
         'silent',
+        undefined,
         undefined,
         /.*/,
         2,
@@ -418,6 +424,7 @@ describe('silent method request in queue with silent behavior', () => {
         methodInstance,
         'silent',
         undefined,
+        undefined,
         /.*/,
         2,
         {
@@ -467,6 +474,7 @@ describe('silent method request in queue with silent behavior', () => {
         methodInstance,
         'silent',
         undefined,
+        undefined,
         /.*/,
         2,
         {
@@ -512,6 +520,7 @@ describe('silent method request in queue with silent behavior', () => {
       const silentMethodInstance = new SilentMethod(
         methodInstance,
         'silent',
+        undefined,
         undefined,
         /.*/,
         2,

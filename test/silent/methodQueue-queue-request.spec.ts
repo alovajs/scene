@@ -23,6 +23,7 @@ describe('silent method request in queue with queue behavior', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         value => resolve(value)
       );
       pushNewSilentMethod2Queue(silentMethodInstance, false);
@@ -63,6 +64,7 @@ describe('silent method request in queue with queue behavior', () => {
       const silentMethodInstance = new SilentMethod(
         methodInstance,
         'queue',
+        undefined,
         undefined,
         /.*/,
         2,

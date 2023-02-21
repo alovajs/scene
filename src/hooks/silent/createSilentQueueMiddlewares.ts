@@ -81,10 +81,12 @@ export default <S, E, R, T, RC, RE, RH>(
     { method, sendArgs, cachedResponse, update, decorateSuccess, decorateError, decorateComplete, config },
     next
   ) => {
+    const { silentDefaultResponse, vDataCaptured, force = falseValue } = config;
+
     // 因为behavior返回值可能会变化，因此每次请求都应该调用它重新获取返回值
     const behaviorFinally = sloughConfig(behavior, sendArgs);
     const queueFinally = sloughConfig(queue, sendArgs);
-    const { silentDefaultResponse, vDataCaptured, force = falseValue } = config;
+    const forceRequest = sloughConfig(force, sendArgs);
     let silentMethodInstance: any;
 
     // 设置事件回调装饰器
@@ -186,6 +188,7 @@ export default <S, E, R, T, RC, RE, RH>(
             method as Method<any, any, any, any, any, any, any>,
             behaviorFinally,
             undefinedValue,
+            !!forceRequest,
             retryError,
             maxRetryTimes,
             backoff,
@@ -232,7 +235,6 @@ export default <S, E, R, T, RC, RE, RH>(
       };
 
       if (behaviorFinally === behaviorQueue) {
-        const forceRequest = sloughConfig(force, sendArgs);
         // 强制请求，或命中缓存时需要更新loading状态
         const needSendRequest = forceRequest || !cachedResponse;
         if (needSendRequest) {

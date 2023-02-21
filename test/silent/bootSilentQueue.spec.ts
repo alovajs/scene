@@ -143,6 +143,7 @@ describe('boot silent queue', () => {
         'silent',
         'abcdef',
         undefined,
+        undefined,
         2,
         undefined,
         [
@@ -174,6 +175,7 @@ describe('boot silent queue', () => {
         methodInstance2,
         'silent',
         'abcdef',
+        undefined,
         undefined,
         2,
         undefined,
@@ -282,7 +284,7 @@ describe('boot silent queue', () => {
       const methodInstance = new Method('POST', alovaInst, '/detail', {
         transformData: () => undefined // 响应数据最终为undefined
       });
-      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', /.*/, 2, {
+      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', undefined, /.*/, 2, {
         delay: 2000,
         multiplier: 1.5
       });
@@ -298,6 +300,7 @@ describe('boot silent queue', () => {
         methodInstance2,
         'silent',
         'abcdef',
+        undefined,
         /.*/,
         2,
         {
@@ -346,7 +349,7 @@ describe('boot silent queue', () => {
       const methodInstance = new Method('POST', alovaInst, '/detail', {
         transformData: () => true
       });
-      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', /.*/, 2, {
+      const silentMethodInstance = new SilentMethod(methodInstance, 'silent', 'abcdef', undefined, /.*/, 2, {
         delay: 2000,
         multiplier: 1.5
       });
@@ -358,6 +361,7 @@ describe('boot silent queue', () => {
         methodInstance2,
         'silent',
         'abcdef',
+        undefined,
         /.*/,
         2,
         {

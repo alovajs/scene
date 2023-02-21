@@ -76,7 +76,7 @@ describe('serializers', () => {
       },
       { text: virtualResponse.text, time: virtualResponse.time }
     );
-    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, /.*/, 2, {
+    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, undefined, /.*/, 2, {
       delay: 2000,
       multiplier: 1.5
     });
@@ -175,6 +175,7 @@ describe('serializers', () => {
       methodInstance,
       'silent',
       'abcdef',
+      undefined,
       /.*/,
       2,
       {

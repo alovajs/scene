@@ -34,7 +34,7 @@ describe('manipulate silent method storage', () => {
     decorateStorageAdapter(alovaInst.storage);
     setDependentAlova(alovaInst);
     const methodInstance = new Method('POST', alovaInst, '/detail');
-    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, /.*/, 2, {
+    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, undefined, /.*/, 2, {
       delay: 50,
       startQuiver: 0.4
     });
@@ -65,12 +65,12 @@ describe('manipulate silent method storage', () => {
     // 设置依赖的alova实例
     setDependentAlova(alovaInst);
     const methodInstance = new Method('POST', alovaInst, '/detail');
-    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, /.*/, 2, {
+    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, undefined, /.*/, 2, {
       delay: 50,
       startQuiver: 0.4
     });
     const methodInstance2 = new Method('DELETE', alovaInst, '/detail/1');
-    const silentMethodInstance2 = new SilentMethod(methodInstance2, 'silent', undefined, /.*/, 2);
+    const silentMethodInstance2 = new SilentMethod(methodInstance2, 'silent', undefined, undefined, /.*/, 2);
     pushNewSilentMethod2Queue(silentMethodInstance, true); // cache为true，会持久化
     pushNewSilentMethod2Queue(silentMethodInstance2, false); // cache为false，不会持久化
 
@@ -102,12 +102,12 @@ describe('manipulate silent method storage', () => {
     // 设置依赖的alova实例
     setDependentAlova(alovaInst);
     const methodInstance = new Method('POST', alovaInst, '/detail');
-    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, /.*/, 2, {
+    const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, undefined, /.*/, 2, {
       delay: 50,
       startQuiver: 0.4
     });
     const methodInstance2 = new Method('DELETE', alovaInst, '/detail/1');
-    const silentMethodInstance2 = new SilentMethod(methodInstance2, 'silent', undefined, /.*/, 2);
+    const silentMethodInstance2 = new SilentMethod(methodInstance2, 'silent', undefined, undefined, /.*/, 2);
     pushNewSilentMethod2Queue(silentMethodInstance, true);
     pushNewSilentMethod2Queue(silentMethodInstance2, true);
 

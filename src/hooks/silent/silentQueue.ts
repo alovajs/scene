@@ -187,13 +187,14 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
       fallbackHandlers = [],
       retryHandlers = [],
       handlerArgs = [],
-      virtualResponse
+      virtualResponse,
+      force
     } = silentMethodInstance;
 
     // 触发请求前事件
     runArgsHandler(beforeHandlers, createSQEvent(0, behavior, entity, silentMethodInstance, queueName, retryTimes));
     promiseThen(
-      entity.send(),
+      entity.send(force),
       data => {
         // 请求成功，移除成功的silentMethod实力，并继续下一个请求
         shift(queue);

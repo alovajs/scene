@@ -226,6 +226,9 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /** 当前是否正在请求中 */
   active?: boolean;
 
+  /** 是否强制请求 */
+  force: boolean;
+
   /**
    * 允许缓存时持久化更新当前实例
    */

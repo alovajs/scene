@@ -21,7 +21,8 @@ export default (payload: SerializedSilentMethod) => {
     resolveHandler,
     rejectHandler,
     handlerArgs,
-    targetRefMethod
+    targetRefMethod,
+    force
   } = payload;
 
   // method类实例化
@@ -34,6 +35,7 @@ export default (payload: SerializedSilentMethod) => {
     deserializeMethod(entity),
     behavior,
     id,
+    force,
     retryError,
     maxRetryTimes,
     backoff,
@@ -64,7 +66,8 @@ export default (payload: SerializedSilentMethod) => {
           'resolveHandler',
           'rejectHandler',
           'handlerArgs',
-          'targetRefMethod'
+          'targetRefMethod',
+          'force'
         ],
         key
       )
