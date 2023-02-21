@@ -8,7 +8,7 @@ import {
   SilentSubmitSuccessHandler
 } from '../../../typings/general';
 import { createAssert, isArray } from '../../helper';
-import { defaultQueueName } from '../../helper/variables';
+import { DEFAUT_QUEUE_NAME } from '../../helper/variables';
 
 /**
  * 全局的虚拟数据收集数组
@@ -80,7 +80,7 @@ export const setQueueRequestWaitSetting = (
     ? (requestWaitSetting as QueueRequestWaitSetting[])
     : [
         {
-          queue: defaultQueueName,
+          queue: DEFAUT_QUEUE_NAME,
           wait: requestWaitSetting as QueueRequestWaitSetting['wait']
         }
       ];

@@ -8,9 +8,19 @@ import { symbolVDataId } from './variables';
  * @param returnOriginalIfNotVData 如果不是虚拟数据则返回原值
  * @returns 虚拟数据id或原数据
  */
-export default (target: any, returnOriginalIfNotVData = trueValue) => {
+const stringifyVData = (target: any, returnOriginalIfNotVData = trueValue) => {
   vDataCollectUnified(target);
   const vDataIdRaw = target?.[symbolVDataId];
   const vDataId = vDataIdRaw ? `[vd:${vDataIdRaw}]` : undefinedValue;
   return vDataId || (returnOriginalIfNotVData ? target : undefinedValue);
 };
+export default stringifyVData;
+
+/**
+ * 创建虚拟数据id收集的getter函数
+ * @param valueReturnFn 返回值函数
+ * @returns getter函数
+ */
+export function stringifyWithThis(this: any) {
+  return stringifyVData(this);
+}

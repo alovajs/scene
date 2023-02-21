@@ -1,4 +1,3 @@
-import { GeneralFn } from '../../../helper';
 import { undefinedValue } from '../../../helper/variables';
 import { vDataIdCollectBasket } from '../globalVariables';
 import { symbolVDataId } from './variables';
@@ -19,15 +18,4 @@ export const vDataCollectUnified = (target: any) => {
   vDataId && vDataIdCollectBasket && (vDataIdCollectBasket[vDataId] = undefinedValue);
 };
 
-/**
- * 创建虚拟数据id收集的getter函数
- * @param valueReturnFn 返回值函数
- * @returns getter函数
- */
-export const vDataCollectGetter = (valueReturnFn: GeneralFn) =>
-  function (this: any, arg?: any) {
-    vDataCollectUnified(this);
-    return valueReturnFn(this, arg);
-  };
-
-export const vDataGetter = (key: string) => vDataCollectGetter((thisObj: any) => thisObj.__proto__[key].call(thisObj));
+// export const vDataGetter = (key: string) => vDataCollectGetter((thisObj: any) => thisObj.__proto__[key].call(thisObj));

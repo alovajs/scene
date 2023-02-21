@@ -352,7 +352,7 @@ interface DataSerializer {
 
 interface QueueRequestWaitSetting {
   queue: string | RegExp;
-  wait: number | ((silentMethod: SilentMethod) => number);
+  wait: number | ((silentMethod: SilentMethod, queueName: string) => number | undefined);
 }
 /** SilentFactory启动选项 */
 interface SilentFactoryBootOptions {

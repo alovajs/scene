@@ -1,6 +1,6 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
-import { defaultQueueName } from '../../src/helper/variables';
+import { DEFAUT_QUEUE_NAME } from '../../src/helper/variables';
 import { setDependentAlova } from '../../src/hooks/silent/globalVariables';
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { clearSilentQueueMap, pushNewSilentMethod2Queue, silentQueueMap } from '../../src/hooks/silent/silentQueue';
@@ -117,13 +117,13 @@ describe('manipulate silent method storage', () => {
     expect(Object.keys(loadedSilentQueueMap)).toHaveLength(1);
     expect(loadedSilentQueueMap.default).toHaveLength(2);
 
-    spliceStorageSilentMethod(defaultQueueName, silentMethodInstance.id);
+    spliceStorageSilentMethod(DEFAUT_QUEUE_NAME, silentMethodInstance.id);
     loadedSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(Object.keys(loadedSilentQueueMap)).toHaveLength(1);
     expect(loadedSilentQueueMap.default).toHaveLength(1);
     expect(storageMock[silentMethodStorageKeyPrefix + silentMethodInstance.id]).toBeUndefined(); // 检查存储中的silentMethod
 
-    spliceStorageSilentMethod(defaultQueueName, silentMethodInstance2.id);
+    spliceStorageSilentMethod(DEFAUT_QUEUE_NAME, silentMethodInstance2.id);
     loadedSilentQueueMap = loadSilentQueueMapFromStorage();
     expect(Object.keys(loadedSilentQueueMap)).toHaveLength(0);
     expect(storageMock[silentMethodStorageKeyPrefix + silentMethodInstance2.id]).toBeUndefined();

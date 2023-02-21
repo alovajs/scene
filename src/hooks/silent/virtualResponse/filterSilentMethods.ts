@@ -1,6 +1,6 @@
 import { SilentQueueMap } from '../../../../typings/general';
 import { getConfig, instanceOf, regexpTest } from '../../../helper';
-import { defaultQueueName, falseValue, trueValue, undefinedValue } from '../../../helper/variables';
+import { DEFAUT_QUEUE_NAME, falseValue, trueValue, undefinedValue } from '../../../helper/variables';
 import { silentFactoryStatus } from '../globalVariables';
 import { SilentMethod } from '../SilentMethod';
 import { silentQueueMap } from '../silentQueue';
@@ -15,7 +15,7 @@ import loadSilentQueueMapFromStorage from '../storage/loadSilentQueueMapFromStor
  */
 export const filterSilentMethods = (
   methodNameMatcher?: string | number | RegExp,
-  queueName = defaultQueueName,
+  queueName = DEFAUT_QUEUE_NAME,
   filterActive = falseValue
 ) => {
   const matchSilentMethods = (targetQueue: SilentQueueMap[string] = []) =>
@@ -47,6 +47,6 @@ export const filterSilentMethods = (
  */
 export const getSilentMethod = (
   methodNameMatcher?: string | number | RegExp,
-  queueName = defaultQueueName,
+  queueName = DEFAUT_QUEUE_NAME,
   filterActive = falseValue
 ): SilentMethod | undefined => filterSilentMethods(methodNameMatcher, queueName, filterActive)[0];

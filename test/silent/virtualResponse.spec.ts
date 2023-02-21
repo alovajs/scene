@@ -1,40 +1,20 @@
-import { setVDataIdCollectBasket, vDataIdCollectBasket } from '../../src/hooks/silent/globalVariables';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
+import Null from '../../src/hooks/silent/virtualResponse/Null';
+import Undefined from '../../src/hooks/silent/virtualResponse/Undefined';
 import { symbolVDataId } from '../../src/hooks/silent/virtualResponse/variables';
 
 // 虚拟响应测试
 describe('virtual response', () => {
   test('undefined virtual data', () => {
     const undef = createVirtualResponse(undefined);
-    setVDataIdCollectBasket({});
-    expect(undef + 1).toBeNaN();
-    expect(undef - 1).toBeNaN();
-    expect(undef | 1).toBe(1);
-    expect(undef & 1).toBe(0);
-    expect(undef > 0).toBeFalsy();
-    expect(undef < 0).toBeFalsy();
-    expect(undef == 0).toBeFalsy();
-    expect(undef >= 0).toBeFalsy();
-    expect(undef <= 0).toBeFalsy();
-    expect(Object.keys(vDataIdCollectBasket || {})).toHaveLength(1);
-    setVDataIdCollectBasket(undefined);
+    expect(undef[symbolVDataId]).toMatch(/[a-z0-9]+/);
+    expect(undef).toBeInstanceOf(Undefined);
   });
 
   test('null virtual data', () => {
     const nil = createVirtualResponse(null);
-    setVDataIdCollectBasket({});
-    expect(nil + 1).toBe(1);
-    expect(nil - 1).toBe(-1);
-    expect(nil | 1).toBe(1);
-    expect(nil & 1).toBe(0);
-    expect(nil > 0).toBeFalsy();
-    expect(nil < 0).toBeFalsy();
-    expect(nil == 0).toBeFalsy();
-    expect(nil >= 0).toBeTruthy();
-    expect(nil <= 0).toBeTruthy();
-
-    expect(Object.keys(vDataIdCollectBasket || {})).toHaveLength(1);
-    setVDataIdCollectBasket(undefined);
+    expect(nil[symbolVDataId]).toMatch(/[a-z0-9]+/);
+    expect(nil).toBeInstanceOf(Null);
   });
 
   test('create virtual response with primitive type', () => {
@@ -42,19 +22,17 @@ describe('virtual response', () => {
     const vNumber = createVirtualResponse(1);
     expect(vNumber).toBeInstanceOf(Number);
     expect(vNumber.toFixed(1)).toBe('1.0');
-    expect(vNumber.valueOf()).toBe(1);
-    expect(vNumber.toString()).toBe('1');
-    expect(vNumber + 100).toBe(101);
+    expect(vNumber.toPrecision(2)).toBe('1.0');
+    expect(vNumber + 1).toMatch(/^\[vd:.+\]1$/);
 
     const vStr = createVirtualResponse('bb');
-    expect(vStr.valueOf()).toBe('bb');
+    expect(vStr.toString()).toBe('bb');
     expect(vStr.replace('bb', 'ccc')).toBe('ccc');
-    expect(vStr + 111).toBe('bb111');
+    expect(vStr + 111).toMatch(/^\[vd:.+\]111$/);
 
     const vBool = createVirtualResponse(true);
-    expect(vBool.valueOf()).toBe(true);
-    expect(vBool + 111).toBe(112);
-    expect(vBool + 'aa').toBe('trueaa');
+    expect(vBool.toString()).toBe('true');
+    expect(vBool + 'aa').toMatch(/^\[vd:.+\]aa$/);
   });
 
   test('create virtual response with object', () => {

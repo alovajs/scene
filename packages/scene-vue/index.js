@@ -19,6 +19,7 @@ export {
 } from '../../src/hooks/silent/silentFactory';
 export { silentQueueMap } from '../../src/hooks/silent/silentQueue';
 export { default as dehydrateVData } from '../../src/hooks/silent/virtualResponse/dehydrateVData';
+export { default as equals } from '../../src/hooks/silent/virtualResponse/equals';
 export { filterSilentMethods, getSilentMethod } from '../../src/hooks/silent/virtualResponse/filterSilentMethods';
 export { default as isVData } from '../../src/hooks/silent/virtualResponse/isVData';
 export { default as stringifyVData } from '../../src/hooks/silent/virtualResponse/stringifyVData';

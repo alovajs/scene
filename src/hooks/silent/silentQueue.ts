@@ -19,8 +19,8 @@ import {
   walkObject
 } from '../../helper';
 import {
-  behaviorSilent,
-  defaultQueueName,
+  BEHAVIOR_SILENT,
+  DEFAUT_QUEUE_NAME,
   falseValue,
   RegExpCls,
   trueValue,
@@ -205,7 +205,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
 
         // 有virtualResponse时才遍历替换虚拟数据，且触发全局事件
         // 一般为silent behavior，而queue behavior不需要
-        if (behavior === behaviorSilent) {
+        if (behavior === BEHAVIOR_SILENT) {
           // 替换队列中后面方法实例中的虚拟数据为真实数据
           // 开锁后才能正常访问virtualResponse的层级结构
           const vDataResponse = replaceVirtualResponseWithResponse(virtualResponse, data);
@@ -254,7 +254,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
         emitWithRequestDelay(queueName);
       },
       reason => {
-        if (behavior !== behaviorSilent) {
+        if (behavior !== BEHAVIOR_SILENT) {
           // 当behavior不为silent时，请求失败就触发rejectHandler
           // 且在队列中移除，并不再重试
           shift(queue);
@@ -388,7 +388,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
 export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
   silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,
   cache: boolean,
-  targetQueueName = defaultQueueName,
+  targetQueueName = DEFAUT_QUEUE_NAME,
   onBeforePush = noop
 ) => {
   silentMethodInstance.cache = cache;

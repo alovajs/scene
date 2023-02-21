@@ -170,7 +170,10 @@ export class SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any
    * @param matcher method实例匹配器
    * @param updateStateName 更新的状态名，默认为data，也可以设置多个
    */
-  public setUpdateState(matcher: MethodMatcher<S, E, R, T, RC, RE, RH>, updateStateName: string | string[] = 'data') {
+  public setUpdateState(
+    matcher: MethodMatcher<any, any, any, any, any, any, any>,
+    updateStateName: string | string[] = 'data'
+  ) {
     const methodInstance = instanceOf(matcher, Method)
       ? matcher
       : matchSnapshotMethod(matcher as MethodFilter, falseValue);
