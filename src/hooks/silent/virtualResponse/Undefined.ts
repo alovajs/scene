@@ -1,13 +1,6 @@
 import { valueObject } from '../../../helper';
-import {
-  nullValue,
-  ObjectCls,
-  strToString,
-  strValueOf,
-  symbolToPrimitive,
-  undefinedValue
-} from '../../../helper/variables';
-import { vDataCollectGetter, vDataGetter } from './helper';
+import { nullValue, ObjectCls, STR_VALUE_OF } from '../../../helper/variables';
+import { stringifyWithThis } from './stringifyVData';
 
 interface UndefinedConstructor {
   new (vDataId?: string): UndefinedInterface;
@@ -21,9 +14,7 @@ interface UndefinedInterface {
  */
 const Undefined = function (this: UndefinedInterface) {} as unknown as UndefinedConstructor;
 Undefined.prototype = ObjectCls.create(nullValue, {
-  [symbolToPrimitive]: valueObject(vDataCollectGetter(() => undefinedValue)),
-  [strValueOf]: valueObject(vDataGetter(strValueOf)),
-  [strToString]: valueObject(vDataGetter(strToString))
+  [STR_VALUE_OF]: valueObject(stringifyWithThis)
 });
 
 export default Undefined;

@@ -96,7 +96,7 @@ describe('serializers', () => {
       },
       params: { id: { __$k: virtualResponse.id[symbolVDataId], __$v: 1 }, createDate: ['date', dateTimestamp] }
     });
-    expect(serializedObj.entity.requestBody).toEqual({
+    expect(serializedObj.entity.data).toEqual({
       text: { __$k: virtualResponse.text[symbolVDataId], __$v: ['custom', '2a'] },
       time: { __$k: virtualResponse.time[symbolVDataId], __$v: ['date', dateTimestamp] }
     });
@@ -210,7 +210,7 @@ describe('serializers', () => {
     expect(params.other1[symbolVDataId]).toBe(virtualResponse.extra.other1[symbolVDataId]);
     expect(dehydrateVData(params.other1)).toBe(dehydrateVData(virtualResponse.extra.other1));
 
-    const requestBody = (deserizlizedSilentMethodInstance.entity.requestBody || {}) as any;
+    const requestBody = (deserizlizedSilentMethodInstance.entity.data || {}) as any;
     expect(requestBody.matcher[symbolVDataId]).toBe(virtualResponse.matcher[symbolVDataId]);
     expect(requestBody.matcher.source).toBe('^123[a-z]+(.*?)$');
     expect(requestBody.time[symbolVDataId]).toBe(virtualResponse.time[symbolVDataId]);

@@ -1,16 +1,9 @@
 import { defineProperty, isArray, isPlainOrCustomObject, newInstance, uuid, walkObject } from '../../../helper';
-import {
-  nullValue,
-  ObjectCls,
-  strToString,
-  strValueOf,
-  symbolToPrimitive,
-  undefinedValue
-} from '../../../helper/variables';
-import { vDataGetter } from './helper';
+import { nullValue, ObjectCls, STR_VALUE_OF, undefinedValue } from '../../../helper/variables';
 import Null from './Null';
+import { stringifyWithThis } from './stringifyVData';
 import Undefined from './Undefined';
-import { symbolVDataId } from './variables';
+import { symbolOriginal, symbolVDataId } from './variables';
 
 /**
  * 创建虚拟响应数据
@@ -23,10 +16,10 @@ export default (structure: any, vDataId = uuid()) => {
     } else if (value === undefinedValue) {
       value = newInstance(Undefined);
     } else {
-      value = ObjectCls(value);
-      defineProperty(value, symbolToPrimitive, vDataGetter(strValueOf));
-      defineProperty(value, strValueOf, vDataGetter(strValueOf));
-      defineProperty(value, strToString, vDataGetter(strToString));
+      const newValue = ObjectCls(value);
+      defineProperty(newValue, STR_VALUE_OF, stringifyWithThis);
+      defineProperty(newValue, symbolOriginal, value);
+      value = newValue;
     }
     defineProperty(value, symbolVDataId, vDataIdInner);
     return value;

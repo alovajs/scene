@@ -1,18 +1,10 @@
 import { isArray } from '@vue/shared';
 import { instanceOf, isPlainOrCustomObject, walkObject } from '../../../helper';
-import {
-  BooleanCls,
-  nullValue,
-  NumberCls,
-  StringCls,
-  strValueOf,
-  trueValue,
-  undefinedValue
-} from '../../../helper/variables';
+import { BooleanCls, nullValue, NumberCls, StringCls, trueValue, undefinedValue } from '../../../helper/variables';
 import { vDataCollectUnified } from './helper';
 import Null from './Null';
 import Undefined from './Undefined';
-import { symbolVDataId } from './variables';
+import { symbolOriginal, symbolVDataId } from './variables';
 
 /**
  * 获取带虚拟数据变量的原始值
@@ -30,7 +22,7 @@ export const dehydrateVDataUnified = <T>(target: T, deepDehydrate = trueValue): 
       } else if (instanceOf(value, Null)) {
         value = nullValue;
       } else if (instanceOf(value, NumberCls) || instanceOf(value, StringCls) || instanceOf(value, BooleanCls)) {
-        value = value[strValueOf]();
+        value = (value as any)[symbolOriginal];
       }
     }
     return value;

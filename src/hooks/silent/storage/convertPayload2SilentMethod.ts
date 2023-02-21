@@ -26,8 +26,8 @@ export default (payload: SerializedSilentMethod) => {
 
   // method类实例化
   const deserializeMethod = (methodPayload: SerializedSilentMethod['entity']) => {
-    const { type, url, config, requestBody } = methodPayload;
-    return newInstance(Method, type, dependentAlovaInstance, url, config, requestBody);
+    const { type, url, config, data } = methodPayload;
+    return newInstance(Method, type, dependentAlovaInstance, url, config, data);
   };
   const silentMethodInstance = newInstance(
     SilentMethod,

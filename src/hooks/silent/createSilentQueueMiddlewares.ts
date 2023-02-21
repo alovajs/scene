@@ -21,9 +21,9 @@ import {
   walkObject
 } from '../../helper';
 import {
-  behaviorQueue,
-  behaviorSilent,
-  behaviorStatic,
+  BEHAVIOR_QUEUE,
+  BEHAVIOR_SILENT,
+  BEHAVIOR_STATIC,
   falseValue,
   PromiseCls,
   trueValue,
@@ -158,9 +158,9 @@ export default <S, E, R, T, RC, RE, RH>(
     if (isFn(vDataCaptured)) {
       let hasVData = vDataIdCollectBasket && len(objectKeys(vDataIdCollectBasket)) > 0;
       if (!hasVData) {
-        const { url, requestBody } = method;
+        const { url, data } = method;
         const { params, headers } = getConfig(method);
-        walkObject({ url, params, requestBody, headers }, value => {
+        walkObject({ url, params, data, headers }, value => {
           if (!hasVData && (stringifyVData(value, falseValue) || regexpTest(regVDataId, value))) {
             hasVData = trueValue;
           }
@@ -176,7 +176,7 @@ export default <S, E, R, T, RC, RE, RH>(
       }
     }
 
-    if (behaviorFinally !== behaviorStatic) {
+    if (behaviorFinally !== BEHAVIOR_STATIC) {
       // 等待队列中的method执行完毕
 
       const createSilentMethodPromise = () => {
@@ -218,7 +218,7 @@ export default <S, E, R, T, RC, RE, RH>(
             silentMethodInstance,
             // onFallback绑定了事件后，即使是silent行为模式也不再存储
             // onFallback会同步调用，因此需要异步判断是否存在fallbackHandlers
-            len(fallbackHandlers) <= 0 && behaviorFinally === behaviorSilent,
+            len(fallbackHandlers) <= 0 && behaviorFinally === BEHAVIOR_SILENT,
             queueFinally,
 
             // 执行放入队列前回调，如果返回false则阻止放入队列
@@ -231,7 +231,7 @@ export default <S, E, R, T, RC, RE, RH>(
         return queueResolvePromise;
       };
 
-      if (behaviorFinally === behaviorQueue) {
+      if (behaviorFinally === BEHAVIOR_QUEUE) {
         const forceRequest = sloughConfig(force, sendArgs);
         // 强制请求，或命中缓存时需要更新loading状态
         const needSendRequest = forceRequest || !cachedResponse;

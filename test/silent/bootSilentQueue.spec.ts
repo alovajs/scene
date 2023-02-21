@@ -1,6 +1,6 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
-import { defaultQueueName } from '../../src/helper/variables';
+import { DEFAUT_QUEUE_NAME } from '../../src/helper/variables';
 import {
   bootSilentFactory,
   onBeforeSilentSubmit,
@@ -40,7 +40,7 @@ describe('boot silent queue', () => {
 
     deepReplaceVData(methodInstance, vDataReplacedResponseMap);
     expect(methodInstance.url).toBe('/detail/1');
-    expect(methodInstance.requestBody).toEqual({
+    expect(methodInstance.data).toEqual({
       whole: { id: 1 }
     });
 
@@ -60,7 +60,7 @@ describe('boot silent queue', () => {
     );
     deepReplaceVData(methodInstance2, vDataReplacedResponseMap);
     expect(methodInstance2.url).toBe('/detail');
-    expect(methodInstance2.requestBody).toEqual({
+    expect(methodInstance2.data).toEqual({
       whole: { id: 123 },
       text: ''
     });
@@ -229,7 +229,7 @@ describe('boot silent queue', () => {
       onSilentSubmitSuccess(event => {
         successMockFn();
         // 验证event内的数据
-        expect(event.queueName).toBe(defaultQueueName);
+        expect(event.queueName).toBe(DEFAUT_QUEUE_NAME);
         expect((event as any)[Symbol.toStringTag]).toBe('GlobalSQSuccessEvent');
         expect(event.behavior).toBe('silent');
         if (successCallIndex === 0) {

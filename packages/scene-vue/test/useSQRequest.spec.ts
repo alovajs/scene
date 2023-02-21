@@ -416,7 +416,7 @@ describe('useSQRequest', () => {
       vDataCaptured(method) {
         expect(method.url).toBe('/detail');
         expect(method.type).toBe('POST');
-        expect((method.requestBody as any).id).toBe(vDataId);
+        expect((method.data as any).id).toBe(vDataId);
         return {
           localData: 'abc'
         };
@@ -678,7 +678,7 @@ describe('useSQRequest', () => {
     onSilentSubmitSuccess(event => {
       if (event.method.type === 'DELETE' && event.behavior === 'queue') {
         expect(event.method.url).toBe('/detail/1010');
-        expect(event.method.requestBody).toStrictEqual({
+        expect(event.method.data).toStrictEqual({
           text1: 'aaa',
           text2: 'bbb',
           status: [1, 2]
