@@ -146,9 +146,7 @@ describe('useSQRequest', () => {
 
   test('should force request when set force to true in silent queue', async () => {
     const queue = 'tb31';
-    const Get = alovaInst.Get<{ total: number; list: number[] }>('/list', {
-      localCache: 1000 * 1000
-    });
+    const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
     const { loading, send, onSuccess } = useSQRequest(() => Get, {
       queue,
       force() {
@@ -267,7 +265,7 @@ describe('useSQRequest', () => {
     });
   });
 
-  test.only('should prevent to push silentMethod when return false in onBeforePushQueue', async () => {
+  test('should prevent to push silentMethod when return false in onBeforePushQueue', async () => {
     const queue = 'tb4';
     const Get = () => alovaInst.Get<any>('/list');
     const { onBeforePushQueue, onSuccess } = useSQRequest(Get, {

@@ -1,7 +1,7 @@
 {
   "name": "@alova/scene",
-  "version": "1.0.0-beta.28",
-  "description": "scenario hooks with alova.js",
+  "version": "1.0.0-beta.29",
+  "description": "request strategy with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "private": true,
   "workspaces": [
@@ -38,7 +38,7 @@
     "@types/testing-library__jest-dom": "^5.14.5",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "alova": "^1.5.0-beta.12",
+    "alova": "^2.0.0-rc.1",
     "babel-jest": "^29.2.2",
     "coveralls": "^3.1.1",
     "cpy": "^8.1.2",
