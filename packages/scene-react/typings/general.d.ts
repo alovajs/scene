@@ -207,11 +207,11 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /**
    * 静默提交时的额外持久化数据
    * 当静默提交后数据真正提交前，我们可能需要访问这条新数据
-   * 当提交的数据不满足界面渲染所需的数据时，我们可以在提交时将额外的数据保存到submitExtra字段中，保证下次可以获取到它
+   * 当提交的数据不满足界面渲染所需的数据时，我们可以在提交时将额外的数据保存到extraData字段中，保证下次可以获取到它
    *
-   * 注意：一般而言，你可以以任意属性名保存持久化数据，但在typescript中会报错，因此为你指定了submitExtra作为以上作用的字段
+   * 注意：一般而言，你可以以任意属性名保存持久化数据，但在typescript中会报错，因此为你指定了extraData作为以上作用的字段
    */
-  submitExtra?: any;
+  extraData?: any;
 
   /**
    * 状态更新所指向的method实例

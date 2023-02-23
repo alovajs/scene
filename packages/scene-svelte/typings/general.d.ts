@@ -207,11 +207,11 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /**
    * 静默提交时的额外持久化数据
    * 当静默提交后数据真正提交前，我们可能需要访问这条新数据
-   * 当提交的数据不满足界面渲染所需的数据时，我们可以在提交时将额外的数据保存到submitExtra字段中，保证下次可以获取到它
+   * 当提交的数据不满足界面渲染所需的数据时，我们可以在提交时将额外的数据保存到extraData字段中，保证下次可以获取到它
    *
-   * 注意：一般而言，你可以以任意属性名保存持久化数据，但在typescript中会报错，因此为你指定了submitExtra作为以上作用的字段
+   * 注意：一般而言，你可以以任意属性名保存持久化数据，但在typescript中会报错，因此为你指定了extraData作为以上作用的字段
    */
-  submitExtra?: any;
+  extraData?: any;
 
   /**
    * 状态更新所指向的method实例
@@ -225,6 +225,9 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
 
   /** 当前是否正在请求中 */
   active?: boolean;
+
+  /** 是否强制请求 */
+  force: boolean;
 
   /**
    * 允许缓存时持久化更新当前实例
@@ -250,7 +253,7 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
    * @param matcher method实例匹配器
    * @param updateStateName 更新的状态名，默认为data，也可以设置多个
    */
-  setUpdateState(matcher: MethodMatcher<S, E, R, T, RC, RE, RH>, updateStateName?: string | string[]): void;
+  setUpdateState(matcher: MethodMatcher<any, any, any, any, any, any, any>, updateStateName?: string | string[]): void;
 }
 
 // 静默队列hooks相关
@@ -352,7 +355,7 @@ interface DataSerializer {
 
 interface QueueRequestWaitSetting {
   queue: string | RegExp;
-  wait: number | ((silentMethod: SilentMethod) => number);
+  wait: number | ((silentMethod: SilentMethod, queueName: string) => number | undefined);
 }
 /** SilentFactory启动选项 */
 interface SilentFactoryBootOptions {
