@@ -179,7 +179,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
       id,
       behavior,
       entity,
-      retryError = 0,
+      retryError = /.*/,
       maxRetryTimes = 0,
       backoff = { delay: defaultBackoffDelay },
       resolveHandler = noop,
@@ -394,15 +394,15 @@ export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
   silentMethodInstance.cache = cache;
   const currentQueue = (silentQueueMap[targetQueueName] = silentQueueMap[targetQueueName] || []);
   const isNewQueue = len(currentQueue) <= 0;
-  const push2Queue = onBeforePush() as any;
+  const isPush2Queue = (onBeforePush() as any) !== falseValue;
 
   // silent行为下，如果没有绑定fallback事件回调，则持久化
   // 如果在onBeforePushQueue返回false，也不再放入队列中
-  if (push2Queue !== falseValue) {
+  if (isPush2Queue) {
     cache && push2PersistentSilentQueue(silentMethodInstance, targetQueueName);
     pushItem(currentQueue, silentMethodInstance);
+    // 如果是新的队列且状态为已启动，则执行它
+    isNewQueue && silentFactoryStatus === 1 && bootSilentQueue(currentQueue, targetQueueName);
   }
-
-  // 如果是新的队列且状态为已启动，则执行它
-  isNewQueue && silentFactoryStatus === 1 && bootSilentQueue(currentQueue, targetQueueName);
+  return isPush2Queue;
 };

@@ -94,7 +94,9 @@ describe('serializers', () => {
       localCache: {
         expire: 500000
       },
-      params: { id: { __$k: virtualResponse.id[symbolVDataId], __$v: 1 }, createDate: ['date', dateTimestamp] }
+      headers: {},
+      params: { id: { __$k: virtualResponse.id[symbolVDataId], __$v: 1 }, createDate: ['date', dateTimestamp] },
+      shareRequest: true
     });
     expect(serializedObj.entity.data).toEqual({
       text: { __$k: virtualResponse.text[symbolVDataId], __$v: ['custom', '2a'] },
