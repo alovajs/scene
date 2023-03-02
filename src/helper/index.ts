@@ -9,6 +9,7 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   ): Promise<T | T2> => promise.then(onFulfilled, onrejected),
   forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn),
   pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item),
+  filterItem = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.filter(fn),
   map = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.map(fn),
   includes = <T>(ary: T[], target: T) => ary.includes(target),
   len = (data: any[] | Uint8Array | string | string) => data.length,
@@ -23,7 +24,8 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   ) => JSON.stringify(value, replacer, space),
   JSONParse = (text: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) =>
     JSON.parse(text, reviver),
-  objectKeys = (obj: any) => Object.keys(obj),
+  objectKeys = (obj: any) => ObjectCls.keys(obj),
+  objectValues = (obj: any) => ObjectCls.values(obj),
   setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
   regexpTest = (reg: RegExp, str: string) => reg.test(str);
 

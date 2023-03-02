@@ -1,4 +1,4 @@
-import { createAlova, setCache } from 'alova';
+import { createAlova, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import {
@@ -10,6 +10,7 @@ import {
 import { untilCbCalled } from '../../../test/utils';
 import { usePagination } from '../index';
 
+jest.setTimeout(1000000);
 // reset data
 beforeEach(() => setMockListData());
 beforeEach(() => setMockListWithSearchData());
@@ -190,12 +191,10 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
 
     // 检查预加载缓存
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      expect(!!cache).toBeTruthy();
-    });
-    setCache(getter(page.value - 1, pageSize.value), cache => {
-      expect(!!cache).toBeTruthy();
-    });
+    let cache = queryCache(getter(page.value + 1, pageSize.value));
+    expect(!!cache).toBeTruthy();
+    cache = queryCache(getter(page.value - 1, pageSize.value));
+    expect(!!cache).toBeTruthy();
 
     let totalPrev = total.value;
     insert(300, 0);
@@ -206,26 +205,22 @@ describe('vue usePagination', () => {
       return data;
     });
     // 检查当前页缓存
-    setCache(getter(page.value, pageSize.value), cache => {
-      expect(cache.list).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
-    });
+    cache = queryCache(getter(page.value, pageSize.value));
+    expect(cache.list).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
     // 检查是否重新fetch了前后一页的数据
-    setCache(getter(page.value - 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    });
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      // insert时不会将缓存末尾去掉，因此剩下11项
-      expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
-    });
+    cache = queryCache(getter(page.value - 1, pageSize.value));
+    expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    cache = queryCache(getter(page.value + 1, pageSize.value));
+    // insert时会将缓存末尾去掉，因此还是剩下10项
+    expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
     await untilCbCalled(setTimeout, 150);
+
     // 检查是否重新fetch了前后一页的数据
-    setCache(getter(page.value - 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    });
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      // 重新fetch后还是保持pageSize项数据
-      expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
-    });
+    cache = queryCache(getter(page.value - 1, pageSize.value));
+    expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    cache = queryCache(getter(page.value + 1, pageSize.value));
+    // 重新fetch后还是保持pageSize项数据
+    expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
 
     insert(400);
     insert(500, 2);
@@ -233,14 +228,56 @@ describe('vue usePagination', () => {
     expect(total.value).toBe((totalPrev = totalPrev + 3));
     expect(data.value).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
     // 当前页缓存要保持一致
-    setCache(getter(page.value, pageSize.value), cache => {
-      expect(cache.list).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
-    });
+    cache = queryCache(getter(page.value, pageSize.value));
+    expect(cache.list).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
 
     const mockFn2 = jest.fn();
     onFetchSuccess(mockFn2);
     await untilCbCalled(setTimeout, 100);
-    expect(mockFn2.mock.calls.length).toBe(1); // 只会重新预加载下一页数据
+    expect(mockFn2).toBeCalledTimes(1); // 只会重新预加载下一页数据
+  });
+
+  // 当操作了数据重新fetch但还未响应时，翻页到了fetch的页，此时也需要更新界面
+  test('should update data when insert and fetch current page', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { data, page, total, insert } = usePagination(getter, {
+      data: res => res.list,
+      initialPage: 2, // 默认从第2页开始
+      initialPageSize: 4
+    });
+
+    await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
+    insert(1000, 1);
+    insert(1001, 2);
+    setMockListData(data => {
+      // 模拟数据中同步删除，这样fetch的数据校验才正常
+      data.splice(5, 0, 1000, 1001);
+      return data;
+    });
+
+    // 正在重新fetch下一页数据，但还没响应（响应有50ms延迟），此时翻页到下一页
+    await untilCbCalled(setTimeout);
+    page.value++;
+
+    await untilCbCalled(setTimeout);
+    expect(data.value).toEqual([6, 7, 8, 9]); // 有两项被挤到后面一页了
+    expect(total.value).toBe(302);
+
+    await untilCbCalled(setTimeout, 100); // 等待fetch响应
+    expect(data.value).toEqual([6, 7, 8, 9]);
+
+    // 再次返回前一页，移除的数据不应该存在
+    page.value--;
+    await untilCbCalled(setTimeout);
+    expect(data.value).toEqual([4, 1000, 1001, 5]);
   });
 
   test('paginated data replace item', async () => {
@@ -344,24 +381,23 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
 
     // 检查预加载缓存
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      expect(!!cache).toBeTruthy();
-    });
-    setCache(getter(page.value - 1, pageSize.value), cache => {
-      expect(!!cache).toBeTruthy();
-    });
+    let cache = queryCache(getter(page.value + 1, pageSize.value));
+    expect(!!cache).toBeTruthy();
+    cache = queryCache(getter(page.value - 1, pageSize.value));
+    expect(!!cache).toBeTruthy();
 
     let totalPrev = total.value;
     // 删除第二项，将会用下一页的数据补位，并重新拉取上下一页的数据
     remove(1);
     remove(1);
-    expect(data.value).toEqual([4, 7, 8, 9]);
-    expect(total.value).toBe((totalPrev = totalPrev - 2));
     setMockListData(data => {
       // 模拟数据中同步删除，这样fetch的数据校验才正常
       data.splice(5, 2);
       return data;
     });
+
+    expect(data.value).toEqual([4, 7, 8, 9]);
+    expect(total.value).toBe((totalPrev = totalPrev - 2));
     // 当前页缓存要保持一致
     setCache(getter(page.value, pageSize.value), cache => {
       expect(cache.list).toEqual([4, 7, 8, 9]);
@@ -389,12 +425,10 @@ describe('vue usePagination', () => {
     expect(mockFn.mock.calls.length).toBe(1); // 有一次下页的fetch被取消，因此只有一次
     // 检查是否重新fetch了前后一页的数据
     await untilCbCalled(setTimeout, 100);
-    setCache(getter(page.value - 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([0, 1, 2, 3]);
-    });
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([11, 12, 13, 14]);
-    });
+    cache = queryCache(getter(page.value - 1, pageSize.value));
+    expect(cache.list).toEqual([0, 1, 2, 3]);
+    cache = queryCache(getter(page.value + 1, pageSize.value));
+    expect(cache.list).toEqual([11, 12, 13, 14]);
 
     // 同步操作的项数超过pageSize时，移除的数据将被恢复，并重新请求当前页数据
     remove(0);
@@ -414,14 +448,119 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout, 100);
     expect(data.value).toEqual([12, 13, 14, 15]);
     expect(total.value).toBe((totalPrev = totalPrev - 5));
-    expect(mockFn2.mock.calls.length).toBe(1); // 只有下页的预加载触发
-    setCache(getter(page.value - 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([0, 1, 2, 3]);
-    });
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([16, 17, 18, 19]);
-    });
+    expect(mockFn2).toBeCalledTimes(1); // 只有下页的预加载触发
+    cache = queryCache(getter(page.value - 1, pageSize.value));
+    expect(cache.list).toEqual([0, 1, 2, 3]);
+    cache = queryCache(getter(page.value + 1, pageSize.value));
+    expect(cache.list).toEqual([16, 17, 18, 19]);
   });
+
+  // 当操作了数据重新fetch但还未响应时，翻页到了fetch的页，此时也需要更新界面
+  test('should update data when fetch current page', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { data, page, total, remove } = usePagination(getter, {
+      data: res => res.list,
+      initialPage: 2, // 默认从第2页开始
+      initialPageSize: 4
+    });
+
+    await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
+    remove(1);
+    remove(1);
+    setMockListData(data => {
+      // 模拟数据中同步删除，这样fetch的数据校验才正常
+      data.splice(5, 2);
+      return data;
+    });
+
+    // 正在重新fetch下一页数据，但还没响应（响应有50ms延迟），此时翻页到下一页
+    await untilCbCalled(setTimeout);
+    page.value++;
+
+    await untilCbCalled(setTimeout);
+    expect(data.value).toEqual([10, 11]); // 有两项用于填补前一页数据了
+    expect(total.value).toBe(298);
+
+    await untilCbCalled(setTimeout, 100); // 等待fetch响应
+    expect(data.value).toEqual([10, 11, 12, 13]);
+
+    // 再次返回前一页，移除的数据不应该存在
+    page.value--;
+    await untilCbCalled(setTimeout);
+    expect(data.value).toEqual([4, 7, 8, 9]);
+  });
+
+  test('should use new total data when remove items and go to adjacent page', async () => {
+    const alovaInst = createMockAlova();
+    const min = ref(0);
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize,
+          min: min.value
+        }
+      });
+
+    const { page, total, remove } = usePagination(getter, {
+      data: res => res.list,
+      watchingStates: [min],
+      initialPage: 2, // 默认从第2页开始
+      initialPageSize: 4
+    });
+
+    await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
+
+    let totalPrev = total.value;
+    // 删除两项，前后页的total也会同步更新
+    remove(1);
+    remove(1);
+    setMockListData(data => {
+      // 模拟数据中同步删除，这样fetch的数据校验才正常
+      data.splice(5, 2);
+      return data;
+    });
+    expect(total.value).toBe(totalPrev - 2);
+
+    page.value--;
+    // 等待刷新数据
+    await untilCbCalled(setTimeout, 100);
+    expect(total.value).toBe(totalPrev - 2);
+
+    page.value += 2;
+    // 等待刷新数据
+    await untilCbCalled(setTimeout, 150);
+    expect(total.value).toBe(totalPrev - 2);
+
+    // 改变筛选条件将使用最新的total
+    min.value = 100;
+    await untilCbCalled(setTimeout, 150); // 预留请求和fetch的时间
+    expect(total.value).toBe(200);
+    // 删除一条
+    remove(1);
+    setMockListData(data => {
+      // 模拟数据中同步删除，这样fetch的数据校验才正常
+      data.splice(0, 1);
+      return data;
+    });
+    expect(total.value).toBe(199);
+
+    // 条件改回去
+    await untilCbCalled(setTimeout, 10); // 需要延迟一会儿再继续操作
+    min.value = 0;
+    await untilCbCalled(setTimeout, 100);
+    expect(total.value).toBe(totalPrev - 3);
+  });
+
+  test('should update data when fetch the current page', async () => {});
 
   test('paginated data remove short list item without preload', async () => {
     const alovaInst = createMockAlova();

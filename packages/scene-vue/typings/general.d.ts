@@ -148,9 +148,15 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   readonly maxRetryTimes?: number;
   /** 避让策略 */
   readonly backoff?: {
-    /** 再次请求的延迟时间，单位毫秒，默认为1000 */
+    /**
+     * 再次请求的延迟时间，单位毫秒
+     * @default {1000}
+     */
     delay?: number;
-    /** 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒，默认为0 */
+    /**
+     * 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒
+     * @default {0}
+     */
     multiplier?: number;
 
     /**
@@ -170,13 +176,19 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
     endQuiver?: number;
   };
 
-  /** 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用 */
+  /**
+   * 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用
+   */
   readonly fallbackHandlers?: FallbackHandler<S, E, R, T, RC, RE, RH>[];
 
-  /** Promise的resolve函数，调用将通过对应的promise对象 */
+  /**
+   * Promise的resolve函数，调用将通过对应的promise对象
+   */
   readonly resolveHandler?: Parameters<ConstructorParameters<typeof Promise<any>>['0']>['0'];
 
-  /** Promise的reject函数，调用将失败对应的promise对象 */
+  /**
+   * Promise的reject函数，调用将失败对应的promise对象
+   */
   readonly rejectHandler?: Parameters<ConstructorParameters<typeof Promise<any>>['0']>['1'];
 
   /**
@@ -185,13 +197,19 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
    */
   readonly handlerArgs?: any[];
 
-  /** method创建时所使用的虚拟数据id */
+  /**
+   * method创建时所使用的虚拟数据id
+   */
   readonly vDatas?: string[];
 
-  /** 虚拟响应数据，通过delayUpdateState保存到此 */
+  /**
+   * 虚拟响应数据，通过delayUpdateState保存到此
+   */
   virtualResponse?: any;
 
-  /** 调用updateStateEffect更新了哪些状态 */
+  /**
+   * 调用updateStateEffect更新了哪些状态
+   */
   updateStates?: string[];
 
   /**
@@ -391,10 +409,10 @@ interface SilentFactoryBootOptions {
    * 2. 如果需要对其他queue设置可指定为对象，如：
    * [
    *   表示对名为customName的队列设置请求等待5000ms
-   *   { name: 'customName', wait: 5000 },
+   *   { queue: 'customName', wait: 5000 },
    *
    *   // 表示前缀为prefix的所有队列中，method实例名为xxx的请求设置等待5000ms
-   *   { name: /^prefix/, wait: silentMethod => silentMethod.entity.config.name === 'xxx' ? 5000 : 0 },
+   *   { queue: /^prefix/, wait: silentMethod => silentMethod.entity.config.name === 'xxx' ? 5000 : 0 },
    * ]
    *
    * >>> 它只在请求成功时起作用，如果失败则会使用重试策略参数

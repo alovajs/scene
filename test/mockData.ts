@@ -34,13 +34,14 @@ let detailErrorId = '';
 let detailErrorTimes = 0;
 const mocks = defineMock({
   '/list': ({ query }) => {
-    let { page = 1, pageSize = 10 } = query;
+    let { page = 1, pageSize = 10, min = 0, max = Infinity } = query;
     page = Number(page);
     pageSize = Number(pageSize);
     const start = (page - 1) * pageSize;
+    const filteredListData = mockListData.filter((num: number) => num >= min && num <= max);
     return {
-      total: mockListData.length,
-      list: mockListData.slice(start, start + pageSize)
+      total: filteredListData.length,
+      list: filteredListData.slice(start, start + pageSize)
     };
   },
 
