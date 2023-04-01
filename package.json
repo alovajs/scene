@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "request strategy with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "private": true,
@@ -38,7 +38,7 @@
     "@types/testing-library__jest-dom": "^5.14.5",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "alova": "^2.0.4",
+    "alova": "^2.0.12",
     "babel-jest": "^29.2.2",
     "coveralls": "^3.1.1",
     "cpy": "^8.1.2",

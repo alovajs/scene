@@ -141,7 +141,7 @@ export default {
   testEnvironment: 'jsdom',
 
   testMatch: [
-    // '**/test/**/*.spec.[tj]s?(x)'
+    '**/test/**/*.spec.[tj]s?(x)'
     // '**/test/modules/uuid.spec.ts(x)?'
     // '**/test/silent/virtualResponse.spec.ts(x)?'
     // '**/test/silent/serializers.spec.ts(x)?'
@@ -157,7 +157,7 @@ export default {
     // '**/test/silent/response-serialize.spec.ts(x)?'
 
     // vue
-    '**/packages/scene-vue/test/usePagination.spec.js(x)?'
+    // '**/packages/scene-vue/test/usePagination.spec.js(x)?'
     // '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
   ],
 

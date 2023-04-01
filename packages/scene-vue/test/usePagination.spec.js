@@ -100,7 +100,7 @@ describe('vue usePagination', () => {
   });
 
   // 不立即发送请求
-  test.only('should not load paginated data when set `immediate` to false', async () => {
+  test('should not load paginated data when set `immediate` to false', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
       alovaInst.Get('/list', {
@@ -110,7 +110,7 @@ describe('vue usePagination', () => {
         }
       });
 
-    const { data, total, isLastPage } = usePagination(getter, {
+    const { data, total, pageCount, page, isLastPage, onSuccess } = usePagination(getter, {
       total: res => res.total,
       data: res => res.list,
       immediate: false
@@ -119,9 +119,12 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout, 100);
     expect(data.value.length).toBe(0);
     expect(total.value).toBeUndefined();
-    expect(isLastPage.value).toBeFalsy();
+    expect(isLastPage.value).toBeTruthy();
+    expect(pageCount.value).toBeUndefined();
 
-    // 检查预加载缓存
+    page.value++;
+    await untilCbCalled(onSuccess);
+    expect(data.value).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
   });
 
   test('paginated data with conditions search', async () => {
@@ -585,7 +588,7 @@ describe('vue usePagination', () => {
     expect(total.value).toBe(totalPrev - 3);
   });
 
-  test('should update data when fetch the current page', async () => {});
+  test('should update data when fetch the current page', async () => { });
 
   test('paginated data remove short list item without preload', async () => {
     const alovaInst = createMockAlova();

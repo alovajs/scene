@@ -89,8 +89,8 @@ export default function (
     const exceedPageCount = pageCountVal
       ? preloadPage > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-      ? len(listDataGetter(_$(states.data))) < _$(pageSize)
-      : falseValue;
+        ? len(listDataGetter(_$(states.data))) < _$(pageSize)
+        : falseValue;
     return preloadPage > 0 && !exceedPageCount;
   };
 
@@ -110,9 +110,13 @@ export default function (
   };
   // 如果返回的数据小于pageSize了，则认定为最后一页了
   const isLastPage = $$(() => {
+    const dataRaw = _$(states.data);
+    if (!dataRaw) {
+      return trueValue;
+    }
+    const statesDataVal = listDataGetter(dataRaw);
     const pageVal = _$(page);
     const pageCountVal = _$(pageCount);
-    const statesDataVal = listDataGetter(_$(states.data));
     const dataLen = isArray(statesDataVal) ? len(statesDataVal) : 0;
     return pageCountVal ? pageVal >= pageCountVal : dataLen < _$(pageSize);
   }, _expBatch$(page, pageCount, states.data, pageSize));
@@ -299,7 +303,7 @@ export default function (
           cachedListData.unshift(popItem);
           cachedListData.pop();
           return rawData;
-        } catch (error) {}
+        } catch (error) { }
       });
 
     // 插入项后也需要让缓存失效，以免不同条件下缓存未更新
@@ -321,7 +325,7 @@ export default function (
           // 从下一页列表的头部开始取补位数据
           fillingItem = shift(cachedListData || []);
           return data;
-        } catch (error) {}
+        } catch (error) { }
       });
 
     const isLastPageVal = _$(isLastPage);
