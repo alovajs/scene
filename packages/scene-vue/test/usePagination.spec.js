@@ -99,6 +99,31 @@ describe('vue usePagination', () => {
     });
   });
 
+  // 不立即发送请求
+  test.only('should not load paginated data when set `immediate` to false', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { data, total, isLastPage } = usePagination(getter, {
+      total: res => res.total,
+      data: res => res.list,
+      immediate: false
+    });
+
+    await untilCbCalled(setTimeout, 100);
+    expect(data.value.length).toBe(0);
+    expect(total.value).toBeUndefined();
+    expect(isLastPage.value).toBeFalsy();
+
+    // 检查预加载缓存
+  });
+
   test('paginated data with conditions search', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize, keyword) =>
