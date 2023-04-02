@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "request strategy with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "private": true,

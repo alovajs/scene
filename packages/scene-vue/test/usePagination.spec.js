@@ -10,7 +10,6 @@ import {
 import { untilCbCalled } from '../../../test/utils';
 import { usePagination } from '../index';
 
-jest.setTimeout(1000000);
 // reset data
 beforeEach(() => setMockListData());
 beforeEach(() => setMockListWithSearchData());
@@ -97,6 +96,24 @@ describe('vue usePagination', () => {
     setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeTruthy();
     });
+  });
+
+  test('should throw error when got wrong array', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { onError } = usePagination(getter, {
+      data: ({ wrongList }) => wrongList
+    });
+
+    const ev = await untilCbCalled(onError);
+    expect(ev.error.message).toBe('[alova/usePagination:Error]Got wrong array, did you return the correct array of list in `data` function');
   });
 
   // 不立即发送请求

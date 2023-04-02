@@ -23,8 +23,8 @@ export default function (
   {
     preloadPreviousPage = trueValue,
     preloadNextPage = trueValue,
-    total: totalGetter = data => data['total'],
-    data: dataGetter = data => data['data'],
+    total: totalGetter = res => res.total,
+    data: dataGetter = res => res.data,
     initialData,
     append = falseValue,
     initialPage = 1,
@@ -54,7 +54,15 @@ export default function (
     remove: removeSnapshot
   } = createSnapshotMethodsManager(page => handler(page, _$(pageSize)));
 
-  const listDataGetter = rawData => dataGetter(rawData) || rawData;
+  const listDataGetter = rawData => {
+    try {
+      paginationAssert(rawData && isArray(dataGetter(rawData)), 'Got wrong array, did you return the correct array of list in `data` function');
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+    return dataGetter(rawData) || rawData;
+  };
   const getHandlerMethod = (refreshPage = _$(page)) => {
     const pageSizeVal = _$(pageSize);
     const handlerMethod = handler(refreshPage, pageSizeVal);
