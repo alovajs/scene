@@ -113,7 +113,9 @@ describe('vue usePagination', () => {
     });
 
     const ev = await untilCbCalled(onError);
-    expect(ev.error.message).toBe('[alova/usePagination:Error]Got wrong array, did you return the correct array of list in `data` function');
+    expect(ev.error.message).toBe(
+      '[alova/usePagination]Got wrong array, did you return the correct array of list in `data` function'
+    );
   });
 
   // 不立即发送请求
@@ -605,8 +607,6 @@ describe('vue usePagination', () => {
     expect(total.value).toBe(totalPrev - 3);
   });
 
-  test('should update data when fetch the current page', async () => { });
-
   test('paginated data remove short list item without preload', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
@@ -650,6 +650,61 @@ describe('vue usePagination', () => {
     expect(page.value).toBe(2);
     expect(data.value).toEqual([4, 5, 6, 7]);
     expect(total.value).toBe(totalPrev - 1);
+  });
+
+  test('should refresh current page and will not prefetch when close cache', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list-short', {
+        localCache: 0,
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { data, page, pageSize, replace, remove, onSuccess, onFetchSuccess, insert } = usePagination(getter, {
+      data: res => res.list,
+      total: res => res.total,
+      initialPage: 2,
+      initialPageSize: 4
+    });
+
+    const mockFn = jest.fn();
+    onFetchSuccess(mockFn);
+    await untilCbCalled(onSuccess);
+
+    // 删除数据
+    remove(1);
+    setMockShortListData(data => {
+      // 模拟数据中同步删除，这样fetch的数据校验才正常
+      data.splice(5, 1);
+      return data;
+    });
+
+    await untilCbCalled(onSuccess);
+    expect(data.value).toEqual([4, 6, 7, 8]);
+    // 当前页缓存要保持一致
+    let cache = queryCache(getter(page.value, pageSize.value));
+    expect(cache).toBeUndefined();
+
+    // 插入数据，插入时不会刷新数据
+    insert(100, 0);
+    setMockShortListData(data => {
+      data.splice(4, 0, 100);
+      return data;
+    });
+    expect(data.value).toEqual([100, 4, 6, 7]);
+
+    // 替换数据
+    replace(200, 1);
+    setMockShortListData(data => {
+      data.splice(5, 1, 200);
+      return data;
+    });
+    expect(data.value).toEqual([100, 200, 6, 7]);
+    // method没有设置缓存时，不会触发数据拉取
+    expect(mockFn).not.toBeCalled();
   });
 
   // 下拉加载更多相关

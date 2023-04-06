@@ -19,7 +19,6 @@ type ArgGetter<R, LD> = (data: R) => LD | undefined;
 interface PaginationConfig<R, LD, WS> {
   preloadPreviousPage?: boolean;
   preloadNextPage?: boolean;
-  pageCount?: ArgGetter<R, number>;
   total?: ArgGetter<R, number>;
   data?: ArgGetter<R, LD>;
   initialData?: WatcherHookConfig<any, any, any, any, any, any, any>['initialData'];
@@ -28,6 +27,7 @@ interface PaginationConfig<R, LD, WS> {
   initialPageSize?: number;
   debounce?: WatcherHookConfig<any, any, any, any, any, any, any>['debounce'];
   watchingStates?: WS;
+  immediate?: boolean;
 }
 
 // =========================

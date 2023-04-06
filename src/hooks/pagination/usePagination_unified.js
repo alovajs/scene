@@ -4,6 +4,8 @@ import {
   createSyncOnceRunner,
   filterItem,
   forEach,
+  getLocalCacheConfigParam,
+  getTime,
   includes,
   isArray,
   len,
@@ -18,6 +20,11 @@ import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
 import createSnapshotMethodsManager from './createSnapshotMethodsManager';
 
 const paginationAssert = createAssert('usePagination');
+const indexAssert = (index, rawData) =>
+  paginationAssert(
+    typeof index === 'number' && index < len(rawData),
+    'index must be a number that less than list length'
+  );
 export default function (
   handler,
   {
@@ -56,7 +63,10 @@ export default function (
 
   const listDataGetter = rawData => {
     try {
-      paginationAssert(rawData && isArray(dataGetter(rawData)), 'Got wrong array, did you return the correct array of list in `data` function');
+      paginationAssert(
+        rawData && isArray(dataGetter(rawData)),
+        'Got wrong array, did you return the correct array of list in `data` function'
+      );
     } catch (error) {
       console.error(error);
       throw error;
@@ -92,28 +102,36 @@ export default function (
     const totalVal = _$(total);
     return totalVal !== undefinedValue ? Math.ceil(totalVal / _$(pageSize)) : undefinedValue;
   }, _expBatch$(pageSize, total));
-  const canPreload = (preloadPage, isNextPage = falseValue) => {
+  const canPreload = (preloadPage, fetchMethod, isNextPage = falseValue) => {
+    const { e: expireMilliseconds } = getLocalCacheConfigParam(fetchMethod);
+    // 如果缓存时间小于等于当前时间，表示没有设置缓存，此时不再预拉取数据
+    if (expireMilliseconds <= getTime()) {
+      return;
+    }
+
     const pageCountVal = _$(pageCount);
     const exceedPageCount = pageCountVal
       ? preloadPage > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-        ? len(listDataGetter(_$(states.data))) < _$(pageSize)
-        : falseValue;
+      ? len(listDataGetter(_$(states.data))) < _$(pageSize)
+      : falseValue;
     return preloadPage > 0 && !exceedPageCount;
   };
 
   // 预加载下一页数据
   const fetchNextPage = (force = falseValue) => {
     const nextPage = _$(page) + 1;
-    if (preloadNextPage && canPreload(nextPage, trueValue)) {
-      fetch(getHandlerMethod(nextPage), force);
+    const fetchMethod = getHandlerMethod(nextPage);
+    if (preloadNextPage && canPreload(nextPage, fetchMethod, trueValue)) {
+      fetch(fetchMethod, force);
     }
   };
   // 预加载上一页数据
   const fetchPreviousPage = () => {
     const prevPage = _$(page) - 1;
-    if (preloadPreviousPage && canPreload(prevPage)) {
-      fetch(getHandlerMethod(prevPage));
+    const fetchMethod = getHandlerMethod(prevPage);
+    if (preloadPreviousPage && canPreload(prevPage, fetchMethod)) {
+      fetch(fetchMethod);
     }
   };
   // 如果返回的数据小于pageSize了，则认定为最后一页了
@@ -134,9 +152,12 @@ export default function (
     const snapShotItem = getSnapshotMethods(_$(page));
     snapShotItem &&
       setCache(snapShotItem.entity, rawData => {
-        const cachedListData = listDataGetter(rawData) || [];
-        splice(cachedListData, 0, len(cachedListData), ..._$(data));
-        return rawData;
+        // 当关闭缓存时，rawData为undefined
+        if (rawData) {
+          const cachedListData = listDataGetter(rawData) || [];
+          splice(cachedListData, 0, len(cachedListData), ..._$(data));
+          return rawData;
+        }
       });
   };
 
@@ -281,7 +302,6 @@ export default function (
 
   /**
    * 插入一条数据
-   * onBefore、插入操作、onAfter三个都需要分别顺序异步执行，因为需要等待视图更新再执行
    * @param item 插入项
    * @param config 插入配置
    */
@@ -306,12 +326,12 @@ export default function (
     const snapShotItem = getSnapshotMethods(nextPage);
     snapShotItem &&
       setCache(snapShotItem.entity, rawData => {
-        try {
+        if (rawData) {
           const cachedListData = listDataGetter(rawData) || [];
           cachedListData.unshift(popItem);
           cachedListData.pop();
           return rawData;
-        } catch (error) { }
+        }
       });
 
     // 插入项后也需要让缓存失效，以免不同条件下缓存未更新
@@ -323,17 +343,18 @@ export default function (
    * @param index 移除的索引
    */
   const remove = index => {
+    indexAssert(index, _$(data));
     const pageVal = _$(page);
     const nextPage = pageVal + 1;
     const snapShotItem = getSnapshotMethods(nextPage);
     snapShotItem &&
-      setCache(snapShotItem.entity, data => {
-        try {
-          const cachedListData = listDataGetter(data);
+      setCache(snapShotItem.entity, rawData => {
+        if (rawData) {
+          const cachedListData = listDataGetter(rawData);
           // 从下一页列表的头部开始取补位数据
           fillingItem = shift(cachedListData || []);
-          return data;
-        } catch (error) { }
+          return rawData;
+        }
       });
 
     const isLastPageVal = _$(isLastPage);
@@ -380,10 +401,7 @@ export default function (
    * @param {number} index 插入位置
    */
   const replace = (item, index) => {
-    paginationAssert(
-      typeof index === 'number' && index < len(_$(data)),
-      'index must be a number that less than list length'
-    );
+    indexAssert(index, _$(data));
     upd$(data, rawd => {
       splice(rawd, index, 1, item);
       return rawd;
