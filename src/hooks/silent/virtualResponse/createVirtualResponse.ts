@@ -1,5 +1,5 @@
-import { defineProperty, isArray, isPlainOrCustomObject, newInstance, uuid, walkObject } from '../../../helper';
-import { nullValue, ObjectCls, STR_VALUE_OF, undefinedValue } from '../../../helper/variables';
+import { defineProperty, isArray, isPlainOrCustomObject, newInstance, uuid, walkObject } from '@/helper';
+import { nullValue, ObjectCls, STR_VALUE_OF, undefinedValue } from '@/helper/variables';
 import Null from './Null';
 import { stringifyWithThis } from './stringifyVData';
 import Undefined from './Undefined';

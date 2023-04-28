@@ -1,7 +1,7 @@
+import { defineProperty, forEach, objectKeys } from '@/helper';
+import { symbolToStringTag, undefinedValue } from '@/helper/variables';
 import { AlovaCompleteEvent, Method } from 'alova';
-import { SilentMethod, SQHookBehavior } from '../../../typings/general';
-import { defineProperty, forEach, objectKeys } from '../../helper';
-import { symbolToStringTag, undefinedValue } from '../../helper/variables';
+import { SilentMethod, SQHookBehavior } from '~/typings/general';
 
 /**
  * 创建统一的事件对象，它将承载以下事件

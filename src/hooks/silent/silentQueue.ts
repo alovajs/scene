@@ -1,5 +1,3 @@
-import { Method, setCache, updateState, UpdateStateCollection } from 'alova';
-import { RetryErrorDetailed, SilentQueueMap } from '../../../typings/general';
 import {
   forEach,
   instanceOf,
@@ -17,7 +15,7 @@ import {
   shift,
   sloughConfig,
   walkObject
-} from '../../helper';
+} from '@/helper';
 import {
   BEHAVIOR_SILENT,
   DEFAUT_QUEUE_NAME,
@@ -25,7 +23,9 @@ import {
   RegExpCls,
   trueValue,
   undefinedValue
-} from '../../helper/variables';
+} from '@/helper/variables';
+import { Method, setCache, updateState, UpdateStateCollection } from 'alova';
+import { RetryErrorDetailed, SilentQueueMap } from '~/typings/general';
 import createSQEvent from './createSQEvent';
 import {
   beforeHandlers,

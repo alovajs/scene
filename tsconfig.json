@@ -22,11 +22,21 @@
     "removeComments": false,
     "esModuleInterop": true,
     "jsx": "react",
-    "allowJs": true
+    "allowJs": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"],
+      "~/*": ["./*"],
+      "#/*": ["test/*"]
+    }
   },
-  "paths": {
-    "@/*": ["src/*"]
-  },
-  "include": ["src/**/*.ts", "typings/*.d.ts", "packages/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "typings/*.d.ts",
+    "packages/**/*.ts",
+    "packages/**/*.js",
+    "packages/**/*.tsx"
+  ],
   "exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]
 }

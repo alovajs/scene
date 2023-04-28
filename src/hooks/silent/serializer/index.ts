@@ -1,4 +1,4 @@
-import { DataSerializer } from '../../../../typings/general';
+import { DataSerializer } from '~/typings/general';
 import dateSerializer from './date';
 import regexpSerializer from './regexp';
 

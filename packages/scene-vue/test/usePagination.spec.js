@@ -1,13 +1,8 @@
+import { mockRequestAdapter, setMockListData, setMockListWithSearchData, setMockShortListData } from '#/mockData';
+import { untilCbCalled } from '#/utils';
 import { createAlova, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
-import {
-  mockRequestAdapter,
-  setMockListData,
-  setMockListWithSearchData,
-  setMockShortListData
-} from '../../../test/mockData';
-import { untilCbCalled } from '../../../test/utils';
 import { usePagination } from '../index';
 
 // reset data
@@ -314,7 +309,7 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout);
     page.value++;
 
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([6, 7, 8, 9]); // 有两项被挤到后面一页了
     expect(total.value).toBe(302);
 
@@ -323,7 +318,7 @@ describe('vue usePagination', () => {
 
     // 再次返回前一页，移除的数据不应该存在
     page.value--;
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([4, 1000, 1001, 5]);
   });
 
@@ -532,7 +527,7 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout);
     page.value++;
 
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([10, 11]); // 有两项用于填补前一页数据了
     expect(total.value).toBe(298);
 
@@ -541,7 +536,7 @@ describe('vue usePagination', () => {
 
     // 再次返回前一页，移除的数据不应该存在
     page.value--;
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([4, 7, 8, 9]);
   });
 

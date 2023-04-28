@@ -1,3 +1,5 @@
+import { createAssert, isArray } from '@/helper';
+import { DEFAUT_QUEUE_NAME } from '@/helper/variables';
 import { Alova } from 'alova';
 import {
   BeforeSilentSubmitHandler,
@@ -6,9 +8,7 @@ import {
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
   SilentSubmitSuccessHandler
-} from '../../../typings/general';
-import { createAssert, isArray } from '../../helper';
-import { DEFAUT_QUEUE_NAME } from '../../helper/variables';
+} from '~/typings/general';
 
 /**
  * 全局的虚拟数据收集数组

@@ -33,7 +33,7 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
  * 创建同步多次调用只在异步执行一次的执行器
  */
 export const createSyncOnceRunner = (delay = 0) => {
-  let timer: NodeJS.Timer;
+  let timer: NodeJS.Timer | undefined = undefinedValue;
 
   /**
    * 执行多次调用此函数将异步执行一次
@@ -258,14 +258,16 @@ export const getLocalCacheConfigParam = <S, E, R, T, RC, RE, RH>(
   let expire = 0;
   let storage = falseValue;
   let tag: undefined | string = undefinedValue;
-  if (isNumber(_localCache) || instanceOf(_localCache, Date)) {
-    expire = getCacheExpireTs(_localCache);
-  } else {
-    const { mode = MEMORY, expire: configExpire = 0, tag: configTag } = _localCache || {};
-    cacheMode = mode;
-    expire = getCacheExpireTs(configExpire);
-    storage = [STORAGE_PLACEHOLDER, STORAGE_RESTORE].includes(mode);
-    tag = configTag ? configTag.toString() : undefinedValue;
+  if (!isFn(_localCache)) {
+    if (isNumber(_localCache) || instanceOf(_localCache, Date)) {
+      expire = getCacheExpireTs(_localCache);
+    } else {
+      const { mode = MEMORY, expire: configExpire = 0, tag: configTag } = _localCache || {};
+      cacheMode = mode;
+      expire = getCacheExpireTs(configExpire);
+      storage = [STORAGE_PLACEHOLDER, STORAGE_RESTORE].includes(mode);
+      tag = configTag ? configTag.toString() : undefinedValue;
+    }
   }
   return {
     e: expire,

@@ -1,4 +1,4 @@
-import { trueValue } from '../../../helper/variables';
+import { trueValue } from '@/helper/variables';
 import stringifyVData from './stringifyVData';
 
 /**

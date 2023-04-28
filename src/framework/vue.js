@@ -1,6 +1,6 @@
+import { map } from '@/helper';
+import { trueValue } from '@/helper/variables';
 import { computed, ref, watch as vueWatch } from 'vue';
-import { map } from '../helper';
-import { trueValue } from '../helper/variables';
 
 /**
  * 创建状态
@@ -11,10 +11,10 @@ export const $ = ref;
 
 /**
  * 创建计算属性
- * @param data 创建计算属性的数据
+ * @param getter 计算属性回调
  * @returns {FrameworkState}
  */
-export const $$ = computed;
+export const $$ = (getter, _) => computed(getter, _);
 
 /**
  * 脱水普通状态、计算属性或alova导出的状态，返回状态原始值
@@ -48,12 +48,11 @@ export const upd$ = (state, newData) => {
 
 /**
  * 监听状态触发回调
- * @param {import('vue').WatchSource} states 监听状态
+ * @param states 监听状态
  * @param {Function} cb 回调函数
  */
 export const watch = (states, cb) => {
   vueWatch(states, cb, {
-    flush: 'sync',
     deep: trueValue
   });
 };

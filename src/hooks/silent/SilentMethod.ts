@@ -1,3 +1,5 @@
+import { instanceOf, isArray, splice, uuid } from '@/helper';
+import { falseValue, undefinedValue } from '@/helper/variables';
 import { matchSnapshotMethod, Method, MethodFilter, MethodMatcher } from 'alova';
 import {
   FallbackHandler,
@@ -5,9 +7,7 @@ import {
   SilentMethod as SilentMethodInterface,
   SilentQueueMap,
   SQHookBehavior
-} from '../../../typings/general';
-import { instanceOf, isArray, splice, uuid } from '../../helper';
-import { falseValue, undefinedValue } from '../../helper/variables';
+} from '~/typings/general';
 import { silentAssert } from './globalVariables';
 import { silentQueueMap } from './silentQueue';
 import { persistSilentMethod, spliceStorageSilentMethod } from './storage/silentMethodStorage';

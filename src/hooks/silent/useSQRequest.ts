@@ -1,5 +1,5 @@
 import { AlovaMethodHandler, useRequest } from 'alova';
-import { SQRequestHookConfig } from '../../../typings/general';
+import { SQRequestHookConfig } from '~/typings/general';
 import createSilentQueueMiddlewares from './createSilentQueueMiddlewares';
 
 export default function <S, E, R, T, RC, RE, RH>(

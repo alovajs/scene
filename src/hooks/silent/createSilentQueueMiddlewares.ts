@@ -1,11 +1,3 @@
-import { AlovaMethodHandler, AlovaMiddleware, Method } from 'alova';
-import {
-  BeforePushQueueHandler,
-  FallbackHandler,
-  PushedQueueHandler,
-  RetryHandler,
-  SQHookConfig
-} from '../../../typings/general';
 import {
   getConfig,
   isFn,
@@ -19,7 +11,7 @@ import {
   runArgsHandler,
   sloughConfig,
   walkObject
-} from '../../helper';
+} from '@/helper';
 import {
   BEHAVIOR_QUEUE,
   BEHAVIOR_SILENT,
@@ -28,7 +20,15 @@ import {
   PromiseCls,
   trueValue,
   undefinedValue
-} from '../../helper/variables';
+} from '@/helper/variables';
+import { AlovaMethodHandler, AlovaMiddleware, Method } from 'alova';
+import {
+  BeforePushQueueHandler,
+  FallbackHandler,
+  PushedQueueHandler,
+  RetryHandler,
+  SQHookConfig
+} from '~/typings/general';
 import createSQEvent from './createSQEvent';
 import { setVDataIdCollectBasket, silentAssert, vDataIdCollectBasket } from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';

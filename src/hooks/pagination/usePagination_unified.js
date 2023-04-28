@@ -1,4 +1,3 @@
-import { getMethodKey, invalidateCache, setCache, useFetcher, useWatcher } from 'alova';
 import {
   createAssert,
   createSyncOnceRunner,
@@ -15,8 +14,9 @@ import {
   pushItem,
   shift,
   splice
-} from '../../helper';
-import { falseValue, trueValue, undefinedValue } from '../../helper/variables';
+} from '@/helper';
+import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
+import { getMethodKey, invalidateCache, setCache, useFetcher, useWatcher } from 'alova';
 import createSnapshotMethodsManager from './createSnapshotMethodsManager';
 
 const paginationAssert = createAssert('usePagination');
