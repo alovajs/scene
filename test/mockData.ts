@@ -38,7 +38,7 @@ const mocks = defineMock({
     page = Number(page);
     pageSize = Number(pageSize);
     const start = (page - 1) * pageSize;
-    const filteredListData = mockListData.filter((num: number) => num >= min && num <= max);
+    const filteredListData = mockListData.filter((num: number) => num >= Number(min) && num <= Number(max));
     return {
       total: filteredListData.length,
       list: filteredListData.slice(start, start + pageSize)
@@ -103,7 +103,7 @@ const mocks = defineMock({
       detailErrorId = id;
     }
 
-    if (detailErrorTimes < failTimes) {
+    if (detailErrorTimes < Number(failTimes)) {
       detailErrorTimes++;
       return {
         status: 403,
@@ -127,6 +127,15 @@ const mocks = defineMock({
       id: 10,
       ...data
     };
+  },
+  '[POST]/captcha': ({ data }) => {
+    if (data.error) {
+      return {
+        status: 500,
+        statusText: 'server error'
+      };
+    }
+    return 'success';
   }
 });
 

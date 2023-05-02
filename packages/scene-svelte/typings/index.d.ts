@@ -10,18 +10,20 @@ import {
 import { Readable, Writable } from 'svelte/store';
 import {
   BeforeSilentSubmitHandler,
+  CaptchaRequestHookConfig,
+  CaptchaRequestReturnType,
   IsUnknown,
   OffEventCallback,
-  PaginationConfig,
+  PaginationHookConfig,
+  SQHookReturnType,
+  SQRequestHookConfig,
   SilentFactoryBootOptions,
   SilentMethod,
   SilentQueueMap,
   SilentSubmitBootHandler,
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
-  SilentSubmitSuccessHandler,
-  SQHookReturnType,
-  SQRequestHookConfig
+  SilentSubmitSuccessHandler
 } from './general';
 
 interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
@@ -109,7 +111,7 @@ declare function usePagination<
   WS extends Readable<any>[]
 >(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
-  config?: PaginationConfig<R, LD, WS>
+  config?: PaginationHookConfig<R, LD, WS>
 ): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;
 
 /**
@@ -142,3 +144,11 @@ declare function getSilentMethod(
 ): SilentMethod | undefined;
 declare const updateStateEffect: typeof updateState;
 declare const silentQueueMap: SilentQueueMap;
+
+/**
+ * 验证码发送场景的请求hook
+ */
+declare function useCaptcha<S, E, R, T, RC, RE, RH>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  config?: CaptchaRequestHookConfig<S, E, R, T, RC, RE, RH>
+): CaptchaRequestReturnType<S, E, R, T, RC, RE, RH>;

@@ -1,6 +1,7 @@
 import {
   Alova,
   AlovaCompleteEvent,
+  ExportedType,
   Method,
   MethodMatcher,
   RequestHookConfig,
@@ -16,7 +17,7 @@ type IsUnknown<T, P, N> = 1 extends 1 & T ? P : N;
 
 /** @description usePagination相关 */
 type ArgGetter<R, LD> = (data: R) => LD | undefined;
-interface PaginationConfig<R, LD, WS> {
+interface PaginationHookConfig<R, LD, WS> {
   preloadPreviousPage?: boolean;
   preloadNextPage?: boolean;
   total?: ArgGetter<R, number>;
@@ -427,3 +428,17 @@ type SilentSubmitErrorHandler = (event: GlobalSQErrorEvent) => void;
 type SilentSubmitFailHandler = (event: GlobalSQFailEvent) => void;
 type OffEventCallback = () => void;
 type SilentQueueMap = Record<string, SilentMethod[]>;
+
+/**
+ * useCaptcha配置
+ */
+type CaptchaRequestHookConfig<S, E, R, T, RC, RE, RH> = {
+  initialCountdown?: number;
+} & Omit<RequestHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
+
+/**
+ * useCaptcha返回值
+ */
+type CaptchaRequestReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+  countdown: ExportedType<number, S>;
+};
