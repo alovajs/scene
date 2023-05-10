@@ -1,14 +1,14 @@
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
-import { useCaptcha } from '../index';
+import { useCaptcha } from '..';
 
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
   statesHook: VueHook,
   requestAdapter: mockRequestAdapter
 });
-describe('useCaptcha', () => {
+describe('vue => useCaptcha', () => {
   test('should throw error when initialCountdown is less than 0', () => {
     const poster = alovaInst.Post('/captcha');
     expect(() => {
@@ -24,7 +24,7 @@ describe('useCaptcha', () => {
   });
 
   test('allow send captcha when countdown is 0', async () => {
-    const poster = alovaInst.Post('/captcha');
+    const poster = () => alovaInst.Post('/captcha');
     const { loading, countdown, data, send } = useCaptcha(poster, {
       initialCountdown: 5
     }) as any;

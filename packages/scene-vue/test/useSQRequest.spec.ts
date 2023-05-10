@@ -39,8 +39,7 @@ beforeAll(() => {
     alova: alovaInst
   });
 });
-// jest.setTimeout(1000000);
-describe('useSQRequest', () => {
+describe('vue => useSQRequest', () => {
   test('request immediately with queue behavior', async () => {
     const queue = 'tb1';
     const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');

@@ -1,7 +1,8 @@
-import { $, $$, _$, _exp$, _expBatch$, upd$, watch } from '@/framework/svelte';
+import { $, $$, upd$, watch, _$, _exp$, _expBatch$ } from '@/framework/svelte';
 import usePagination_unified from '@/hooks/pagination/usePagination_unified';
 import { default as useSQRequest_unified } from '@/hooks/silent/useSQRequest';
 import { default as useCaptcha_unified } from '@/hooks/useCaptcha';
+import { default as useForm_unified } from '@/hooks/useForm';
 
 export const usePagination = (handler, config = {}) =>
   usePagination_unified(handler, config, $, $$, upd$, _$, _exp$, _expBatch$, watch);
@@ -26,5 +27,7 @@ export { default as stringifyVData } from '@/hooks/silent/virtualResponse/string
 export { default as updateStateEffect } from '@/hooks/silent/virtualResponse/updateStateEffect';
 
 // 导出useCaptcha
-export const useCaptcha = (handler, config = {}) =>
-  useCaptcha_unified(handler, config, $, upd$, _$, _exp$);
+export const useCaptcha = (handler, config = {}) => useCaptcha_unified(handler, config, $, upd$, _$, _exp$);
+
+// 导出useForm
+export const useForm = (handler, config = {}) => useForm_unified(handler, config, $, _$, _exp$, upd$, watch);

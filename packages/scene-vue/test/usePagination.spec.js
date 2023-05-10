@@ -15,7 +15,7 @@ const createMockAlova = () =>
     statesHook: VueHook,
     requestAdapter: mockRequestAdapter
   });
-describe('vue usePagination', () => {
+describe('vue => usePagination', () => {
   // 分页相关测试
   test('load paginated data and change page/pageSize', async () => {
     const alovaInst = createMockAlova();

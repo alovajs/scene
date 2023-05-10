@@ -161,7 +161,8 @@ export default {
     // '**/packages/scene-vue/test/functions.spec.ts(x)?'
     // '**/packages/scene-vue/test/usePagination.spec.js(x)?'
     // '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
-    '**/packages/scene-vue/test/useCaptcha.spec.ts(x)?'
+    // '**/packages/scene-vue/test/useCaptcha.spec.ts(x)?'
+    '**/packages/scene-vue/test/useForm.spec.ts(x)?'
     // react
     // '**/packages/scene-react/test/functions.spec.ts(x)?'
     // svelte

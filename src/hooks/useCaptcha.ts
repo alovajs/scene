@@ -1,14 +1,14 @@
-import { T$, T_$, T_exp$, Tupd$ } from '@/framework/type';
+import { T$, Tupd$, T_$, T_exp$ } from '@/framework/type';
 import { buildErrorMsg, createAssert, newInstance } from '@/helper';
-import { PromiseCls, falseValue, undefinedValue } from '@/helper/variables';
-import { AlovaMethodHandler, useRequest } from 'alova';
-import { CaptchaRequestHookConfig } from '~/typings/general';
+import { falseValue, PromiseCls, undefinedValue } from '@/helper/variables';
+import { AlovaMethodHandler, Method, useRequest } from 'alova';
+import { CaptchaHookConfig } from '~/typings/general';
 
 const hookPrefix = 'useCaptcha';
 const assert = createAssert(hookPrefix);
 export default <S, E, R, T, RC, RE, RH>(
-  handler: AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config: CaptchaRequestHookConfig<S, E, R, T, RC, RE, RH>,
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  config: CaptchaHookConfig<S, E, R, T, RC, RE, RH>,
   $: T$,
   upd$: Tupd$,
   _$: T_$,

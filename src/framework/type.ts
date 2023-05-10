@@ -1,5 +1,9 @@
-interface FrameworkState<T> {}
-interface FrameworkExportedValue<T> {}
+export interface FrameworkState<T> {
+  [x: string]: T;
+}
+export interface FrameworkExportedValue<T> {
+  [x: string]: T;
+}
 
 /**
  * 创建状态
@@ -48,4 +52,4 @@ export type Tupd$ = <T>(state: FrameworkState<T>, cb: T | ((originalValue: T) =>
  * @param states 监听状态
  * @param {Function} cb 回调函数
  */
-export type watch = (states: FrameworkState<any>[], cb: () => void) => void;
+export type Twatch = (states: FrameworkState<any>[], cb: () => void) => void;

@@ -1,4 +1,4 @@
-import { map } from '@/helper';
+import { isFn, map } from '@/helper';
 import { trueValue } from '@/helper/variables';
 import { computed, ref, watch as vueWatch } from 'vue';
 
@@ -43,7 +43,7 @@ export const _expBatch$ = (...states) => map(states, s => _exp$(s));
  * @param newData 新状态值
  */
 export const upd$ = (state, newData) => {
-  state.value = typeof newData === 'function' ? newData(state.value) : newData;
+  state.value = isFn(newData) ? newData(state.value) : newData;
 };
 
 /**

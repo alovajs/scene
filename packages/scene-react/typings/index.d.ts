@@ -10,20 +10,24 @@ import {
 import { DependencyList, Dispatch, SetStateAction } from 'react';
 import {
   BeforeSilentSubmitHandler,
-  CaptchaRequestHookConfig,
-  CaptchaRequestReturnType,
+  CaptchaHookConfig,
+  CaptchaReturnType,
+  FormHookConfig,
+  FormReturnType,
   IsUnknown,
   OffEventCallback,
   PaginationHookConfig,
-  SQHookReturnType,
-  SQRequestHookConfig,
+  RetriableHookConfig,
+  RetriableReturnType,
   SilentFactoryBootOptions,
   SilentMethod,
   SilentQueueMap,
   SilentSubmitBootHandler,
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
-  SilentSubmitSuccessHandler
+  SilentSubmitSuccessHandler,
+  SQHookReturnType,
+  SQRequestHookConfig
 } from './general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
@@ -137,8 +141,44 @@ declare const silentQueueMap: SilentQueueMap;
 
 /**
  * 验证码发送场景的请求hook
+ * @param handler method实例或获取函数
+ * @param 配置参数
+ * @return useCaptcha相关数据和操作函数
  */
 declare function useCaptcha<S, E, R, T, RC, RE, RH>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config?: CaptchaRequestHookConfig<S, E, R, T, RC, RE, RH>
-): CaptchaRequestReturnType<S, E, R, T, RC, RE, RH>;
+  config?: CaptchaHookConfig<S, E, R, T, RC, RE, RH>
+): CaptchaReturnType<S, E, R, T, RC, RE, RH>;
+
+/**
+ * useForm
+ * 表单的提交hook，具有草稿功能，以及多页表单的数据同步功能
+ *
+ * 适用场景：
+ * 1. 单表单/多表单提交、草稿数据持久化、数据更新和重置
+ * 2. 条件搜索输入项，可持久化搜索条件，可立即发送表单数据
+ *
+ * @param handler method获取函数，只需要获取同步数据时可传id
+ * @param config 配置参数
+ * @return useForm相关数据和操作函数
+ */
+declare function useForm<S, E, R, T, RC, RE, RH, F = any>(
+  handler: FormHookHandler<S, E, R, T, RC, RE, RH, F> | NonNullable<FormHookConfig<S, E, R, T, RC, RE, RH, F>['id']>,
+  config?: FormHookConfig<S, E, R, T, RC, RE, RH, F>
+): FormReturnType<S, E, R, T, RC, RE, RH, F>;
+
+/**
+ * useRetriableRequest
+ * 具有重试功能的请求hook
+ * 适用场景：
+ * 1. 请求失败重试、或自定义规则重试
+ * 2. 手动停止/启动重试
+ *
+ * @param handler method实例或获取函数
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useRetriableRequest<S, E, R, T, RC, RE, RH>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  config?: RetriableHookConfig<S, E, R, T, RC, RE, RH>
+): RetriableReturnType<S, E, R, T, RC, RE, RH>;

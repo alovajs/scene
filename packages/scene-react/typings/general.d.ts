@@ -151,12 +151,12 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   readonly backoff?: {
     /**
      * 再次请求的延迟时间，单位毫秒
-     * @default {1000}
+     * @default 1000
      */
     delay?: number;
     /**
      * 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒
-     * @default {0}
+     * @default 0
      */
     multiplier?: number;
 
@@ -432,13 +432,94 @@ type SilentQueueMap = Record<string, SilentMethod[]>;
 /**
  * useCaptcha配置
  */
-type CaptchaRequestHookConfig<S, E, R, T, RC, RE, RH> = {
+type CaptchaHookConfig<S, E, R, T, RC, RE, RH> = {
+  /**
+   * 初始倒计时，当验证码发送成功时将会以此数据来开始倒计时
+   * @default 60
+   */
   initialCountdown?: number;
-} & Omit<RequestHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
 
 /**
  * useCaptcha返回值
  */
-type CaptchaRequestReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+type CaptchaReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+  /**
+   * 当前倒计时，每秒-1，当倒计时到0时可再次发送验证码
+   */
   countdown: ExportedType<number, S>;
+};
+
+/**
+ * useForm的handler函数类型
+ */
+type FormHookHandler<S, E, R, T, RC, RE, RH, F> = (form: F, ...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
+/**
+ * useForm配置
+ */
+type FormHookConfig<S, E, R, T, RC, RE, RH, F> = {
+  /**
+   * 初始表单数据
+   */
+  initialForm?: F;
+
+  /**
+   * form id，相同id的data数据是同一份引用，可以用于在多页表单时共用同一份表单数据
+   * 单页表单不需要指定id
+   */
+  id?: string | number;
+
+  /**
+   * 是否持久化保存数据，设置为true后将实时持久化未提交的数据
+   * @default false
+   */
+  store?: boolean;
+
+  /**
+   * 提交后重置数据
+   * @default false
+   */
+  resetAfterSubmit?: boolean;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+
+type RestoreHandler = () => void;
+/**
+ * useForm返回值
+ */
+type FormReturnType<S, E, R, T, RC, RE, RH, F> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+  /**
+   * 表单数据
+   */
+  form: ExportedType<F, S>;
+
+  /**
+   * 持久化数据恢复事件绑定，数据恢复后触发
+   */
+  onRestore(handler: RestoreHandler): void;
+
+  /**
+   * 更新表单数据，可传入
+   * @param newForm 新表单数据
+   */
+  updateForm(newForm: F | ((oldForm: F) => F)): void;
+
+  /**
+   * 重置为初始化数据，如果有持久化数据则清空
+   */
+  reset(): void;
+};
+
+/**
+ * useRetriableRequest配置
+ */
+type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+
+/**
+ * useRetriableRequest返回值
+ */
+type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+  /**
+   * 停止重试，只在重试中调用有效
+   */
+  stop(): void;
 };

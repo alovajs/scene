@@ -17,6 +17,7 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   shift = <T>(ary: T[]) => ary.shift(),
   splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) => ary.splice(start, deleteCount, ...items),
   getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.config,
+  getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.context,
   JSONStringify = (
     value: any,
     replacer?: ((this: any, key: string, value: any) => any) | undefined,

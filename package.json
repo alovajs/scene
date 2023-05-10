@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "request strategy with alova.js",
   "homepage": "https://github.com/alovajs/scene",
   "private": true,
@@ -28,7 +28,7 @@
     "url": "https://github.com/alovajs/scene/issues"
   },
   "devDependencies": {
-    "@alova/mock": "^1.0.8",
+    "@alova/mock": "^1.4.0",
     "@babel/core": "^7.18.2",
     "@babel/preset-env": "^7.18.2",
     "@commitlint/config-conventional": "^17.4.4",
@@ -45,7 +45,7 @@
     "@types/testing-library__jest-dom": "^5.14.5",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "alova": "^2.2.0",
+    "alova": "^2.3.1",
     "babel-jest": "^29.2.2",
     "commitizen": "^4.3.0",
     "commitlint": "^17.5.1",

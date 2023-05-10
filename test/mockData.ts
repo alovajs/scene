@@ -128,7 +128,7 @@ const mocks = defineMock({
       ...data
     };
   },
-  '[POST]/captcha': ({ data }) => {
+  '[POST]/captcha': ({ data = {} }) => {
     if (data.error) {
       return {
         status: 500,
@@ -136,6 +136,18 @@ const mocks = defineMock({
       };
     }
     return 'success';
+  },
+  '[POST]/saveData': ({ data = {} }) => {
+    if (data.error) {
+      return {
+        status: 500,
+        statusText: 'server error'
+      };
+    }
+    return {
+      code: 200,
+      data
+    };
   }
 });
 
