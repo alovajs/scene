@@ -1,4 +1,5 @@
 import {
+  delayWithBackoff,
   forEach,
   instanceOf,
   isObject,
@@ -16,6 +17,7 @@ import {
   sloughConfig,
   walkObject
 } from '@/helper';
+import createHookEvent from '@/helper/createHookEvent';
 import {
   BEHAVIOR_SILENT,
   DEFAUT_QUEUE_NAME,
@@ -26,7 +28,6 @@ import {
 } from '@/helper/variables';
 import { Method, setCache, updateState, UpdateStateCollection } from 'alova';
 import { RetryErrorDetailed, SilentQueueMap } from '~/typings/general';
-import createSQEvent from './createSQEvent';
 import {
   beforeHandlers,
   errorHandlers,
@@ -192,7 +193,7 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
     } = silentMethodInstance;
 
     // 触发请求前事件
-    runArgsHandler(beforeHandlers, createSQEvent(0, behavior, entity, silentMethodInstance, queueName, retryTimes));
+    runArgsHandler(beforeHandlers, createHookEvent(0, entity, behavior, silentMethodInstance, queueName, retryTimes));
     promiseThen(
       entity.send(force),
       data => {
@@ -232,10 +233,10 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
           // 触发全局的成功事件
           runArgsHandler(
             successHandlers,
-            createSQEvent(
+            createHookEvent(
               1,
-              behavior,
               entity,
+              behavior,
               silentMethodInstance,
               queueName,
               retryTimes,
@@ -264,10 +265,10 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
           const runGlobalErrorEvent = (retryDelay?: number) =>
             runArgsHandler(
               errorHandlers,
-              createSQEvent(
+              createHookEvent(
                 2,
-                behavior,
                 entity,
+                behavior,
                 silentMethodInstance,
                 queueName,
                 retryTimes,
@@ -295,37 +296,28 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
             (regRetryErrorMsg && regexpTest(regRetryErrorMsg, errorMsg));
           // 如果还有重试次数则进行重试
           if (retryTimes < maxRetryTimes && matchRetryError) {
-            let { delay = defaultBackoffDelay, multiplier = 1, startQuiver, endQuiver } = backoff;
-            let retryDelayFinally = delay * Math.pow(multiplier, retryTimes);
-            // 如果startQuiver或endQuiver有值，则需要增加指定范围的随机抖动值
-            if (startQuiver || endQuiver) {
-              startQuiver = startQuiver || 0;
-              endQuiver = endQuiver || 1;
-              retryDelayFinally +=
-                retryDelayFinally * startQuiver + Math.random() * retryDelayFinally * (endQuiver - startQuiver);
-              retryDelayFinally = Math.floor(retryDelayFinally); // 取整数延迟
-            }
-
-            runGlobalErrorEvent(retryDelayFinally);
+            // 需要使用下次的retryTimes来计算延迟时间，因此这边需+1
+            const retryDelay = delayWithBackoff(backoff, retryTimes + 1);
+            runGlobalErrorEvent(retryDelay);
             setTimeoutFn(
               () => {
                 silentMethodRequest(silentMethodInstance, ++retryTimes);
                 runArgsHandler(
                   retryHandlers,
-                  createSQEvent(
+                  createHookEvent(
                     8,
-                    behavior,
                     entity,
+                    behavior,
                     silentMethodInstance,
                     undefinedValue,
                     retryTimes,
-                    retryDelayFinally,
+                    retryDelay,
                     handlerArgs
                   )
                 );
               },
-              // 还有重试次数时使用timeout作为下次请求时间，否则是否nextRound
-              retryDelayFinally
+              // 还有重试次数时使用timeout作为下次请求时间
+              retryDelay
             );
           } else {
             setSilentFactoryStatus(2);
@@ -333,10 +325,10 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
             // 达到失败次数，或不匹配重试的错误信息时，触发失败回调
             runArgsHandler(
               fallbackHandlers,
-              createSQEvent(
+              createHookEvent(
                 6,
-                behavior,
                 entity,
+                behavior,
                 silentMethodInstance,
                 undefinedValue,
                 undefinedValue,
@@ -349,10 +341,10 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
             );
             runArgsHandler(
               failHandlers,
-              createSQEvent(
+              createHookEvent(
                 3,
-                behavior,
                 entity,
+                behavior,
                 silentMethodInstance,
                 queueName,
                 retryTimes,
@@ -375,15 +367,10 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
 
 /**
  * 将新的silentMethod实例放入队列中
- * @param methodInstance method实例
- * @param behavior 行为参数
- * @param fallbackHandlers 回退回调函数数组
- * @param retry 重试次数
- * @param timeout 请求超时时间，超时后将重试请求
- * @param nextRound 下一轮请求时间
- * @param resolveHandler promise.resolve函数
- * @param rejectHandler promise.reject函数
+ * @param silentMethodInstance silentMethod实例
+ * @param cache silentMethod是否有缓存
  * @param targetQueueName 目标队列名
+ * @param onBeforePush silentMethod实例push前的事件
  */
 export const pushNewSilentMethod2Queue = <S, E, R, T, RC, RE, RH>(
   silentMethodInstance: SilentMethod<S, E, R, T, RC, RE, RH>,

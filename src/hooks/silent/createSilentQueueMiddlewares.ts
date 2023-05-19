@@ -12,6 +12,7 @@ import {
   sloughConfig,
   walkObject
 } from '@/helper';
+import createHookEvent from '@/helper/createHookEvent';
 import {
   BEHAVIOR_QUEUE,
   BEHAVIOR_SILENT,
@@ -21,7 +22,7 @@ import {
   trueValue,
   undefinedValue
 } from '@/helper/variables';
-import { AlovaMethodHandler, AlovaMiddleware, Method } from 'alova';
+import { AlovaFrontMiddleware, AlovaMethodHandler, Method } from 'alova';
 import {
   BeforePushQueueHandler,
   FallbackHandler,
@@ -29,7 +30,6 @@ import {
   RetryHandler,
   SQHookConfig
 } from '~/typings/general';
-import createSQEvent from './createSQEvent';
 import { setVDataIdCollectBasket, silentAssert, vDataIdCollectBasket } from './globalVariables';
 import { MethodHandler, SilentMethod } from './SilentMethod';
 import { pushNewSilentMethod2Queue } from './silentQueue';
@@ -77,7 +77,7 @@ export default <S, E, R, T, RC, RE, RH>(
    * @param next 继续执行函数
    * @returns {Promise}
    */
-  const middleware: AlovaMiddleware<S, E, R, T, RC, RE, RH> = (
+  const middleware: AlovaFrontMiddleware<S, E, R, T, RC, RE, RH> = (
     { method, sendArgs, cachedResponse, update, decorateSuccess, decorateError, decorateComplete, config },
     next
   ) => {
@@ -95,10 +95,10 @@ export default <S, E, R, T, RC, RE, RH>(
         currentSilentMethod = silentMethodInstance;
       }
       handler(
-        createSQEvent(
+        createHookEvent(
           5,
-          behaviorFinally,
           method,
+          behaviorFinally,
           silentMethodInstance,
           undefinedValue,
           undefinedValue,
@@ -116,10 +116,10 @@ export default <S, E, R, T, RC, RE, RH>(
     });
     decorateError((handler, event) => {
       handler(
-        createSQEvent(
+        createHookEvent(
           6,
-          behaviorFinally,
           method,
+          behaviorFinally,
           silentMethodInstance,
           undefinedValue,
           undefinedValue,
@@ -133,10 +133,10 @@ export default <S, E, R, T, RC, RE, RH>(
     });
     decorateComplete((handler, event) => {
       handler(
-        createSQEvent(
+        createHookEvent(
           7,
-          behaviorFinally,
           method,
+          behaviorFinally,
           silentMethodInstance,
           undefinedValue,
           undefinedValue,
@@ -205,10 +205,10 @@ export default <S, E, R, T, RC, RE, RH>(
         // onBeforePush和onPushed事件是同步绑定的，因此需要异步执行入队列才能正常触发事件
         promiseThen(promiseResolve(), () => {
           const createPushEvent = () =>
-            createSQEvent(
+            createHookEvent(
               4,
-              behaviorFinally,
               method,
+              behaviorFinally,
               silentMethodInstance,
               undefinedValue,
               undefinedValue,

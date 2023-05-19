@@ -1,6 +1,8 @@
 import {
   Alova,
   AlovaCompleteEvent,
+  AlovaErrorEvent,
+  AlovaEvent,
   ExportedType,
   Method,
   MethodMatcher,
@@ -123,6 +125,35 @@ interface RetryErrorDetailed {
   message?: RegExp;
 }
 
+interface BackoffPolicy {
+  /**
+   * 再次请求的延迟时间，单位毫秒
+   * @default 1000
+   */
+  delay?: number;
+  /**
+   * 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒
+   * @default 0
+   */
+  multiplier?: number;
+
+  /**
+   * 延迟请求的抖动起始百分比值，范围为0-1
+   * 当只设置了startQuiver时，endQuiver默认为1
+   * 例如设置为0.5，它将在当前延迟时间上增加50%到100%的随机时间
+   * 如果endQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
+   */
+  startQuiver?: number;
+
+  /**
+   * 延迟请求的抖动结束百分比值，范围为0-1
+   * 当只设置了endQuiver时，startQuiver默认为0
+   * 例如设置为0.5，它将在当前延迟时间上增加0%到50%的随机时间
+   * 如果startQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
+   */
+  endQuiver?: number;
+}
+
 /**
  * silentMethod实例
  * 需要进入silentQueue的请求都将被包装成silentMethod实例，它将带有请求策略的各项参数
@@ -148,34 +179,7 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /** 重试次数 */
   readonly maxRetryTimes?: number;
   /** 避让策略 */
-  readonly backoff?: {
-    /**
-     * 再次请求的延迟时间，单位毫秒
-     * @default 1000
-     */
-    delay?: number;
-    /**
-     * 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒
-     * @default 0
-     */
-    multiplier?: number;
-
-    /**
-     * 延迟请求的抖动起始百分比值，范围为0-1
-     * 当只设置了startQuiver时，endQuiver默认为1
-     * 例如设置为0.5，它将在当前延迟时间上增加50%到100%的随机时间
-     * 如果endQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
-     */
-    startQuiver?: number;
-
-    /**
-     * 延迟请求的抖动结束百分比值，范围为0-1
-     * 当只设置了endQuiver时，startQuiver默认为0
-     * 例如设置为0.5，它将在当前延迟时间上增加0%到50%的随机时间
-     * 如果startQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
-     */
-    endQuiver?: number;
-  };
+  readonly backoff?: BackoffPolicy;
 
   /**
    * 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用
@@ -512,14 +516,56 @@ type FormReturnType<S, E, R, T, RC, RE, RH, F> = UseHookReturnType<S, E, R, T, R
 /**
  * useRetriableRequest配置
  */
-type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {
+  retry?: number | ((error: Error) => boolean);
+  backoff?: BackoffPolicy;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
 
+/**
+ * useRetriableRequest onRetry回调事件实例
+ */
+interface RetriableRetryEvent<S, E, R, T, RC, RE, RH> extends AlovaEvent<S, E, R, T, RC, RE, RH> {
+  /**
+   * 当前的重试次数
+   */
+  retryTimes: number;
+
+  /**
+   * 本次重试的延迟时间
+   */
+  retryDelay: number;
+}
+/**
+ * useRetriableRequest onFail回调事件实例
+ */
+interface RetriableFailEvent<S, E, R, T, RC, RE, RH> extends AlovaErrorEvent<S, E, R, T, RC, RE, RH> {
+  /**
+   * 失败时的重试次数
+   */
+  retryTimes: number;
+}
 /**
  * useRetriableRequest返回值
  */
 type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
   /**
-   * 停止重试，只在重试中调用有效
+   * 停止重试，只在重试期间调用有效
    */
   stop(): void;
+
+  /**
+   * 重试事件绑定
+   * 它们将在重试发起后触发
+   * @param handler 重试事件回调
+   */
+  onRetry(handler: (event: RetriableRetryEvent<S, E, R, T, RC, RE, RH>) => void): void;
+
+  /**
+   * 失败事件绑定
+   * 它们将在不再重试时触发，例如到达最大重试次数时，重试回调返回false时，手动调用stop停止重试时
+   * 而alova的onError事件是在每次请求报错时都将被触发
+   *
+   * 注意：如果没有重试次数时，onError、onComplete和onFail会被同时触发
+   */
+  onFail(handler: (event: RetriableFailEvent<S, E, R, T, RC, RE, RH>) => void): void;
 };

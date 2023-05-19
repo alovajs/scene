@@ -43,7 +43,7 @@ export default <S, E, R, T, RC, RE, RH>(
             })
             .catch(reason => reject(reason));
         } else {
-          reject(buildErrorMsg(hookPrefix, 'the countdown is not over yet'));
+          reject(new Error(buildErrorMsg(hookPrefix, 'the countdown is not over yet')));
         }
       }),
     countdown: _exp$(countdown)

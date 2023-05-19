@@ -1,6 +1,7 @@
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
+import { untilCbCalled } from '~/test/utils';
 import { useCaptcha } from '..';
 
 const alovaInst = createAlova({
@@ -27,22 +28,24 @@ describe('vue => useCaptcha', () => {
     const poster = () => alovaInst.Post('/captcha');
     const { loading, countdown, data, send } = useCaptcha(poster, {
       initialCountdown: 5
-    }) as any;
+    });
 
     // 默认不发送请求
     expect(loading.value).toBeFalsy();
     expect(countdown.value).toBe(0);
     expect(data.value).toBeUndefined();
 
+    const setTimeoutFn = setTimeout;
     jest.useFakeTimers();
     const promise = send();
     expect(loading.value).toBeTruthy();
     expect(countdown.value).toBe(0);
 
+    await untilCbCalled(setTimeoutFn, 10); // 使用备份的setTimeout来延迟
     jest.runAllTimers();
     await promise;
     expect(countdown.value).toBe(5);
-    await expect(send()).rejects.toMatch(/the countdown is not over yet/);
+    await expect(send()).rejects.toThrow(/the countdown is not over yet/);
     jest.advanceTimersByTime(1000);
     expect(countdown.value).toBe(4);
 
@@ -55,10 +58,10 @@ describe('vue => useCaptcha', () => {
     // 倒计时完成了，即使再过段时间倒计时也还是停留在0
     jest.advanceTimersByTime(3000);
     expect(countdown.value).toBe(0);
+    jest.useRealTimers();
   });
 
   test("shouldn't start countdown when request error", async () => {
-    jest.useRealTimers();
     const poster = alovaInst.Post('/captcha', { error: 1 });
     const { countdown, send } = useCaptcha(poster, {
       initialCountdown: 5

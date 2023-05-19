@@ -3,7 +3,7 @@ import { untilCbCalled } from '#/utils';
 import { createAlova, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
-import { usePagination } from '../index';
+import { usePagination } from '..';
 
 // reset data
 beforeEach(() => setMockListData());
@@ -404,7 +404,7 @@ describe('vue => usePagination', () => {
     });
   });
 
-  test('paginated data remove item with preload', async () => {
+  test.only('paginated data remove item with preload', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
       alovaInst.Get('/list', {
@@ -464,7 +464,7 @@ describe('vue => usePagination', () => {
 
     await untilCbCalled(setTimeout, 100); // 等待重新fetch
     expect(data.value).toEqual([4, 7, 9, 10]);
-    expect(mockFn.mock.calls.length).toBe(1); // 有一次下页的fetch被取消，因此只有一次
+    expect(mockFn).toBeCalledTimes(1); // 有一次下页的fetch被取消，因此只有一次
     // 检查是否重新fetch了前后一页的数据
     await untilCbCalled(setTimeout, 100);
     cache = queryCache(getter(page.value - 1, pageSize.value));

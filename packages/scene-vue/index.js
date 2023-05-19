@@ -1,8 +1,8 @@
 import { $, $$, upd$, watch, _$, _exp$, _expBatch$ } from '@/framework/vue';
-import usePagination_unified from '@/hooks/pagination/usePagination_unified';
-import { default as useSQRequest_unified } from '@/hooks/silent/useSQRequest';
-import { default as useCaptcha_unified } from '@/hooks/useCaptcha';
-import { default as useForm_unified } from '@/hooks/useForm';
+import usePagination_unified from '@/hooks/pagination/usePagination';
+import useSQRequest_unified from '@/hooks/silent/useSQRequest';
+import useCaptcha_unified from '@/hooks/useCaptcha';
+import useForm_unified from '@/hooks/useForm';
 
 export const usePagination = (handler, config = {}) =>
   usePagination_unified(handler, config, $, $$, upd$, _$, _exp$, _expBatch$, watch);

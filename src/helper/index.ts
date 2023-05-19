@@ -1,12 +1,15 @@
 import { CacheExpire, LocalCacheConfig, Method } from 'alova';
-import { ObjectCls, PromiseCls, StringCls, falseValue, nullValue, trueValue, undefinedValue } from './variables';
+import { BackoffPolicy } from '~/typings/general';
+import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, trueValue, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
+  promiseReject = <T>(value: T) => PromiseCls.reject(value),
   promiseThen = <T, T2 = never>(
     promise: Promise<T>,
     onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined | null,
     onrejected?: ((reason: any) => T2 | PromiseLike<T2>) | undefined | null
   ): Promise<T | T2> => promise.then(onFulfilled, onrejected),
+  promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected),
   forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn),
   pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item),
   filterItem = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.filter(fn),
@@ -284,4 +287,24 @@ export const getLocalCacheConfigParam = <S, E, R, T, RC, RE, RH>(
     s: storage,
     t: tag
   };
+};
+
+/**
+ * 根据避让策略和重试次数计算重试延迟时间
+ * @param backoff 避让参数
+ * @param retryTimes 重试次数
+ * @returns 重试延迟时间
+ */
+export const delayWithBackoff = (backoff: BackoffPolicy, retryTimes: number) => {
+  let { delay, multiplier = 1, startQuiver, endQuiver } = backoff;
+  let retryDelayFinally = (delay || 0) * Math.pow(multiplier, retryTimes - 1);
+  // 如果startQuiver或endQuiver有值，则需要增加指定范围的随机抖动值
+  if (startQuiver || endQuiver) {
+    startQuiver = startQuiver || 0;
+    endQuiver = endQuiver || 1;
+    retryDelayFinally +=
+      retryDelayFinally * startQuiver + Math.random() * retryDelayFinally * (endQuiver - startQuiver);
+    retryDelayFinally = Math.floor(retryDelayFinally); // 取整数延迟
+  }
+  return retryDelayFinally;
 };

@@ -2,7 +2,6 @@ import { $, $$, upd$, watch, _$, _exp$, _expBatch$ } from '@/framework/svelte';
 import { untilCbCalled } from '~/test/utils';
 
 // 测试svelte的封装函数
-jest.setTimeout(1000000);
 describe('svelte framework functions', () => {
   test('state, computed and update', () => {
     const state1 = $(0);

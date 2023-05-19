@@ -1,5 +1,14 @@
 import { T$, Tupd$, Twatch, T_$, T_exp$ } from '@/framework/type';
-import { createAssert, getContext, isNumber, isString, map, pushItem, setTimeoutFn, sloughConfig } from '@/helper';
+import {
+  createAssert,
+  getContext,
+  isNumber,
+  isString,
+  pushItem,
+  runArgsHandler,
+  setTimeoutFn,
+  sloughConfig
+} from '@/helper';
 import { falseValue, trueValue } from '@/helper/variables';
 import { getMethodKey, Method, UseHookReturnType, useRequest } from 'alova';
 import { FormHookConfig, FormHookHandler, RestoreHandler } from '~/typings/general';
@@ -60,7 +69,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
    * @param newForm 新表单数据
    */
   const updateForm = (newForm: F | ((oldForm: F) => F)) => {
-    upd$(form, newForm);
+    upd$(form as any, newForm);
   };
   let hookReturns = {
     form: _exp$(form),
@@ -74,7 +83,9 @@ export default <S, E, R, T, RC, RE, RH, F>(
     }),
 
     // 持久化数据恢复事件绑定
-    onRestore: (handler: RestoreHandler) => pushItem(restoreHandlers, handler),
+    onRestore(handler: RestoreHandler) {
+      pushItem(restoreHandlers, handler);
+    },
     updateForm,
     reset
   };
@@ -99,7 +110,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
       setTimeoutFn(() => {
         upd$(form, storagedForm);
         // 触发持久化数据恢复事件
-        map(restoreHandlers, handler => handler());
+        runArgsHandler(restoreHandlers);
         store && immediate && send();
       });
 

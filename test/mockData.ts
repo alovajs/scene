@@ -160,7 +160,10 @@ export const mockRequestAdapter = createAlovaMockAdapter([mocks], {
       err.name = status.toString();
       throw err;
     }
-    return body;
+    return {
+      response: body,
+      headers: {}
+    };
   },
   mockRequestLogger: false
 });
