@@ -3,7 +3,7 @@ import { untilCbCalled } from '#/utils';
 import { createAlova, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
-import { usePagination } from '..';
+import { notifyHandler, subscriberMiddleware, usePagination } from '..';
 
 // reset data
 beforeEach(() => setMockListData());
@@ -404,7 +404,7 @@ describe('vue => usePagination', () => {
     });
   });
 
-  test.only('paginated data remove item with preload', async () => {
+  test('paginated data remove item in preload mode', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
       alovaInst.Get('/list', {
@@ -441,9 +441,8 @@ describe('vue => usePagination', () => {
     expect(data.value).toEqual([4, 7, 8, 9]);
     expect(total.value).toBe((totalPrev = totalPrev - 2));
     // 当前页缓存要保持一致
-    setCache(getter(page.value, pageSize.value), cache => {
-      expect(cache.list).toEqual([4, 7, 8, 9]);
-    });
+    cache = queryCache(getter(page.value, pageSize.value));
+    expect(cache.list).toEqual([4, 7, 8, 9]);
 
     const mockFn = jest.fn();
     onFetchSuccess(mockFn);
@@ -458,9 +457,8 @@ describe('vue => usePagination', () => {
     expect(data.value).toEqual([4, 7, 9, 10]);
     expect(total.value).toBe((totalPrev = totalPrev - 1));
     // 检查下一页缓存
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([11]); // 已经被使用了3项了
-    });
+    cache = queryCache(getter(page.value + 1, pageSize.value));
+    expect(cache.list).toEqual([11]); // 已经被使用了3项了
 
     await untilCbCalled(setTimeout, 100); // 等待重新fetch
     expect(data.value).toEqual([4, 7, 9, 10]);
@@ -983,5 +981,45 @@ describe('vue => usePagination', () => {
     setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(cache).toBeUndefined();
     });
+  });
+
+  test("should notify handlers by middleware subscriber", async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list-short', {
+        localCache: 0,
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { data, page, pageSize, onSuccess } = usePagination(getter, {
+      total: () => undefined,
+      data: res => res.list,
+      append: true,
+      initialPage: 2,
+      initialPageSize: 4,
+      middleware: subscriberMiddleware('test_page')
+    });
+
+    const successFn = jest.fn();
+    onSuccess(successFn);
+    await untilCbCalled(onSuccess);
+    expect(successFn).toBeCalledTimes(1);
+
+    notifyHandler('test_page', (handlers) => {
+      expect(handlers.send).toBeInstanceOf(Function);
+      expect(handlers.refresh).toBeInstanceOf(Function);
+      expect(handlers.insert).toBeInstanceOf(Function);
+      expect(handlers.remove).toBeInstanceOf(Function);
+      expect(handlers.replace).toBeInstanceOf(Function);
+      expect(handlers.reload).toBeInstanceOf(Function);
+      expect(handlers.abort).toBeInstanceOf(Function);
+      handlers.refresh(1);
+    });
+
+    await untilCbCalled(onSuccess);
+    expect(successFn).toBeCalledTimes(2);
   });
 });

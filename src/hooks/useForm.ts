@@ -1,4 +1,4 @@
-import { T$, Tupd$, Twatch, T_$, T_exp$ } from '@/framework/type';
+import { T$, T_$, T_exp$, Tupd$, Twatch } from '@/framework/type';
 import {
   createAssert,
   getContext,
@@ -9,8 +9,8 @@ import {
   setTimeoutFn,
   sloughConfig
 } from '@/helper';
-import { falseValue, trueValue } from '@/helper/variables';
-import { getMethodKey, Method, UseHookReturnType, useRequest } from 'alova';
+import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
+import { Method, UseHookReturnType, getMethodKey, useRequest } from 'alova';
 import { FormHookConfig, FormHookHandler, RestoreHandler } from '~/typings/general';
 
 const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || getMethodKey(methodInstance)}`;
@@ -40,7 +40,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
   }
 
   // 默认不发送请求
-  const { id, initialForm, store, resetAfterSubmit, immediate = falseValue } = config;
+  const { id, initialForm, store, resetAfterSubmit, immediate = falseValue, middleware } = config;
 
   // id有值时才检查是共用数据
   if (id) {
@@ -77,6 +77,18 @@ export default <S, E, R, T, RC, RE, RH, F>(
     // 第一个参数固定为form数据
     ...useRequest((...args: any[]) => methodHandler(_$(form) as any, ...args), {
       ...config,
+
+      // 中间件函数，也支持subscriberMiddleware
+      middleware: middleware
+        ? (ctx, next) =>
+            middleware(
+              {
+                ...ctx,
+                subscribeHandlers: { updateForm, reset }
+              } as any,
+              next
+            )
+        : undefinedValue,
 
       // 当需要持久化时，将在数据恢复后触发
       immediate: store ? falseValue : immediate

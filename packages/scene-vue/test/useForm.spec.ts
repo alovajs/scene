@@ -3,7 +3,7 @@ import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
 import { untilCbCalled } from '~/test/utils';
 import { FormHookConfig } from '~/typings/general';
-import { useForm } from '..';
+import { notifyHandler, subscriberMiddleware, useForm } from '..';
 
 type ID = NonNullable<FormHookConfig<any, any, any, any, any, any, any, any>['id']>;
 const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || getMethodKey(methodInstance)}`;
@@ -54,6 +54,7 @@ describe('vue => useForm', () => {
       data: newForm
     });
   });
+
   test('should reset form data when set resetAfterSubmit to true', async () => {
     const poster = (data: any) => alovaInst.Post('/saveData', data);
     const initialForm = {
@@ -247,5 +248,36 @@ describe('vue => useForm', () => {
     // 提交后表单数据重置
     expect(formRet2.form.value).toStrictEqual(initialForm);
     expect(formRet3.form.value).toStrictEqual(initialForm);
+  });
+
+  test('should notify handlers by middleware subscriber', async () => {
+    const poster = (form: any) => alovaInst.Post('/saveData', form);
+    const newForm = {
+      name: 'Ming',
+      age: '18'
+    };
+    const { onSuccess, onComplete } = useForm(poster, {
+      initialForm: newForm,
+      immediate: true,
+      middleware: subscriberMiddleware('test_page')
+    });
+
+    const successFn = jest.fn();
+    const completeFn = jest.fn();
+    onSuccess(successFn);
+    onComplete(completeFn);
+    await untilCbCalled(onSuccess);
+
+    notifyHandler('test_page', handlers => {
+      expect(handlers.send).toBeInstanceOf(Function);
+      expect(handlers.abort).toBeInstanceOf(Function);
+      expect(handlers.updateForm).toBeInstanceOf(Function);
+      expect(handlers.reset).toBeInstanceOf(Function);
+      handlers.send();
+    });
+
+    await untilCbCalled(onSuccess);
+    expect(successFn).toBeCalledTimes(2);
+    expect(completeFn).toBeCalledTimes(2);
   });
 });

@@ -143,7 +143,7 @@ export default {
   testEnvironment: 'jsdom',
 
   testMatch: [
-    // '**/test/**/*.spec.[tj]s?(x)'
+    '**/test/**/*.spec.[tj]s?(x)'
     // '**/test/modules/uuid.spec.ts(x)?'
     // '**/test/silent/virtualResponse.spec.ts(x)?'
     // '**/test/silent/serializers.spec.ts(x)?'
@@ -163,9 +163,10 @@ export default {
     // '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
     // '**/packages/scene-vue/test/useCaptcha.spec.ts(x)?'
     // '**/packages/scene-vue/test/useForm.spec.ts(x)?'
+    // '**/packages/scene-vue/test/subscriberMiddleware.spec.ts(x)?'
     // react
     // '**/packages/scene-react/test/functions.spec.ts(x)?'
-    '**/packages/scene-react/test/useRetriableRequest.spec.ts(x)?'
+    // '**/packages/scene-react/test/useRetriableRequest.spec.ts(x)?'
     // svelte
     // '**/packages/scene-svelte/test/functions.spec.ts(x)?'
   ],

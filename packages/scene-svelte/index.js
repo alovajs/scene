@@ -25,9 +25,13 @@ export { filterSilentMethods, getSilentMethod } from '@/hooks/silent/virtualResp
 export { default as isVData } from '@/hooks/silent/virtualResponse/isVData';
 export { default as stringifyVData } from '@/hooks/silent/virtualResponse/stringifyVData';
 export { default as updateStateEffect } from '@/hooks/silent/virtualResponse/updateStateEffect';
+export { notifyHandler, subscriberMiddleware } from '@/middlewares/subscriber'; // 导出subscriber中间件
 
 // 导出useCaptcha
 export const useCaptcha = (handler, config = {}) => useCaptcha_unified(handler, config, $, upd$, _$, _exp$);
 
 // 导出useForm
 export const useForm = (handler, config = {}) => useForm_unified(handler, config, $, _$, _exp$, upd$, watch);
+
+// 导出useRetriableRequest
+export const useRetriableRequest = (handler, config = {}) => useRetriableRequest_unified(handler, config);

@@ -14,7 +14,7 @@
     "build": "npm run build --workspaces",
     "release": "npm run release --workspaces",
     "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info",
-    "commit": "git add . && git-cz && git push",
+    "commit": "git-cz && git push",
     "lint": "eslint --ext .ts,.js src/**",
     "lint:fix": "eslint --ext .ts,.js src/** --fix"
   },
@@ -28,7 +28,7 @@
     "url": "https://github.com/alovajs/scene/issues"
   },
   "devDependencies": {
-    "@alova/mock": "^1.4.0",
+    "@alova/mock": "^1.4.1",
     "@babel/core": "^7.18.2",
     "@babel/preset-env": "^7.18.2",
     "@commitlint/config-conventional": "^17.4.4",
@@ -45,7 +45,7 @@
     "@types/testing-library__jest-dom": "^5.14.5",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "alova": "^2.5.0",
+    "alova": "^2.5.1",
     "babel-jest": "^29.2.2",
     "commitizen": "^4.3.0",
     "commitlint": "^17.5.1",

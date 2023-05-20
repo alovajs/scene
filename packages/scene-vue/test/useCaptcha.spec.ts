@@ -2,7 +2,7 @@ import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
 import { untilCbCalled } from '~/test/utils';
-import { useCaptcha } from '..';
+import { notifyHandler, subscriberMiddleware, useCaptcha } from '..';
 
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
@@ -65,15 +65,53 @@ describe('vue => useCaptcha', () => {
     const poster = alovaInst.Post('/captcha', { error: 1 });
     const { countdown, send } = useCaptcha(poster, {
       initialCountdown: 5
-    }) as any;
+    });
     await expect(send()).rejects.toThrow('server error');
     expect(countdown.value).toBe(0);
   });
 
   test('initialCountdown default value is 60', async () => {
     const poster = alovaInst.Post('/captcha');
-    const { countdown, send } = useCaptcha(poster) as any;
+    const { countdown, send } = useCaptcha(poster);
     await send();
     expect(countdown.value).toBe(60);
+  });
+
+  test('should notify handlers by middleware subscriber', async () => {
+    const poster = alovaInst.Post('/captcha');
+    const { send, onComplete, onSuccess } = useCaptcha(poster, {
+      initialCountdown: 5,
+      middleware: subscriberMiddleware('test_page')
+    });
+
+    const successFn = jest.fn();
+    const completeFn = jest.fn();
+    onSuccess(successFn);
+    onComplete(completeFn);
+
+    const setTimeoutFn = setTimeout;
+    jest.useFakeTimers();
+    let promise = send();
+    await untilCbCalled(setTimeoutFn, 10); // 使用备份的setTimeout来延迟
+    jest.runOnlyPendingTimers();
+    await promise;
+
+    expect(successFn).toBeCalledTimes(1);
+    expect(completeFn).toBeCalledTimes(1);
+
+    jest.advanceTimersByTime(6000); // 让倒计时完成
+    notifyHandler('test_page', handlers => {
+      expect(handlers.send).toBeInstanceOf(Function);
+      expect(handlers.abort).toBeInstanceOf(Function);
+      promise = handlers.send();
+    });
+
+    await untilCbCalled(setTimeoutFn, 10);
+    jest.runOnlyPendingTimers();
+    await promise;
+    expect(successFn).toBeCalledTimes(2);
+    expect(completeFn).toBeCalledTimes(2);
+
+    jest.useRealTimers();
   });
 });

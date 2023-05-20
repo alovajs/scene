@@ -6,6 +6,7 @@ import {
   noop,
   promiseCatch,
   promiseReject,
+  promiseResolve,
   promiseThen,
   pushItem,
   runArgsHandler,
@@ -24,7 +25,7 @@ export default <S, E, R, T, RC, RE, RH>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config: RetriableHookConfig<S, E, R, T, RC, RE, RH>
 ) => {
-  const { retry = 3, backoff = { delay: 1000 } } = config;
+  const { retry = 3, backoff = { delay: 1000 }, middleware = noop } = config;
   const retryHandlers: RetryHandler<S, E, R, T, RC, RE, RH>[] = [];
   const failHandlers: FailHandler<S, E, R, T, RC, RE, RH>[] = [];
   let retryTimes = 0;
@@ -57,7 +58,17 @@ export default <S, E, R, T, RC, RE, RH>(
   let retrying = falseValue; // 是否正在重试
   const requestReturns = useRequest(handler, {
     ...config,
-    middleware({ update, sendArgs, send, method, controlLoading }, next) {
+    middleware(ctx, next) {
+      middleware(
+        {
+          ...ctx,
+          subscribeHandler: {
+            stop
+          }
+        } as any,
+        () => promiseResolve(undefinedValue as any)
+      );
+      const { update, sendArgs, send, method, controlLoading } = ctx;
       const setLoading = (loading = falseValue) => {
         !retrying && update({ loading });
       };
@@ -118,40 +129,44 @@ export default <S, E, R, T, RC, RE, RH>(
       );
     }
   });
+
+  /**
+   * 停止重试，只在重试期间调用有效
+   * 停止后将立即触发onFail事件
+   */
+  const stop = () => {
+    assert(retrying, 'there are no requests being retried');
+    stopManually = trueValue;
+    requestReturns.update({ loading: falseValue });
+    emitOnFail(methodInstanceLastest, sendArgsLatest, new Error(buildErrorMsg(hookPrefix, 'stop retry manually')));
+  };
+
+  /**
+   * 重试事件绑定
+   * 它们将在重试发起后触发
+   * @param handler 重试事件回调
+   */
+  const onRetry = (handler: RetryHandler<S, E, R, T, RC, RE, RH>) => {
+    pushItem(retryHandlers, handler);
+  };
+
+  /**
+   * 失败事件绑定
+   * 它们将在不再重试时触发，例如到达最大重试次数时，重试回调返回false时，手动调用stop停止重试时
+   * 而alova的onError事件是在每次请求报错时都将被触发
+   *
+   * 注意：如果没有重试次数时，onError、onComplete和onFail会被同时触发
+   *
+   * @param handler 失败事件回调
+   */
+  const onFail = (handler: FailHandler<S, E, R, T, RC, RE, RH>) => {
+    pushItem(failHandlers, handler);
+  };
+
   return {
     ...requestReturns,
-
-    /**
-     * 停止重试，只在重试期间调用有效
-     * 停止后将立即触发onFail事件
-     */
-    stop() {
-      assert(retrying, 'there are no requests being retried');
-      stopManually = trueValue;
-      requestReturns.update({ loading: falseValue });
-      emitOnFail(methodInstanceLastest, sendArgsLatest, new Error(buildErrorMsg(hookPrefix, 'stop retry manually')));
-    },
-
-    /**
-     * 重试事件绑定
-     * 它们将在重试发起后触发
-     * @param handler 重试事件回调
-     */
-    onRetry(handler: RetryHandler<S, E, R, T, RC, RE, RH>) {
-      pushItem(retryHandlers, handler);
-    },
-
-    /**
-     * 失败事件绑定
-     * 它们将在不再重试时触发，例如到达最大重试次数时，重试回调返回false时，手动调用stop停止重试时
-     * 而alova的onError事件是在每次请求报错时都将被触发
-     *
-     * 注意：如果没有重试次数时，onError、onComplete和onFail会被同时触发
-     *
-     * @param handler 失败事件回调
-     */
-    onFail(handler: FailHandler<S, E, R, T, RC, RE, RH>) {
-      pushItem(failHandlers, handler);
-    }
+    stop,
+    onRetry,
+    onFail
   };
 };

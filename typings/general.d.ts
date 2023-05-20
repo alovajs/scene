@@ -3,6 +3,9 @@ import {
   AlovaCompleteEvent,
   AlovaErrorEvent,
   AlovaEvent,
+  AlovaFetcherMiddlewareContext,
+  AlovaFrontMiddlewareContext,
+  AlovaGuardNext,
   ExportedType,
   Method,
   MethodMatcher,
@@ -31,6 +34,7 @@ interface PaginationHookConfig<R, LD, WS> {
   debounce?: WatcherHookConfig<any, any, any, any, any, any, any>['debounce'];
   watchingStates?: WS;
   immediate?: boolean;
+  middleware?: AlovaFrontMiddleware<any, any, R, any, any, any, any>;
 }
 
 // =========================
@@ -326,9 +330,9 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
 }
 
 type SQRequestHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
-  Omit<RequestHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
+  RequestHookConfig<S, E, R, T, RC, RE, RH>;
 type SQWatcherHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
-  Omit<WatcherHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
+  WatcherHookConfig<S, E, R, T, RC, RE, RH>;
 
 type FallbackHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, T, RC, RE, RH>) => void;
@@ -551,6 +555,7 @@ type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T,
   /**
    * 停止重试，只在重试期间调用有效
    * 停止后将立即触发onFail事件
+   *
    */
   stop(): void;
 
@@ -572,3 +577,35 @@ type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T,
    */
   onFail(handler: (event: RetriableFailEvent<S, E, R, T, RC, RE, RH>) => void): void;
 };
+
+// middlewares
+interface Handlers {
+  [x: string]: (...args: any[]) => any;
+}
+/**
+ * 订阅者中间件
+ * 使用此中间件后可通过notifyHandlers直接调用订阅的函数
+ * 可以订阅多个相同id
+ * 以此来消除组件的层级限制
+ * @param id 订阅者id
+ * @returns alova中间件函数
+ */
+type SubscriberMiddleware = (id: string | number | symbol) => (
+  context: (
+    | AlovaFrontMiddlewareContext<any, any, any, any, any, any, any>
+    | AlovaFetcherMiddlewareContext<any, any, any, any, any, any, any>
+  ) & {
+    subscribeHandlers?: Handlers;
+  },
+  next: AlovaGuardNext<any, any, any, any, any, any, any>
+) => Promise<any>;
+
+/**
+ * 通知订阅函数，如果匹配多个则会以此调用onMatch
+ * @param id 订阅者id，或正则表达式
+ * @param onMatch 匹配的订阅者
+ */
+type NotifyHandler = (
+  id: string | number | symbol | RegExp,
+  onMatch: (matchedSubscriber: Handlers, index: number) => void
+) => void;

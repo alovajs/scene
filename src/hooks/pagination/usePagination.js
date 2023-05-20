@@ -38,7 +38,8 @@ export default function (
     initialPageSize = 10,
     debounce,
     watchingStates = [],
-    immediate = trueValue
+    immediate = trueValue,
+    middleware
   },
   $,
   $$,
@@ -86,139 +87,6 @@ export default function (
   watch(watchingStates, () => {
     upd$(page, 1);
     isReset = trueValue;
-  });
-
-  const states = useWatcher(getHandlerMethod, [...watchingStates, page, pageSize], {
-    immediate,
-    initialData,
-    debounce,
-    force: (_, isRefresh) => isRefresh
-  });
-
-  const { send } = states;
-  // 计算data、total、isLastPage参数
-  const total = $(undefinedValue);
-  const pageCount = $$(() => {
-    const totalVal = _$(total);
-    return totalVal !== undefinedValue ? Math.ceil(totalVal / _$(pageSize)) : undefinedValue;
-  }, _expBatch$(pageSize, total));
-  const canPreload = (preloadPage, fetchMethod, isNextPage = falseValue) => {
-    const { e: expireMilliseconds } = getLocalCacheConfigParam(fetchMethod);
-    // 如果缓存时间小于等于当前时间，表示没有设置缓存，此时不再预拉取数据
-    if (expireMilliseconds <= getTime()) {
-      return;
-    }
-
-    const pageCountVal = _$(pageCount);
-    const exceedPageCount = pageCountVal
-      ? preloadPage > pageCountVal
-      : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-      ? len(listDataGetter(_$(states.data))) < _$(pageSize)
-      : falseValue;
-    return preloadPage > 0 && !exceedPageCount;
-  };
-
-  // 预加载下一页数据
-  const fetchNextPage = (force = falseValue) => {
-    const nextPage = _$(page) + 1;
-    const fetchMethod = getHandlerMethod(nextPage);
-    if (preloadNextPage && canPreload(nextPage, fetchMethod, trueValue)) {
-      fetch(fetchMethod, force);
-    }
-  };
-  // 预加载上一页数据
-  const fetchPreviousPage = () => {
-    const prevPage = _$(page) - 1;
-    const fetchMethod = getHandlerMethod(prevPage);
-    if (preloadPreviousPage && canPreload(prevPage, fetchMethod)) {
-      fetch(fetchMethod);
-    }
-  };
-  // 如果返回的数据小于pageSize了，则认定为最后一页了
-  const isLastPage = $$(() => {
-    const dataRaw = _$(states.data);
-    if (!dataRaw) {
-      return trueValue;
-    }
-    const statesDataVal = listDataGetter(dataRaw);
-    const pageVal = _$(page);
-    const pageCountVal = _$(pageCount);
-    const dataLen = isArray(statesDataVal) ? len(statesDataVal) : 0;
-    return pageCountVal ? pageVal >= pageCountVal : dataLen < _$(pageSize);
-  }, _expBatch$(page, pageCount, states.data, pageSize));
-
-  // 更新当前页缓存
-  const updateCurrentPageCache = () => {
-    const snapShotItem = getSnapshotMethods(_$(page));
-    snapShotItem &&
-      setCache(snapShotItem.entity, rawData => {
-        // 当关闭缓存时，rawData为undefined
-        if (rawData) {
-          const cachedListData = listDataGetter(rawData) || [];
-          splice(cachedListData, 0, len(cachedListData), ..._$(data));
-          return rawData;
-        }
-      });
-  };
-
-  // 初始化fetcher
-  const fetchStates = useFetcher({
-    force: forceFetch => forceFetch
-  });
-  const { fetch, abort: abortFetch, onSuccess: onFetchSuccess } = fetchStates;
-  onFetchSuccess(({ method, data: rawData }) => {
-    // 处理当fetch还没响应时就翻页到上或下一页了
-    const snapShotItem = getSnapshotMethods(_$(page));
-    if (snapShotItem && getMethodKey(snapShotItem.entity) === getMethodKey(method)) {
-      // 如果追加数据，才更新data
-      const listData = listDataGetter(rawData); // 更新data参数
-      if (append) {
-        // 下拉加载时需要替换当前页数据
-        const dataRaw = _$(data);
-        const pageSizeVal = _$(pageSize);
-
-        // 当做移除操作时，替换的数量小于pageSize，此时dataRaw % pageSizeVal会大于0
-        // 当新增操作时，替换的数量等于pageSize，此时dataRaw % pageSizeVal会等于0，此时不需要替换
-        const replaceNumber = len(dataRaw) % pageSizeVal;
-        replaceNumber > 0 &&
-          upd$(data, rawd => {
-            splice(rawd, (_$(page) - 1) * pageSizeVal, replaceNumber, ...listData);
-            return rawd;
-          });
-      } else {
-        upd$(data, listData);
-      }
-    }
-  });
-  states.onSuccess(({ data: rawData, sendArgs: [refreshPage, isRefresh], method }) => {
-    const { total: cachedTotal } = getSnapshotMethods(method) || {};
-    upd$(total, cachedTotal !== undefinedValue ? cachedTotal : totalGetter(rawData));
-    if (!isRefresh) {
-      fetchPreviousPage();
-      fetchNextPage();
-    }
-
-    const pageSizeVal = _$(pageSize);
-    // 如果追加数据，才更新data
-    const listData = listDataGetter(rawData); // 更新data参数
-    if (append) {
-      // 如果是reset则先清空数据
-      if (isReset) {
-        upd$(data, []);
-      }
-      if (refreshPage === undefinedValue) {
-        upd$(data, [..._$(data), ...listData]);
-      } else if (refreshPage) {
-        // 如果是刷新页面，则是替换那一页的数据
-        upd$(data, rawd => {
-          splice(rawd, (refreshPage - 1) * pageSizeVal, pageSizeVal, ...listData);
-          return rawd;
-        });
-      }
-    } else {
-      upd$(data, listData);
-    }
-    isReset = falseValue;
   });
 
   /**
@@ -418,6 +286,150 @@ export default function (
     _$(page) === 1 ? send() : upd$(page, 1);
     isReset = trueValue;
   };
+
+
+  const states = useWatcher(getHandlerMethod, [...watchingStates, page, pageSize], {
+    immediate,
+    initialData,
+    debounce,
+    middleware: middleware ? (ctx, next) => middleware({
+      ...ctx,
+      subscribeHandlers: {
+        refresh,
+        insert,
+        remove,
+        replace,
+        reload
+      }
+    }, next) : undefinedValue,
+    force: (_, isRefresh) => isRefresh
+  });
+  const { send } = states;
+
+  // 计算data、total、isLastPage参数
+  const total = $(undefinedValue);
+  const pageCount = $$(() => {
+    const totalVal = _$(total);
+    return totalVal !== undefinedValue ? Math.ceil(totalVal / _$(pageSize)) : undefinedValue;
+  }, _expBatch$(pageSize, total));
+  const canPreload = (preloadPage, fetchMethod, isNextPage = falseValue) => {
+    const { e: expireMilliseconds } = getLocalCacheConfigParam(fetchMethod);
+    // 如果缓存时间小于等于当前时间，表示没有设置缓存，此时不再预拉取数据
+    if (expireMilliseconds <= getTime()) {
+      return;
+    }
+
+    const pageCountVal = _$(pageCount);
+    const exceedPageCount = pageCountVal
+      ? preloadPage > pageCountVal
+      : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
+        ? len(listDataGetter(_$(states.data))) < _$(pageSize)
+        : falseValue;
+    return preloadPage > 0 && !exceedPageCount;
+  };
+
+  // 预加载下一页数据
+  const fetchNextPage = (force = falseValue) => {
+    const nextPage = _$(page) + 1;
+    const fetchMethod = getHandlerMethod(nextPage);
+    if (preloadNextPage && canPreload(nextPage, fetchMethod, trueValue)) {
+      fetch(fetchMethod, force);
+    }
+  };
+  // 预加载上一页数据
+  const fetchPreviousPage = () => {
+    const prevPage = _$(page) - 1;
+    const fetchMethod = getHandlerMethod(prevPage);
+    if (preloadPreviousPage && canPreload(prevPage, fetchMethod)) {
+      fetch(fetchMethod);
+    }
+  };
+  // 如果返回的数据小于pageSize了，则认定为最后一页了
+  const isLastPage = $$(() => {
+    const dataRaw = _$(states.data);
+    if (!dataRaw) {
+      return trueValue;
+    }
+    const statesDataVal = listDataGetter(dataRaw);
+    const pageVal = _$(page);
+    const pageCountVal = _$(pageCount);
+    const dataLen = isArray(statesDataVal) ? len(statesDataVal) : 0;
+    return pageCountVal ? pageVal >= pageCountVal : dataLen < _$(pageSize);
+  }, _expBatch$(page, pageCount, states.data, pageSize));
+
+  // 更新当前页缓存
+  const updateCurrentPageCache = () => {
+    const snapShotItem = getSnapshotMethods(_$(page));
+    snapShotItem &&
+      setCache(snapShotItem.entity, rawData => {
+        // 当关闭缓存时，rawData为undefined
+        if (rawData) {
+          const cachedListData = listDataGetter(rawData) || [];
+          splice(cachedListData, 0, len(cachedListData), ..._$(data));
+          return rawData;
+        }
+      });
+  };
+
+  // 初始化fetcher
+  const fetchStates = useFetcher({
+    force: forceFetch => forceFetch
+  });
+  const { fetch, abort: abortFetch, onSuccess: onFetchSuccess } = fetchStates;
+  onFetchSuccess(({ method, data: rawData }) => {
+    // 处理当fetch还没响应时就翻页到上或下一页了
+    const snapShotItem = getSnapshotMethods(_$(page));
+    if (snapShotItem && getMethodKey(snapShotItem.entity) === getMethodKey(method)) {
+      // 如果追加数据，才更新data
+      const listData = listDataGetter(rawData); // 更新data参数
+      if (append) {
+        // 下拉加载时需要替换当前页数据
+        const dataRaw = _$(data);
+        const pageSizeVal = _$(pageSize);
+
+        // 当做移除操作时，替换的数量小于pageSize，此时dataRaw % pageSizeVal会大于0
+        // 当新增操作时，替换的数量等于pageSize，此时dataRaw % pageSizeVal会等于0，此时不需要替换
+        const replaceNumber = len(dataRaw) % pageSizeVal;
+        replaceNumber > 0 &&
+          upd$(data, rawd => {
+            splice(rawd, (_$(page) - 1) * pageSizeVal, replaceNumber, ...listData);
+            return rawd;
+          });
+      } else {
+        upd$(data, listData);
+      }
+    }
+  });
+  states.onSuccess(({ data: rawData, sendArgs: [refreshPage, isRefresh], method }) => {
+    const { total: cachedTotal } = getSnapshotMethods(method) || {};
+    upd$(total, cachedTotal !== undefinedValue ? cachedTotal : totalGetter(rawData));
+    if (!isRefresh) {
+      fetchPreviousPage();
+      fetchNextPage();
+    }
+
+    const pageSizeVal = _$(pageSize);
+    // 如果追加数据，才更新data
+    const listData = listDataGetter(rawData); // 更新data参数
+    if (append) {
+      // 如果是reset则先清空数据
+      if (isReset) {
+        upd$(data, []);
+      }
+      if (refreshPage === undefinedValue) {
+        upd$(data, [..._$(data), ...listData]);
+      } else if (refreshPage) {
+        // 如果是刷新页面，则是替换那一页的数据
+        upd$(data, rawd => {
+          splice(rawd, (refreshPage - 1) * pageSizeVal, pageSizeVal, ...listData);
+          return rawd;
+        });
+      }
+    } else {
+      upd$(data, listData);
+    }
+    isReset = falseValue;
+  });
 
   /** @Returns */
   return {
