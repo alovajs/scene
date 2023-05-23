@@ -9,9 +9,12 @@ import {
   isArray,
   len,
   map,
+  noop,
   objectKeys,
   objectValues,
+  promiseCatch,
   pushItem,
+  setTimeoutFn,
   shift,
   splice
 } from '@/helper';
@@ -139,18 +142,19 @@ export default function (
   // 单独拿出来的原因是
   // 无论同步调用几次insert、remove，或它们组合调用，reset操作只需要异步执行一次
   const resetSyncRunner = createSyncOnceRunner();
-  const resetCache = () => {
+  const resetCache = () =>
     resetSyncRunner(() => {
-      abortFetch();
+      _$(fetching) && abortFetch();
       // 缓存失效
       invalidatePaginationCache();
       // 重新预加载前后一页的数据，需要在refresh被调用前执行，因为refresh时isRefresh为true，此时无法fetch数据
       // fetchPreviousPage();
 
-      // 强制请求下一页
-      fetchNextPage(trueValue);
+      // 强制请求下一页，因为有请求共享，需要在中断请求后异步执行拉取操作
+      setTimeoutFn(() => {
+        fetchNextPage(trueValue);
+      });
     });
-  };
 
   // 统一更新总条数
   const updateTotal = offset => {
@@ -287,21 +291,26 @@ export default function (
     isReset = trueValue;
   };
 
-
   const states = useWatcher(getHandlerMethod, [...watchingStates, page, pageSize], {
     immediate,
     initialData,
     debounce,
-    middleware: middleware ? (ctx, next) => middleware({
-      ...ctx,
-      subscribeHandlers: {
-        refresh,
-        insert,
-        remove,
-        replace,
-        reload
-      }
-    }, next) : undefinedValue,
+    middleware: middleware
+      ? (ctx, next) =>
+          middleware(
+            {
+              ...ctx,
+              subscribeHandlers: {
+                refresh,
+                insert,
+                remove,
+                replace,
+                reload
+              }
+            },
+            next
+          )
+      : undefinedValue,
     force: (_, isRefresh) => isRefresh
   });
   const { send } = states;
@@ -323,8 +332,8 @@ export default function (
     const exceedPageCount = pageCountVal
       ? preloadPage > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-        ? len(listDataGetter(_$(states.data))) < _$(pageSize)
-        : falseValue;
+      ? len(listDataGetter(_$(states.data))) < _$(pageSize)
+      : falseValue;
     return preloadPage > 0 && !exceedPageCount;
   };
 
@@ -333,7 +342,7 @@ export default function (
     const nextPage = _$(page) + 1;
     const fetchMethod = getHandlerMethod(nextPage);
     if (preloadNextPage && canPreload(nextPage, fetchMethod, trueValue)) {
-      fetch(fetchMethod, force);
+      promiseCatch(fetch(fetchMethod, force), noop);
     }
   };
   // 预加载上一页数据
@@ -341,7 +350,7 @@ export default function (
     const prevPage = _$(page) - 1;
     const fetchMethod = getHandlerMethod(prevPage);
     if (preloadPreviousPage && canPreload(prevPage, fetchMethod)) {
-      fetch(fetchMethod);
+      promiseCatch(fetch(fetchMethod), noop);
     }
   };
   // 如果返回的数据小于pageSize了，则认定为最后一页了
@@ -375,7 +384,7 @@ export default function (
   const fetchStates = useFetcher({
     force: forceFetch => forceFetch
   });
-  const { fetch, abort: abortFetch, onSuccess: onFetchSuccess } = fetchStates;
+  const { fetching, fetch, abort: abortFetch, onSuccess: onFetchSuccess } = fetchStates;
   onFetchSuccess(({ method, data: rawData }) => {
     // 处理当fetch还没响应时就翻页到上或下一页了
     const snapShotItem = getSnapshotMethods(_$(page));

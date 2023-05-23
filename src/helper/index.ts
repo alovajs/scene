@@ -46,7 +46,7 @@ export const createSyncOnceRunner = (delay = 0) => {
     if (timer) {
       clearTimeout(timer);
     }
-    timer = setTimeout(fn, delay);
+    timer = setTimeoutFn(fn, delay);
   };
 };
 
