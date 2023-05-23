@@ -25,4 +25,4 @@ plugins:
 
     # 使用下一个版本号执行命令
     - prepareCmd: 'cross-env VERSION=${nextRelease.version} npm run build --workspaces && npm version ${nxtRelease.version} --workspaces'
-    - publishCmd: 'npm run publish --workspaces'
+      publishCmd: 'npm run publish --workspaces'
