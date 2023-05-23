@@ -1,14 +1,9 @@
+import { mockRequestAdapter, setMockListData, setMockListWithSearchData, setMockShortListData } from '#/mockData';
+import { untilCbCalled } from '#/utils';
 import { createAlova, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
-import {
-  mockRequestAdapter,
-  setMockListData,
-  setMockListWithSearchData,
-  setMockShortListData
-} from '../../../test/mockData';
-import { untilCbCalled } from '../../../test/utils';
-import { usePagination } from '../index';
+import { notifyHandler, subscriberMiddleware, usePagination } from '..';
 
 // reset data
 beforeEach(() => setMockListData());
@@ -20,7 +15,7 @@ const createMockAlova = () =>
     statesHook: VueHook,
     requestAdapter: mockRequestAdapter
   });
-describe('vue usePagination', () => {
+describe('vue => usePagination', () => {
   // 分页相关测试
   test('load paginated data and change page/pageSize', async () => {
     const alovaInst = createMockAlova();
@@ -314,7 +309,7 @@ describe('vue usePagination', () => {
     await untilCbCalled(setTimeout);
     page.value++;
 
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([6, 7, 8, 9]); // 有两项被挤到后面一页了
     expect(total.value).toBe(302);
 
@@ -323,7 +318,7 @@ describe('vue usePagination', () => {
 
     // 再次返回前一页，移除的数据不应该存在
     page.value--;
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([4, 1000, 1001, 5]);
   });
 
@@ -409,7 +404,7 @@ describe('vue usePagination', () => {
     });
   });
 
-  test('paginated data remove item with preload', async () => {
+  test('paginated data remove item in preload mode', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
       alovaInst.Get('/list', {
@@ -446,9 +441,8 @@ describe('vue usePagination', () => {
     expect(data.value).toEqual([4, 7, 8, 9]);
     expect(total.value).toBe((totalPrev = totalPrev - 2));
     // 当前页缓存要保持一致
-    setCache(getter(page.value, pageSize.value), cache => {
-      expect(cache.list).toEqual([4, 7, 8, 9]);
-    });
+    cache = queryCache(getter(page.value, pageSize.value));
+    expect(cache.list).toEqual([4, 7, 8, 9]);
 
     const mockFn = jest.fn();
     onFetchSuccess(mockFn);
@@ -463,13 +457,12 @@ describe('vue usePagination', () => {
     expect(data.value).toEqual([4, 7, 9, 10]);
     expect(total.value).toBe((totalPrev = totalPrev - 1));
     // 检查下一页缓存
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([11]); // 已经被使用了3项了
-    });
+    cache = queryCache(getter(page.value + 1, pageSize.value));
+    expect(cache.list).toEqual([11]); // 已经被使用了3项了
 
-    await untilCbCalled(setTimeout, 100); // 等待重新fetch
+    await untilCbCalled(setTimeout, 200); // 等待重新fetch
     expect(data.value).toEqual([4, 7, 9, 10]);
-    expect(mockFn.mock.calls.length).toBe(1); // 有一次下页的fetch被取消，因此只有一次
+    expect(mockFn).toBeCalledTimes(1); // 有一次下页的fetch被取消，因此只有一次
     // 检查是否重新fetch了前后一页的数据
     await untilCbCalled(setTimeout, 100);
     cache = queryCache(getter(page.value - 1, pageSize.value));
@@ -502,7 +495,7 @@ describe('vue usePagination', () => {
     expect(cache.list).toEqual([16, 17, 18, 19]);
   });
 
-  // 当操作了数据重新fetch但还未响应时，翻页到了fetch的页，此时也需要更新界面
+  // 当操作了数据重新fetch但还未响应时，翻页到了正在fetch的页，此时也需要更新界面
   test('should update data when fetch current page', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
@@ -529,19 +522,19 @@ describe('vue usePagination', () => {
     });
 
     // 正在重新fetch下一页数据，但还没响应（响应有50ms延迟），此时翻页到下一页
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 20);
     page.value++;
 
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([10, 11]); // 有两项用于填补前一页数据了
     expect(total.value).toBe(298);
 
-    await untilCbCalled(setTimeout, 100); // 等待fetch响应
+    await untilCbCalled(setTimeout, 200); // 等待fetch响应
     expect(data.value).toEqual([10, 11, 12, 13]);
 
     // 再次返回前一页，移除的数据不应该存在
     page.value--;
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 5);
     expect(data.value).toEqual([4, 7, 8, 9]);
   });
 
@@ -988,5 +981,45 @@ describe('vue usePagination', () => {
     setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(cache).toBeUndefined();
     });
+  });
+
+  test('should notify handlers by middleware subscriber', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list-short', {
+        localCache: 0,
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { onSuccess } = usePagination(getter, {
+      total: () => undefined,
+      data: res => res.list,
+      append: true,
+      initialPage: 2,
+      initialPageSize: 4,
+      middleware: subscriberMiddleware('test_page')
+    });
+
+    const successFn = jest.fn();
+    onSuccess(successFn);
+    await untilCbCalled(onSuccess);
+    expect(successFn).toBeCalledTimes(1);
+
+    notifyHandler('test_page', handlers => {
+      expect(handlers.send).toBeInstanceOf(Function);
+      expect(handlers.refresh).toBeInstanceOf(Function);
+      expect(handlers.insert).toBeInstanceOf(Function);
+      expect(handlers.remove).toBeInstanceOf(Function);
+      expect(handlers.replace).toBeInstanceOf(Function);
+      expect(handlers.reload).toBeInstanceOf(Function);
+      expect(handlers.abort).toBeInstanceOf(Function);
+      handlers.refresh(1);
+    });
+
+    await untilCbCalled(onSuccess);
+    expect(successFn).toBeCalledTimes(2);
   });
 });

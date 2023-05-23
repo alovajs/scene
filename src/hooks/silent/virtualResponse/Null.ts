@@ -1,5 +1,5 @@
-import { valueObject } from '../../../helper';
-import { nullValue, ObjectCls, STR_VALUE_OF } from '../../../helper/variables';
+import { valueObject } from '@/helper';
+import { nullValue, ObjectCls, STR_VALUE_OF } from '@/helper/variables';
 import { stringifyWithThis } from './stringifyVData';
 
 interface NullConstructor {

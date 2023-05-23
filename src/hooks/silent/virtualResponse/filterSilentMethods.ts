@@ -1,6 +1,6 @@
-import { SilentQueueMap } from '../../../../typings/general';
-import { getConfig, instanceOf, regexpTest } from '../../../helper';
-import { DEFAUT_QUEUE_NAME, falseValue, trueValue, undefinedValue } from '../../../helper/variables';
+import { getConfig, instanceOf, regexpTest } from '@/helper';
+import { DEFAUT_QUEUE_NAME, falseValue, trueValue, undefinedValue } from '@/helper/variables';
+import { SilentQueueMap } from '~/typings/general';
 import { silentFactoryStatus } from '../globalVariables';
 import { SilentMethod } from '../SilentMethod';
 import { silentQueueMap } from '../silentQueue';

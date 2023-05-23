@@ -1,4 +1,4 @@
-import { len, objectKeys, pushItem, splice } from '../../../helper';
+import { len, objectKeys, pushItem, splice } from '@/helper';
 import { SilentMethod } from '../SilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,

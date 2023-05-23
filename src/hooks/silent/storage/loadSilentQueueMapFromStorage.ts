@@ -1,5 +1,5 @@
-import { SilentQueueMap } from '../../../../typings/general';
-import { forEach, objectKeys, pushItem } from '../../../helper';
+import { forEach, objectKeys, pushItem } from '@/helper';
+import { SilentQueueMap } from '~/typings/general';
 import convertPayload2SilentMethod from './convertPayload2SilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,

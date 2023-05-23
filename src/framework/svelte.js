@@ -1,6 +1,6 @@
+import { createSyncOnceRunner, map } from '@/helper';
+import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import { derived, writable } from 'svelte/store';
-import { createSyncOnceRunner, map } from '../helper';
-import { falseValue, trueValue, undefinedValue } from '../helper/variables';
 
 /**
  * 创建状态
@@ -56,20 +56,14 @@ export const upd$ = (state, newData) => {
  * @param {import('svelte/store').Readable[]} states 监听状态
  * @param {Function} cb 回调函数
  */
-export const watch = (states, cb) => {
-  let emited = falseValue;
-  let subscribeStage = trueValue;
+export const watch = (states, handler) => {
+  let needEmit = falseValue;
   const syncRunner = createSyncOnceRunner();
-  const subscribeCb = () => {
-    if (!emited && !subscribeStage) {
-      cb();
-      emited = trueValue;
-    }
-    syncRunner(() => {
-      emited = subscribeStage = falseValue;
-    });
-  };
   states.forEach(state => {
-    state.subscribe(subscribeCb);
+    state.subscribe(() => {
+      syncRunner(() => {
+        needEmit ? handler() : (needEmit = trueValue);
+      });
+    });
   });
 };

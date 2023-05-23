@@ -1,3 +1,4 @@
+import { forEach, objectKeys, pushItem, runArgsHandler, setTimeoutFn, splice } from '@/helper';
 import {
   BeforeSilentSubmitHandler,
   SilentFactoryBootOptions,
@@ -5,8 +6,7 @@ import {
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
   SilentSubmitSuccessHandler
-} from '../../../typings/general';
-import { forEach, objectKeys, pushItem, runArgsHandler, setTimeoutFn, splice } from '../../helper';
+} from '~/typings/general';
 import {
   beforeHandlers,
   bootHandlers,

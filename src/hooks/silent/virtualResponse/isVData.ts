@@ -1,5 +1,5 @@
-import { regexpTest } from '../../../helper';
-import { falseValue } from '../../../helper/variables';
+import { regexpTest } from '@/helper';
+import { falseValue } from '@/helper/variables';
 import stringifyVData from './stringifyVData';
 import { regVDataId } from './variables';
 

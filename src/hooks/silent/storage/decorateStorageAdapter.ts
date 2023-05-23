@@ -1,6 +1,6 @@
+import { forEach, includes, instanceOf, isArray, isObject, len, objectKeys, walkObject } from '@/helper';
+import { falseValue, ObjectCls, StringCls, trueValue, undefinedValue } from '@/helper/variables';
 import { AlovaGlobalStorage } from 'alova';
-import { forEach, includes, instanceOf, isArray, isObject, len, objectKeys, walkObject } from '../../../helper';
-import { falseValue, ObjectCls, StringCls, trueValue, undefinedValue } from '../../../helper/variables';
 import { serializers } from '../serializer';
 import createVirtualResponse from '../virtualResponse/createVirtualResponse';
 import { dehydrateVDataUnified } from '../virtualResponse/dehydrateVData';

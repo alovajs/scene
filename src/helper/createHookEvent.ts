@@ -1,10 +1,11 @@
+import { defineProperty, forEach, objectKeys } from '@/helper';
+import { symbolToStringTag, undefinedValue } from '@/helper/variables';
 import { AlovaCompleteEvent, Method } from 'alova';
-import { SilentMethod, SQHookBehavior } from '../../../typings/general';
-import { defineProperty, forEach, objectKeys } from '../../helper';
-import { symbolToStringTag, undefinedValue } from '../../helper/variables';
+import { SilentMethod, SQHookBehavior } from '~/typings/general';
 
 /**
  * 创建统一的事件对象，它将承载以下事件
+ * useSQRequest相关
  * 全局的：
  * 	[GlobalSQSuccessEvent]成功：behavior、silentMethod实例、queue名称、method实例、retryTimes、响应数据、虚拟数据和实际值的集合
  * 	[GlobalSQErrorEvent]失败：behavior、silentMethod实例、queue名称、method实例、retryTimes、错误对象
@@ -19,11 +20,14 @@ import { symbolToStringTag, undefinedValue } from '../../helper/variables';
  * 	[ScopedSQEvent]入队列前：behavior、silentMethod实例、method实例、send参数
  * 	[ScopedSQEvent]入队列后：behavior、silentMethod实例、method实例、send参数
  *
+ * useRetriableRequest相关
+ * [RetriableRetryEvent]重试：method实例、sendArgs、retryTimes、retryDelay
+ * [RetriableFailEvent]重试：method实例、sendArgs、错误对象、retryTimes
  */
 export default <S, E, R, T, RC, RE, RH>(
   eventType: number,
-  behavior: SQHookBehavior,
   method: Method<S, E, R, T, RC, RE, RH>,
+  behavior?: SQHookBehavior,
   silentMethod?: SilentMethod<S, E, R, T, RC, RE, RH>,
   queueName?: string,
   retryTimes?: number,
@@ -77,15 +81,17 @@ export default <S, E, R, T, RC, RE, RH>(
   // 将此类的对象重新命名，让它看上去是由不同的类生成的对象
   // 以此来对应typescript中定义的类型
   const typeName = [
-    'GlobalSQEvent',
-    'GlobalSQSuccessEvent',
-    'GlobalSQErrorEvent',
-    'GlobalSQFailEvent',
-    'ScopedSQEvent',
-    'ScopedSQSuccessEvent',
-    'ScopedSQErrorEvent',
-    'ScopedSQCompleteEvent',
-    'ScopedSQRetryEvent'
+    'GlobalSQEvent', // 0
+    'GlobalSQSuccessEvent', // 1
+    'GlobalSQErrorEvent', // 2
+    'GlobalSQFailEvent', // 3
+    'ScopedSQEvent', // 4
+    'ScopedSQSuccessEvent', // 5
+    'ScopedSQErrorEvent', // 6
+    'ScopedSQCompleteEvent', // 7
+    'ScopedSQRetryEvent', // 8
+    'RetriableRetryEvent', // 9
+    'RetriableFailEvent' // 10
   ][eventType];
   typeName && defineProperty(sqEvent, symbolToStringTag, typeName);
   return sqEvent;

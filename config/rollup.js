@@ -6,6 +6,7 @@
 var typescript = require('rollup-plugin-typescript2');
 var { readFileSync } = require('fs');
 var compilePaths = require('./libs');
+const path = require('path');
 
 const getCompiler = (
   opt = {
@@ -26,14 +27,14 @@ if (!extension) {
   process.exit(1);
 }
 
-const pkg = JSON.parse(readFileSync('package.json').toString() || '{}');
-const version = pkg.version;
-const author = pkg.author;
-const homepage = pkg.homepage;
+const pkgPath = path.resolve(process.cwd(), './package.json');
+const pkg = require(pkgPath);
+const version = process.env.VERSION || pkg.version;
+const { name, author, homepage } = pkg;
 exports.banner = `/**
-  * ${pkg.name} ${version} (${homepage})
+  * ${name} ${version} (${homepage})
   * Copyright ${new Date().getFullYear()} ${author}. All Rights Reserved
-  * Licensed under MIT (${homepage}/blob/master/LICENSE)
+  * Licensed under MIT (${homepage}/blob/main/LICENSE)
   */
 `;
 const compilePath = (exports.compilePath = compilePaths[extension]);
