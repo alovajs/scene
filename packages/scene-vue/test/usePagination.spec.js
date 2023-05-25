@@ -3,7 +3,7 @@ import { untilCbCalled } from '#/utils';
 import { createAlova, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
-import { notifyHandler, subscriberMiddleware, usePagination } from '..';
+import { accessAction, actionDelegationMiddleware, usePagination } from '..';
 
 // reset data
 beforeEach(() => setMockListData());
@@ -983,7 +983,7 @@ describe('vue => usePagination', () => {
     });
   });
 
-  test('should notify handlers by middleware subscriber', async () => {
+  test('should access actions by middleware actionDelegation', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
       alovaInst.Get('/list-short', {
@@ -1000,7 +1000,7 @@ describe('vue => usePagination', () => {
       append: true,
       initialPage: 2,
       initialPageSize: 4,
-      middleware: subscriberMiddleware('test_page')
+      middleware: actionDelegationMiddleware('test_page')
     });
 
     const successFn = jest.fn();
@@ -1008,7 +1008,7 @@ describe('vue => usePagination', () => {
     await untilCbCalled(onSuccess);
     expect(successFn).toBeCalledTimes(1);
 
-    notifyHandler('test_page', handlers => {
+    accessAction('test_page', handlers => {
       expect(handlers.send).toBeInstanceOf(Function);
       expect(handlers.refresh).toBeInstanceOf(Function);
       expect(handlers.insert).toBeInstanceOf(Function);

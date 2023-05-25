@@ -300,7 +300,7 @@ export default function (
           middleware(
             {
               ...ctx,
-              subscribeHandlers: {
+              delegatingActions: {
                 refresh,
                 insert,
                 remove,

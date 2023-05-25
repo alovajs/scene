@@ -9,19 +9,18 @@ import {
 } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
 import {
+  AccessAction,
+  ActionDelegationMiddleware,
   BeforeSilentSubmitHandler,
   CaptchaHookConfig,
   CaptchaReturnType,
   FormHookConfig,
   FormReturnType,
   IsUnknown,
-  NotifyHandler,
   OffEventCallback,
   PaginationHookConfig,
   RetriableHookConfig,
   RetriableReturnType,
-  SQHookReturnType,
-  SQRequestHookConfig,
   SilentFactoryBootOptions,
   SilentMethod,
   SilentQueueMap,
@@ -29,7 +28,8 @@ import {
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
   SilentSubmitSuccessHandler,
-  SubscriberMiddleware
+  SQHookReturnType,
+  SQRequestHookConfig
 } from './general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
@@ -186,18 +186,18 @@ declare function useRetriableRequest<S, E, R, T, RC, RE, RH>(
 ): RetriableReturnType<S, E, R, T, RC, RE, RH>;
 
 /**
- * 订阅者中间件
- * 使用此中间件后可通过notifyHandlers直接调用订阅的函数
- * 可以订阅多个相同id
+ * 操作函数委托中间件
+ * 使用此中间件后可通过accessAction调用委托的函数
+ * 可以委托多个相同id
  * 以此来消除组件的层级限制
- * @param id 订阅者id
+ * @param id 委托者id
  * @returns alova中间件函数
  */
-declare const subscriberMiddleware: SubscriberMiddleware;
+declare const actionDelegationMiddleware: ActionDelegationMiddleware;
 
 /**
- * 通知订阅函数，如果匹配多个则会以此调用onMatch
- * @param id 订阅者id，或正则表达式
+ * 访问操作函数，如果匹配多个则会以此调用onMatch
+ * @param id 委托者id，或正则表达式
  * @param onMatch 匹配的订阅者
  */
-declare const notifyHandler: NotifyHandler;
+declare const accessAction: AccessAction;

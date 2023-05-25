@@ -1,5 +1,5 @@
-import { notifyHandler, subscriberMiddleware } from '@/middlewares/subscriber';
-import { FetcherType, createAlova, useFetcher, useRequest, useWatcher } from 'alova';
+import { accessAction, actionDelegationMiddleware } from '@/middlewares/actionDelegation';
+import { createAlova, FetcherType, useFetcher, useRequest, useWatcher } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import { mockRequestAdapter } from '~/test/mockData';
@@ -18,7 +18,7 @@ describe('vue => subscriber middleware', () => {
       });
 
     const { loading, data, onSuccess, onComplete } = useRequest(methodInstance, {
-      middleware: subscriberMiddleware('abc')
+      middleware: actionDelegationMiddleware('abc')
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
@@ -33,7 +33,7 @@ describe('vue => subscriber middleware', () => {
     expect(completeFn).toBeCalledTimes(1);
 
     await new Promise<void>(resolve => {
-      notifyHandler('abc', async ({ send }) => {
+      accessAction('abc', async ({ send }) => {
         resolve(send({ name: 'aa' }));
       });
     });
@@ -50,7 +50,7 @@ describe('vue => subscriber middleware', () => {
 
     const sym = Symbol('test');
     const { loading, data, onSuccess, onComplete } = useRequest(methodInstance, {
-      middleware: subscriberMiddleware(sym)
+      middleware: actionDelegationMiddleware(sym)
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
@@ -65,7 +65,7 @@ describe('vue => subscriber middleware', () => {
     expect(completeFn).toBeCalledTimes(1);
 
     await new Promise<void>(resolve => {
-      notifyHandler(sym, async ({ send }) => {
+      accessAction(sym, async ({ send }) => {
         resolve(send({ name: 'aa' }));
       });
     });
@@ -82,7 +82,7 @@ describe('vue => subscriber middleware', () => {
 
     const num = 123;
     const { loading, data, onSuccess, onComplete } = useRequest(methodInstance, {
-      middleware: subscriberMiddleware(num)
+      middleware: actionDelegationMiddleware(num)
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
@@ -97,7 +97,7 @@ describe('vue => subscriber middleware', () => {
     expect(completeFn).toBeCalledTimes(1);
 
     await new Promise<void>(resolve => {
-      notifyHandler(num, async ({ send }) => {
+      accessAction(num, async ({ send }) => {
         resolve(send({ name: 'aa' }));
       });
     });
@@ -114,10 +114,10 @@ describe('vue => subscriber middleware', () => {
 
     const str = 'zzz';
     const state1 = useRequest(methodInstance, {
-      middleware: subscriberMiddleware(str)
+      middleware: actionDelegationMiddleware(str)
     });
     const state2 = useRequest(methodInstance, {
-      middleware: subscriberMiddleware(str)
+      middleware: actionDelegationMiddleware(str)
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
@@ -131,7 +131,7 @@ describe('vue => subscriber middleware', () => {
     expect(completeFn).toBeCalledTimes(2);
 
     const senders = [] as Promise<any>[];
-    notifyHandler(str, async ({ send }, index) => {
+    accessAction(str, async ({ send }, index) => {
       senders.push(send({ name: 'aa' + index }));
     });
     await Promise.all(senders);
@@ -148,10 +148,10 @@ describe('vue => subscriber middleware', () => {
       });
 
     const state1 = useRequest(methodInstance, {
-      middleware: subscriberMiddleware('aaa-1')
+      middleware: actionDelegationMiddleware('aaa-1')
     });
     const state2 = useRequest(methodInstance, {
-      middleware: subscriberMiddleware('aaa-2')
+      middleware: actionDelegationMiddleware('aaa-2')
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
@@ -165,7 +165,7 @@ describe('vue => subscriber middleware', () => {
     expect(completeFn).toBeCalledTimes(2);
 
     const senders = [] as Promise<any>[];
-    notifyHandler(/^aaa/, async ({ send }, index) => {
+    accessAction(/^aaa/, async ({ send }, index) => {
       senders.push(send({ name: 'aa' + index }));
     });
     await Promise.all(senders);
@@ -177,7 +177,7 @@ describe('vue => subscriber middleware', () => {
 
   test('should throws a error when not match any handler', () => {
     expect(() => {
-      notifyHandler('not_match', () => {});
+      accessAction('not_match', () => {});
     }).toThrow('[alova/subscriber]not match handlers which id is `not_match`');
   });
 
@@ -188,11 +188,11 @@ describe('vue => subscriber middleware', () => {
       });
 
     useRequest(methodInstance, {
-      middleware: subscriberMiddleware('not_match2'),
+      middleware: actionDelegationMiddleware('not_match2'),
       immediate: false
     });
     expect(() => {
-      notifyHandler('not_match2', () => {});
+      accessAction('not_match2', () => {});
     }).toThrow('[alova/subscriber]not match handlers which id is `not_match2`');
   });
 
@@ -204,7 +204,7 @@ describe('vue => subscriber middleware', () => {
 
     const num = ref(1);
     const { loading, data, onSuccess, onComplete } = useWatcher(methodInstance, [num], {
-      middleware: subscriberMiddleware('watcher-aaa'),
+      middleware: actionDelegationMiddleware('watcher-aaa'),
       immediate: true
     });
     const successFn = jest.fn();
@@ -220,7 +220,7 @@ describe('vue => subscriber middleware', () => {
     expect(completeFn).toBeCalledTimes(1);
 
     await new Promise<void>(resolve => {
-      notifyHandler('watcher-aaa', async ({ send }) => {
+      accessAction('watcher-aaa', async ({ send }) => {
         resolve(send({ name: 'watcher-aaa' }));
       });
     });
@@ -236,7 +236,7 @@ describe('vue => subscriber middleware', () => {
       });
 
     const { fetch, onSuccess, onComplete } = useFetcher<FetcherType<typeof alovaInst>>({
-      middleware: subscriberMiddleware('fetcher-aaa')
+      middleware: actionDelegationMiddleware('fetcher-aaa')
     });
 
     const successFn = jest.fn();
@@ -249,7 +249,7 @@ describe('vue => subscriber middleware', () => {
     expect(successFn).toBeCalledTimes(1);
     expect(completeFn).toBeCalledTimes(1);
 
-    notifyHandler('fetcher-aaa', async ({ fetch }) => {
+    accessAction('fetcher-aaa', async ({ fetch }) => {
       fetch({ fetch: 'fetcher-aaa' });
     });
 

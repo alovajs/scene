@@ -2,7 +2,7 @@ import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
 import { untilCbCalled } from '~/test/utils';
-import { notifyHandler, subscriberMiddleware, useCaptcha } from '..';
+import { accessAction, actionDelegationMiddleware, useCaptcha } from '..';
 
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
@@ -77,11 +77,11 @@ describe('vue => useCaptcha', () => {
     expect(countdown.value).toBe(60);
   });
 
-  test('should notify handlers by middleware subscriber', async () => {
+  test('should access actions by middleware actionDelegation', async () => {
     const poster = alovaInst.Post('/captcha');
     const { send, onComplete, onSuccess } = useCaptcha(poster, {
       initialCountdown: 5,
-      middleware: subscriberMiddleware('test_page')
+      middleware: actionDelegationMiddleware('test_page')
     });
 
     const successFn = jest.fn();
@@ -100,7 +100,7 @@ describe('vue => useCaptcha', () => {
     expect(completeFn).toBeCalledTimes(1);
 
     jest.advanceTimersByTime(6000); // 让倒计时完成
-    notifyHandler('test_page', handlers => {
+    accessAction('test_page', handlers => {
       expect(handlers.send).toBeInstanceOf(Function);
       expect(handlers.abort).toBeInstanceOf(Function);
       promise = handlers.send();

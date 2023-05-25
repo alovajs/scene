@@ -3,7 +3,7 @@ import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
 import { untilCbCalled } from '~/test/utils';
 import { FormHookConfig } from '~/typings/general';
-import { notifyHandler, subscriberMiddleware, useForm } from '..';
+import { accessAction, actionDelegationMiddleware, useForm } from '..';
 
 type ID = NonNullable<FormHookConfig<any, any, any, any, any, any, any, any>['id']>;
 const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || getMethodKey(methodInstance)}`;
@@ -250,7 +250,7 @@ describe('vue => useForm', () => {
     expect(formRet3.form.value).toStrictEqual(initialForm);
   });
 
-  test('should notify handlers by middleware subscriber', async () => {
+  test('should access actions by middleware actionDelegation', async () => {
     const poster = (form: any) => alovaInst.Post('/saveData', form);
     const newForm = {
       name: 'Ming',
@@ -259,7 +259,7 @@ describe('vue => useForm', () => {
     const { onSuccess, onComplete } = useForm(poster, {
       initialForm: newForm,
       immediate: true,
-      middleware: subscriberMiddleware('test_page')
+      middleware: actionDelegationMiddleware('test_page')
     });
 
     const successFn = jest.fn();
@@ -268,7 +268,7 @@ describe('vue => useForm', () => {
     onComplete(completeFn);
     await untilCbCalled(onSuccess);
 
-    notifyHandler('test_page', handlers => {
+    accessAction('test_page', handlers => {
       expect(handlers.send).toBeInstanceOf(Function);
       expect(handlers.abort).toBeInstanceOf(Function);
       expect(handlers.updateForm).toBeInstanceOf(Function);
