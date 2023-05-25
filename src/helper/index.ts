@@ -31,6 +31,7 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   objectKeys = (obj: any) => ObjectCls.keys(obj),
   objectValues = (obj: any) => ObjectCls.values(obj),
   setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
+  clearTimeoutFn = (timeoutId: NodeJS.Timeout) => clearTimeout(timeoutId),
   regexpTest = (reg: RegExp, str: string) => reg.test(str);
 
 /**
@@ -44,7 +45,7 @@ export const createSyncOnceRunner = (delay = 0) => {
    */
   return (fn: () => void) => {
     if (timer) {
-      clearTimeout(timer);
+      clearTimeoutFn(timer);
     }
     timer = setTimeoutFn(fn, delay);
   };

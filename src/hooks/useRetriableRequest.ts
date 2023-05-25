@@ -1,5 +1,6 @@
 import {
   buildErrorMsg,
+  clearTimeoutFn,
   createAssert,
   delayWithBackoff,
   isNumber,
@@ -29,12 +30,18 @@ export default <S, E, R, T, RC, RE, RH>(
   const retryHandlers: RetryHandler<S, E, R, T, RC, RE, RH>[] = [];
   const failHandlers: FailHandler<S, E, R, T, RC, RE, RH>[] = [];
   let retryTimes = 0;
-  // 停止标志，在手动触发停止时设置为true
-  let stopManually = falseValue;
 
-  const emitOnFail = (method: Method<S, E, R, T, RC, RE, RH>, sendArgs: any[], error: any) =>
+  // 停止错误对象，在手动触发停止时有值
+  let stopManuallyError: Error | undefined = undefinedValue;
+  let methodInstanceLastest: Method<S, E, R, T, RC, RE, RH>;
+  let sendArgsLatest: any[];
+  let currentLoadingState = falseValue;
+  let requesting = falseValue; // 是否正在请求
+  let retryTimer: NodeJS.Timer;
+
+  const emitOnFail = (method: Method<S, E, R, T, RC, RE, RH>, sendArgs: any[], error: any) => {
     // 需要异步触发onFail，让onError和onComplete先触发
-    setTimeoutFn(() =>
+    setTimeoutFn(() => {
       runArgsHandler(
         failHandlers,
         createHookEvent(
@@ -50,19 +57,36 @@ export default <S, E, R, T, RC, RE, RH>(
           undefinedValue,
           error
         )
-      )
-    );
+      );
+      stopManuallyError = undefinedValue;
+      retryTimes = 0; // 重置已重试次数
+    });
+  };
 
-  let methodInstanceLastest: Method<S, E, R, T, RC, RE, RH>;
-  let sendArgsLatest: any[];
-  let retrying = falseValue; // 是否正在重试
+  /**
+   * 停止重试，只在重试期间调用有效
+   * 如果正在请求中，则触发中断请求，让请求错误来抛出错误，否则手动修改状态以及触发onFail
+   * 停止后将立即触发onFail事件
+   */
+  const stop = () => {
+    assert(currentLoadingState, 'there are no requests being retried');
+    stopManuallyError = new Error(buildErrorMsg(hookPrefix, 'stop retry manually'));
+    if (requesting) {
+      requestReturns.abort();
+    } else {
+      emitOnFail(methodInstanceLastest, sendArgsLatest, stopManuallyError);
+      requestReturns.update({ error: stopManuallyError, loading: falseValue });
+      currentLoadingState = falseValue;
+      clearTimeoutFn(retryTimer); // 清除重试定时器
+    }
+  };
   const requestReturns = useRequest(handler, {
     ...config,
     middleware(ctx, next) {
       middleware(
         {
           ...ctx,
-          subscribeHandler: {
+          delegatingActions: {
             stop
           }
         } as any,
@@ -70,76 +94,65 @@ export default <S, E, R, T, RC, RE, RH>(
       );
       const { update, sendArgs, send, method, controlLoading } = ctx;
       const setLoading = (loading = falseValue) => {
-        !retrying && update({ loading });
+        if (loading !== currentLoadingState) {
+          update({ loading });
+          currentLoadingState = loading;
+        }
       };
       controlLoading();
       setLoading(trueValue);
       methodInstanceLastest = method;
       sendArgsLatest = sendArgs;
+      requesting = trueValue;
       return promiseThen(
         next(),
 
         // 请求成功时设置loading为false
         val => {
-          retrying = falseValue;
+          retryTimes = 0; // 重置已重试次数
+          requesting = falseValue;
           setLoading();
           return val;
         },
 
         // 请求失败时触发重试机制
         error => {
-          // 需要重试时继续重试
-          if (isNumber(retry) ? retryTimes < retry : retry(error)) {
-            retrying = trueValue;
+          // 没有手动触发停止，以及重试次数未到达最大时触发重试
+          if (!stopManuallyError && (isNumber(retry) ? retryTimes < retry : retry(error))) {
             // 计算重试延迟时间
             const retryDelay = delayWithBackoff(backoff, ++retryTimes);
             // 延迟对应时间重试
-            setTimeoutFn(() => {
+            retryTimer = setTimeoutFn(() => {
               // 如果手动停止了则不再触发重试
-              if (!stopManually) {
-                promiseCatch(send(...sendArgs), noop); // 捕获错误不再往外抛，否则重试时也会抛出错误
-                // 触发重试事件
-                runArgsHandler(
-                  retryHandlers,
-                  createHookEvent(
-                    9,
-                    method,
-                    undefinedValue,
-                    undefinedValue,
-                    undefinedValue,
-                    retryTimes,
-                    retryDelay,
-                    sendArgs
-                  )
-                );
-              }
-
-              // 重置为false防止下次不触发重试
-              stopManually = falseValue;
+              promiseCatch(send(...sendArgs), noop); // 捕获错误不再往外抛，否则重试时也会抛出错误
+              // 触发重试事件
+              runArgsHandler(
+                retryHandlers,
+                createHookEvent(
+                  9,
+                  method,
+                  undefinedValue,
+                  undefinedValue,
+                  undefinedValue,
+                  retryTimes,
+                  retryDelay,
+                  sendArgs
+                )
+              );
             }, retryDelay);
           } else {
-            retrying = falseValue;
             setLoading();
+            error = stopManuallyError || error; // 如果stopManuallyError有值表示是通过stop函数触发停止的
             emitOnFail(method, sendArgs, error);
           }
 
+          requesting = falseValue;
           // 返回reject执行后续的错误流程
           return promiseReject(error);
         }
       );
     }
   });
-
-  /**
-   * 停止重试，只在重试期间调用有效
-   * 停止后将立即触发onFail事件
-   */
-  const stop = () => {
-    assert(retrying, 'there are no requests being retried');
-    stopManually = trueValue;
-    requestReturns.update({ loading: falseValue });
-    emitOnFail(methodInstanceLastest, sendArgsLatest, new Error(buildErrorMsg(hookPrefix, 'stop retry manually')));
-  };
 
   /**
    * 重试事件绑定

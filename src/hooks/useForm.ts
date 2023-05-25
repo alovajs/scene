@@ -1,4 +1,4 @@
-import { T$, T_$, T_exp$, Tupd$, Twatch } from '@/framework/type';
+import { T$, Tupd$, Twatch, T_$, T_exp$ } from '@/framework/type';
 import {
   createAssert,
   getContext,
@@ -10,7 +10,7 @@ import {
   sloughConfig
 } from '@/helper';
 import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
-import { Method, UseHookReturnType, getMethodKey, useRequest } from 'alova';
+import { getMethodKey, Method, UseHookReturnType, useRequest } from 'alova';
 import { FormHookConfig, FormHookHandler, RestoreHandler } from '~/typings/general';
 
 const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || getMethodKey(methodInstance)}`;
@@ -84,7 +84,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
             middleware(
               {
                 ...ctx,
-                subscribeHandlers: { updateForm, reset }
+                delegatingActions: { updateForm, reset }
               } as any,
               next
             )

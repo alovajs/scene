@@ -163,7 +163,7 @@ export default {
     // '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
     // '**/packages/scene-vue/test/useCaptcha.spec.ts(x)?'
     // '**/packages/scene-vue/test/useForm.spec.ts(x)?'
-    // '**/packages/scene-vue/test/subscriberMiddleware.spec.ts(x)?'
+    // '**/packages/scene-vue/test/actionDelegationMiddleware.spec.ts(x)?'
     // react
     // '**/packages/scene-react/test/functions.spec.ts(x)?'
     // '**/packages/scene-react/test/useRetriableRequest.spec.ts(x)?'

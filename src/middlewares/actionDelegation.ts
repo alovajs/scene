@@ -1,12 +1,12 @@
 import { createAssert, filterItem, forEach, instanceOf, isNumber, isString, objectKeys, pushItem } from '@/helper';
 import { falseValue, trueValue } from '@/helper/variables';
 import { AlovaFetcherMiddlewareContext, AlovaFrontMiddlewareContext, AlovaGuardNext } from 'alova';
-import { Handlers } from '~/typings/general';
+import { Actions } from '~/typings/general';
 
 type AnyAlovaFrontMiddlewareContext = AlovaFrontMiddlewareContext<any, any, any, any, any, any, any>;
 type AnyAlovaFetcherMiddlewareContext = AlovaFetcherMiddlewareContext<any, any, any, any, any, any, any>;
 
-const handlersMap: Record<string | number | symbol, Handlers[]> = {};
+const actionsMap: Record<string | number | symbol, Actions[]> = {};
 const isFrontMiddlewareContext = (
   context: AnyAlovaFrontMiddlewareContext | AnyAlovaFetcherMiddlewareContext
 ): context is AnyAlovaFrontMiddlewareContext => !!(context as AnyAlovaFrontMiddlewareContext).send;
@@ -14,62 +14,62 @@ const isFrontMiddlewareContext = (
 const assert = createAssert('subscriber');
 
 /**
- * 订阅者中间件
- * 使用此中间件后可通过notifyHandlers直接调用订阅的函数
- * 可以订阅多个相同id
+ * 操作函数委托中间件
+ * 使用此中间件后可通过accessAction调用委托的函数
+ * 可以委托多个相同id
  * 以此来消除组件的层级限制
- * @param id 订阅者id
+ * @param id 委托者id
  * @returns alova中间件函数
  */
-export const subscriberMiddleware = (id: string | number | symbol) => {
-  let subscribe = falseValue;
+export const actionDelegationMiddleware = (id: string | number | symbol) => {
+  let delegated = falseValue;
   return (
-    context: (AnyAlovaFrontMiddlewareContext | AnyAlovaFetcherMiddlewareContext) & { subscribeHandlers?: Handlers },
+    context: (AnyAlovaFrontMiddlewareContext | AnyAlovaFetcherMiddlewareContext) & { delegatingActions?: Actions },
     next: AlovaGuardNext<any, any, any, any, any, any, any>
   ) => {
     // 中间件会重复调用，已经订阅过了就无需再订阅了
-    if (!subscribe) {
-      const { abort, subscribeHandlers = {} } = context;
+    if (!delegated) {
+      const { abort, delegatingActions = {} } = context;
       // 相同id的将以数组形式保存在一起
-      const handlersItems = (handlersMap[id] = handlersMap[id] || []);
+      const handlersItems = (actionsMap[id] = actionsMap[id] || []);
       handlersItems.push(
         isFrontMiddlewareContext(context)
           ? {
-              ...subscribeHandlers,
+              ...delegatingActions,
               send: context.send,
               abort
             }
           : {
-              ...subscribeHandlers,
+              ...delegatingActions,
               fetch: context.fetch,
               abort
             }
       );
 
-      subscribe = trueValue;
+      delegated = trueValue;
     }
     return next();
   };
 };
 
 /**
- * 通知订阅函数，如果匹配多个则会以此调用onMatch
- * @param id 订阅者id，或正则表达式
+ * 访问操作函数，如果匹配多个则会以此调用onMatch
+ * @param id 委托者id，或正则表达式
  * @param onMatch 匹配的订阅者
  */
-export const notifyHandler = (
+export const accessAction = (
   id: string | number | symbol | RegExp,
-  onMatch: (matchedSubscriber: Handlers, index: number) => void
+  onMatch: (matchedSubscriber: Actions, index: number) => void
 ) => {
-  const matched = [] as Handlers[];
+  const matched = [] as Actions[];
   if (typeof id === 'symbol' || isString(id) || isNumber(id)) {
-    assert(!!handlersMap[id], `not match handlers which id is \`${id.toString()}\``);
-    pushItem(matched, ...handlersMap[id]);
+    assert(!!actionsMap[id], `not match handlers which id is \`${id.toString()}\``);
+    pushItem(matched, ...actionsMap[id]);
   } else if (instanceOf(id, RegExp)) {
     forEach(
-      filterItem(objectKeys(handlersMap), idItem => id.test(idItem)),
+      filterItem(objectKeys(actionsMap), idItem => id.test(idItem)),
       idItem => {
-        pushItem(matched, ...handlersMap[idItem]);
+        pushItem(matched, ...actionsMap[idItem]);
       }
     );
   }

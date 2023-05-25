@@ -1,21 +1,21 @@
 import { mockRequestAdapter } from '#/mockData';
 import { untilCbCalled } from '#/utils';
-import { SilentMethod } from '@/hooks/silent/SilentMethod';
 import { setSilentFactoryStatus } from '@/hooks/silent/globalVariables';
 import { bootSilentFactory, onSilentSubmitSuccess } from '@/hooks/silent/silentFactory';
+import { SilentMethod } from '@/hooks/silent/SilentMethod';
 import { silentQueueMap } from '@/hooks/silent/silentQueue';
 import loadSilentQueueMapFromStorage from '@/hooks/silent/storage/loadSilentQueueMapFromStorage';
 import useSQRequest from '@/hooks/silent/useSQRequest';
-import Undefined from '@/hooks/silent/virtualResponse/Undefined';
 import createVirtualResponse from '@/hooks/silent/virtualResponse/createVirtualResponse';
 import dehydrateVData from '@/hooks/silent/virtualResponse/dehydrateVData';
 import stringifyVData from '@/hooks/silent/virtualResponse/stringifyVData';
+import Undefined from '@/hooks/silent/virtualResponse/Undefined';
 import updateStateEffect from '@/hooks/silent/virtualResponse/updateStateEffect';
 import { symbolVDataId } from '@/hooks/silent/virtualResponse/variables';
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
-import { SQHookBehavior, ScopedSQErrorEvent, ScopedSQSuccessEvent } from '~/typings/general';
-import { notifyHandler, subscriberMiddleware } from '..';
+import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '~/typings/general';
+import { accessAction, actionDelegationMiddleware } from '..';
 
 const alovaInst = createAlova({
   baseURL: 'http://xxx',
@@ -713,13 +713,13 @@ describe('vue => useSQRequest', () => {
     });
   });
 
-  test('should notify handlers by middleware subscriber', async () => {
+  test('should access actions by middleware actionDelegation', async () => {
     const queue = 'tb33221';
     const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
     const { onSuccess, onComplete } = useSQRequest(() => Get, {
       queue,
       behavior: 'queue',
-      middleware: subscriberMiddleware('test_page')
+      middleware: actionDelegationMiddleware('test_page')
     });
 
     const successFn = jest.fn();
@@ -731,7 +731,7 @@ describe('vue => useSQRequest', () => {
     expect(successFn).toBeCalledTimes(1);
     expect(completeFn).toBeCalledTimes(1);
 
-    notifyHandler('test_page', handlers => {
+    accessAction('test_page', handlers => {
       expect(handlers.send).toBeInstanceOf(Function);
       expect(handlers.abort).toBeInstanceOf(Function);
       handlers.send();

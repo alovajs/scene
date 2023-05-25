@@ -1,6 +1,7 @@
-export interface FrameworkState<T> {
-  [x: string]: T;
-}
+import { Writable } from 'svelte/store';
+import { Ref } from 'vue';
+
+export type FrameworkState<T> = T | Ref<T> | Writable<T>;
 export interface FrameworkExportedValue<T> {
   [x: string]: T;
 }
