@@ -6,7 +6,7 @@ import {
   silentMethodIdQueueMapStorageKey,
   silentMethodStorageKeyPrefix,
   storageGetItem
-} from './helper';
+} from './performers';
 
 /**
  * 从storage中载入静默队列数据

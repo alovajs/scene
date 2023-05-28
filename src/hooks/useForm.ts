@@ -1,17 +1,18 @@
-import { T$, Tupd$, Twatch, T_$, T_exp$ } from '@/framework/type';
+import { T$, T_$, T_exp$, TonMounted, Tupd$, TuseFlag$, Twatch } from '@/framework/type';
 import {
   createAssert,
   getContext,
   isNumber,
+  isObject,
   isString,
   pushItem,
   runArgsHandler,
-  setTimeoutFn,
   sloughConfig
 } from '@/helper';
+import createSerializerPerformer from '@/helper/serializer';
 import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
-import { getMethodKey, Method, UseHookReturnType, useRequest } from 'alova';
-import { FormHookConfig, FormHookHandler, RestoreHandler } from '~/typings/general';
+import { Method, UseHookReturnType, getMethodKey, useRequest } from 'alova';
+import { FormHookConfig, FormHookHandler, RestoreHandler, StoreDetailConfig } from '~/typings/general';
 
 const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || getMethodKey(methodInstance)}`;
 type ID = NonNullable<FormHookConfig<any, any, any, any, any, any, any, any>['id']>;
@@ -30,7 +31,9 @@ export default <S, E, R, T, RC, RE, RH, F>(
   _$: T_$,
   _exp$: T_exp$,
   upd$: Tupd$,
-  watch: Twatch
+  watch$: Twatch,
+  onMounted$: TonMounted,
+  useFlag$: TuseFlag$
 ) => {
   // 如果第一个参数传入的是id，则获取它的初始化数据并返回
   let checkSharedState = falseValue;
@@ -40,8 +43,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
   }
 
   // 默认不发送请求
-  const { id, initialForm, store, resetAfterSubmit, immediate = falseValue, middleware } = config;
-
+  const { id } = config;
   // id有值时才检查是共用数据
   if (id) {
     const sharedState = sharedStates[id];
@@ -52,24 +54,38 @@ export default <S, E, R, T, RC, RE, RH, F>(
     }
   }
 
-  const form = $(initialForm);
-  const methodHandler = handler as FormHookHandler<S, E, R, T, RC, RE, RH, F>;
-  const restoreHandlers: RestoreHandler[] = [];
+  const { initialForm, store, resetAfterSubmit, immediate = falseValue, middleware } = config,
+    form = $(initialForm),
+    methodHandler = handler as FormHookHandler<S, E, R, T, RC, RE, RH, F>,
+    restoreHandlers: RestoreHandler[] = [],
+    initialMethodInstance = sloughConfig(methodHandler, [_$(form)]),
+    isStoreObject = isObject(store),
+    enableStore = isStoreObject ? (store as StoreDetailConfig).enable : store,
+    storageContext = getContext(initialMethodInstance).storage,
+    storagedKey = useFlag$(getStoragedKey(initialMethodInstance, id)),
+    reseting = useFlag$(falseValue),
+    serializerPerformer = useFlag$(
+      createSerializerPerformer(isStoreObject ? (store as StoreDetailConfig).serializers : undefinedValue)
+    );
 
   /**
    * 重置form数据
    */
   const reset = () => {
+    reseting.v = trueValue;
     upd$(form, initialForm);
-    store && storageContext.remove(storagedKey);
+    enableStore && storageContext.remove(storagedKey.v);
   };
 
   /**
    * 更新form数据
    * @param newForm 新表单数据
    */
-  const updateForm = (newForm: F | ((oldForm: F) => F)) => {
-    upd$(form as any, newForm);
+  const updateForm = (newForm: Partial<F> | ((oldForm: F) => F)) => {
+    upd$(form as any, {
+      ..._$(form),
+      ...newForm
+    });
   };
   let hookReturns = {
     form: _exp$(form),
@@ -91,7 +107,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
         : undefinedValue,
 
       // 当需要持久化时，将在数据恢复后触发
-      immediate: store ? falseValue : immediate
+      immediate: enableStore ? falseValue : immediate
     }),
 
     // 持久化数据恢复事件绑定
@@ -109,26 +125,29 @@ export default <S, E, R, T, RC, RE, RH, F>(
     });
 
   const { send, onSuccess } = hookReturns;
-  const initialMethodInstance = sloughConfig(methodHandler, [_$(form)]);
-  const storageContext = getContext(initialMethodInstance).storage;
-  const storagedKey = getStoragedKey(initialMethodInstance, id);
   // 需要持久化时更新data
-  if (store) {
-    // 获取存储并更新data
-    const storagedForm = storageContext.get(storagedKey);
+  if (enableStore) {
+    onMounted$(() => {
+      // 获取存储并更新data
+      // 需要在onMounted中调用，否则会导致在react中重复被调用
+      const storagedForm = serializerPerformer.v.deserialize(storageContext.get(storagedKey.v));
 
-    // 有草稿数据时，异步恢复数据，否则无法正常绑定onRetore事件
-    storagedForm &&
-      setTimeoutFn(() => {
+      // 有草稿数据时，异步恢复数据，否则无法正常绑定onRetore事件
+      if (storagedForm) {
         upd$(form, storagedForm);
         // 触发持久化数据恢复事件
         runArgsHandler(restoreHandlers);
-        store && immediate && send();
-      });
+        enableStore && immediate && send();
+      }
+    });
 
     // 监听变化同步存储
-    watch([form], () => {
-      storageContext.set(storagedKey, _$(form));
+    watch$([form], () => {
+      if (reseting.v) {
+        reseting.v = falseValue;
+        return;
+      }
+      storageContext.set(storagedKey.v, serializerPerformer.v.serialize(_$(form)));
     });
   }
   // 如果在提交后需要清除数据，则调用reset

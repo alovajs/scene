@@ -1,4 +1,4 @@
-import { $, $$, upd$, watch, _$, _exp$, _expBatch$ } from '@/framework/react';
+import { $, $$, onMounted$, upd$, useFlag$, watch$, _$, _exp$, _expBatch$ } from '@/framework/react';
 import usePagination_unified from '@/hooks/pagination/usePagination';
 import useSQRequest_unified from '@/hooks/silent/useSQRequest';
 import useCaptcha_unified from '@/hooks/useCaptcha';
@@ -6,7 +6,7 @@ import useForm_unified from '@/hooks/useForm';
 import useRetriableRequest_unified from '@/hooks/useRetriableRequest';
 
 export const usePagination = (handler, config = {}) =>
-  usePagination_unified(handler, config, $, $$, upd$, _$, _exp$, _expBatch$, watch);
+  usePagination_unified(handler, config, $, $$, upd$, _$, _exp$, _expBatch$, watch$);
 
 // 已通过 hooks/silent/useSQRequest 导入测试
 /* c8 ignore start */
@@ -29,10 +29,11 @@ export { default as updateStateEffect } from '@/hooks/silent/virtualResponse/upd
 export { accessAction, actionDelegationMiddleware } from '@/middlewares/actionDelegation'; // 导出actionDelegation中间件
 
 // 导出useCaptcha
-export const useCaptcha = (handler, config = {}) => useCaptcha_unified(handler, config, $, upd$, _$, _exp$);
+export const useCaptcha = (handler, config = {}) => useCaptcha_unified(handler, config, $, upd$, _$, _exp$, useFlag$);
 
 // 导出useForm
-export const useForm = (handler, config = {}) => useForm_unified(handler, config, $, _$, _exp$, upd$, watch);
+export const useForm = (handler, config = {}) =>
+  useForm_unified(handler, config, $, _$, _exp$, upd$, watch$, onMounted$, useFlag$);
 
 // 导出useRetriableRequest
-export const useRetriableRequest = (handler, config = {}) => useRetriableRequest_unified(handler, config, _$);
+export const useRetriableRequest = (handler, config = {}) => useRetriableRequest_unified(handler, config, useFlag$);

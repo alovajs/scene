@@ -1,4 +1,4 @@
-import { $, $$, upd$, watch, _$, _exp$, _expBatch$ } from '@/framework/svelte';
+import { $, $$, upd$, watch$, _$, _exp$, _expBatch$ } from '@/framework/svelte';
 import { untilCbCalled } from '~/test/utils';
 
 // 测试svelte的封装函数
@@ -25,7 +25,7 @@ describe('svelte framework functions', () => {
     const mockFn = jest.fn();
     const state1 = $(0);
     const state2 = $('a');
-    watch(_expBatch$(state1, state2), mockFn);
+    watch$(_expBatch$(state1, state2), mockFn);
     await untilCbCalled(setTimeout, 5);
 
     upd$(state1, 1);

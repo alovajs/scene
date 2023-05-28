@@ -462,9 +462,29 @@ type CaptchaReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, R
  * useForm的handler函数类型
  */
 type FormHookHandler<S, E, R, T, RC, RE, RH, F> = (form: F, ...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
+
 /**
  * useForm配置
  */
+interface StoreDetailConfig {
+  /**
+   * 是否启用持久化数据
+   */
+  enable: boolean;
+
+  /**
+   * 序列化器集合，用于自定义转换为序列化时某些不能直接转换的数据
+   * 集合的key作为它的名字进行序列化，当反序列化时会将对应名字的值传入backward函数中
+   * 因此，在forward中序列化时需判断是否为指定的数据，并返回转换后的数据，否则返回undefined或不返回
+   * 而在backward中可通过名字来识别，因此只需直接反序列化即可
+   * 内置的序列化器：
+   * 1. date序列化器用于转换日期
+   * 2. regexp序列化器用于转化正则表达式
+   *
+   * >>> 可以通过设置同名序列化器来覆盖内置序列化器
+   */
+  serializers?: Record<string | number, DataSerializer>;
+}
 type FormHookConfig<S, E, R, T, RC, RE, RH, F> = {
   /**
    * 初始表单数据
@@ -481,7 +501,7 @@ type FormHookConfig<S, E, R, T, RC, RE, RH, F> = {
    * 是否持久化保存数据，设置为true后将实时持久化未提交的数据
    * @default false
    */
-  store?: boolean;
+  store?: boolean | StoreDetailConfig;
 
   /**
    * 提交后重置数据
@@ -509,7 +529,7 @@ type FormReturnType<S, E, R, T, RC, RE, RH, F> = UseHookReturnType<S, E, R, T, R
    * 更新表单数据，可传入
    * @param newForm 新表单数据
    */
-  updateForm(newForm: F | ((oldForm: F) => F)): void;
+  updateForm(newForm: Partial<F> | ((oldForm: F) => F)): void;
 
   /**
    * 重置为初始化数据，如果有持久化数据则清空

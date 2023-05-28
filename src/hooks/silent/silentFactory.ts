@@ -12,15 +12,14 @@ import {
   bootHandlers,
   errorHandlers,
   failHandlers,
+  setCustomSerializers,
   setDependentAlova,
   setQueueRequestWaitSetting,
   setSilentFactoryStatus,
   silentFactoryStatus,
   successHandlers
 } from './globalVariables';
-import { mergeSerializer } from './serializer';
 import { bootSilentQueue, merge2SilentQueueMap, silentQueueMap } from './silentQueue';
-import decorateStorageAdapter from './storage/decorateStorageAdapter';
 import loadSilentQueueMapFromStorage from './storage/loadSilentQueueMapFromStorage';
 
 const offEventCallback = (offHandler: any, handlers: any[]) => () => {
@@ -88,9 +87,8 @@ export const onBeforeSilentSubmit = (handler: BeforeSilentSubmitHandler) => {
 export const bootSilentFactory = (options: SilentFactoryBootOptions) => {
   if (silentFactoryStatus === 0) {
     const { alova } = options;
-    decorateStorageAdapter(alova.storage);
     setDependentAlova(alova);
-    mergeSerializer(options.serializers);
+    setCustomSerializers(options.serializers);
     setQueueRequestWaitSetting(options.requestWait);
     setTimeoutFn(() => {
       // 延时加载，让页面的queue放在最前面

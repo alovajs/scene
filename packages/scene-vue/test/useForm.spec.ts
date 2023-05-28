@@ -1,9 +1,13 @@
-import { createAlova, getMethodKey, Method } from 'alova';
+import '@testing-library/jest-dom';
+import { fireEvent, render, screen } from '@testing-library/vue';
+import { Method, createAlova, getMethodKey } from 'alova';
 import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
 import { untilCbCalled } from '~/test/utils';
 import { FormHookConfig } from '~/typings/general';
 import { accessAction, actionDelegationMiddleware, useForm } from '..';
+import CompPersistentDataReset from './components/persistent-data-reset.vue';
+import CompRestorePersistentData from './components/restore-persistent-data.vue';
 
 type ID = NonNullable<FormHookConfig<any, any, any, any, any, any, any, any>['id']>;
 const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || getMethodKey(methodInstance)}`;
@@ -18,13 +22,14 @@ describe('vue => useForm', () => {
     const { form, send, loading, updateForm } = useForm(poster);
     expect(form.value).toBeUndefined();
     expect(loading.value).toBeFalsy();
+    updateForm({ name: 'Ming' });
+    updateForm({ age: '18' });
+
     const newForm = {
       name: 'Ming',
       age: '18'
     };
-    updateForm(newForm);
     expect(form.value).toStrictEqual(newForm);
-
     const res = await send(form.value);
     expect(res).toStrictEqual({
       code: 200,
@@ -133,28 +138,23 @@ describe('vue => useForm', () => {
     const methodStorageKey = getStoragedKey(poster(initialForm));
     alovaInst.storage.set(methodStorageKey, storagedForm);
 
-    const { form, onSuccess, onRestore } = useForm(poster, {
-      initialForm,
-      store: true,
-      resetAfterSubmit: true,
-      immediate: true
-    });
-    expect(form.value).toStrictEqual(initialForm); // 缓存恢复前
-    const restoreMockHandler = jest.fn();
-    onRestore(() => {
-      expect(form.value).toStrictEqual(storagedForm); // 缓存恢复后
-      restoreMockHandler();
-    });
+    render(CompRestorePersistentData);
 
-    const { data } = await untilCbCalled(onSuccess);
-    expect(restoreMockHandler).toBeCalled(); // 没有缓存不会触发onRestore
-    expect(form.value).toStrictEqual(initialForm); // 请求成功后重置了
+    expect(screen.getByRole('form')).toHaveTextContent(JSON.stringify(initialForm)); // 缓存恢复前
+    await screen.findByText('isRestore_1');
+    expect(screen.getByRole('form')).toHaveTextContent(JSON.stringify(storagedForm)); // 缓存恢复后
+
+    // 缓存恢复后才会开始发送请求
+    await screen.findByText('isSuccess_1');
+    expect(screen.getByRole('form')).toHaveTextContent(JSON.stringify(initialForm)); // 请求成功后重置了
 
     // 当有缓存数据并且immediate设置为true时，会在数据恢复后再发起提交
-    expect(data).toStrictEqual({
-      code: 200,
-      data: storagedForm
-    });
+    expect(screen.getByRole('data')).toHaveTextContent(
+      JSON.stringify({
+        code: 200,
+        data: storagedForm
+      })
+    );
   });
 
   test('should reset when call function reset manually', () => {
@@ -178,28 +178,62 @@ describe('vue => useForm', () => {
     expect(form.value).toStrictEqual(initialForm);
   });
 
+  test('should clear storaged data when call function reset manually', async () => {
+    const poster = (data: any) => alovaInst.Post('/saveData', data);
+    const initialForm = {
+      date: null as Date | null,
+      reg: null as RegExp | null
+    };
+    const { form, reset } = useForm(poster, {
+      initialForm,
+      store: true
+    });
+    const methodStorageKey = getStoragedKey(poster(initialForm));
+    const dateObj = new Date('2022-10-01 00:00:00');
+    const dateTimestamp = dateObj.getTime();
+    const regObj = /abc_([0-9])+$/;
+    form.value.date = dateObj;
+    form.value.reg = regObj;
+    await untilCbCalled(setTimeout, 20);
+    expect(form.value).toStrictEqual({
+      date: dateObj,
+      reg: regObj
+    });
+    // 序列化自动转换date和regexp对象
+    expect(alovaInst.storage.get(methodStorageKey)).toStrictEqual({
+      date: ['date', dateTimestamp],
+      reg: ['regexp', regObj.source]
+    });
+
+    reset();
+    expect(form.value).toStrictEqual(initialForm);
+    await untilCbCalled(setTimeout, 20);
+    expect(alovaInst.storage.get(methodStorageKey)).toBeNull();
+  });
+
   test('should remove storage form data when call function reset', async () => {
     const poster = (data: any) => alovaInst.Post('/saveData?d=3', data);
-    const initialForm = undefined;
+    const initialForm = {
+      name: '',
+      age: ''
+    };
     const storagedForm = {
       name: 'Hong',
       age: '22'
     };
+
     // 预先存储数据，模拟刷新恢复持久化数据
     const methodStorageKey = getStoragedKey(poster(initialForm));
     alovaInst.storage.set(methodStorageKey, storagedForm);
     const getStoragedForm = () => alovaInst.storage.get(methodStorageKey);
     expect(getStoragedForm()).toStrictEqual(storagedForm);
-    const { form, reset } = useForm(poster, {
-      initialForm,
-      store: true
-    });
-    expect(form.value).toStrictEqual(initialForm); // 缓存恢复前
 
-    await untilCbCalled(setTimeout, 10);
-    expect(form.value).toStrictEqual(storagedForm); // 缓存恢复后
+    render(CompPersistentDataReset); // 渲染组件
+    expect(screen.getByRole('form')).toHaveTextContent(JSON.stringify(initialForm)); // 缓存恢复前
+    await screen.findByText('isRestore_1');
+    expect(screen.getByRole('form')).toHaveTextContent(JSON.stringify(storagedForm)); // 缓存恢复后
 
-    reset(); // reset后删除缓存
+    fireEvent.click(screen.getByRole('btnReset'));
     expect(getStoragedForm()).toBeNull();
   });
 

@@ -1,6 +1,6 @@
 import { CacheExpire, LocalCacheConfig, Method } from 'alova';
 import { BackoffPolicy } from '~/typings/general';
-import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, trueValue, undefinedValue } from './variables';
+import { ObjectCls, PromiseCls, StringCls, falseValue, nullValue, trueValue, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   promiseReject = <T>(value: T) => PromiseCls.reject(value),
@@ -31,14 +31,14 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   objectKeys = (obj: any) => ObjectCls.keys(obj),
   objectValues = (obj: any) => ObjectCls.values(obj),
   setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
-  clearTimeoutFn = (timeoutId: NodeJS.Timeout) => clearTimeout(timeoutId),
+  clearTimeoutFn = (timeoutId?: string | number | NodeJS.Timeout) => clearTimeout(timeoutId),
   regexpTest = (reg: RegExp, str: string) => reg.test(str);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
  */
 export const createSyncOnceRunner = (delay = 0) => {
-  let timer: NodeJS.Timer | undefined = undefinedValue;
+  let timer: NodeJS.Timeout | number | undefined = undefinedValue;
 
   /**
    * 执行多次调用此函数将异步执行一次

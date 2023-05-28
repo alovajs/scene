@@ -1,6 +1,6 @@
-import { T$, T_$, T_exp$, Tupd$ } from '@/framework/type';
+import { T$, Tupd$, TuseFlag$, T_$, T_exp$ } from '@/framework/type';
 import { buildErrorMsg, createAssert, newInstance } from '@/helper';
-import { PromiseCls, falseValue, undefinedValue } from '@/helper/variables';
+import { falseValue, PromiseCls, undefinedValue } from '@/helper/variables';
 import { AlovaMethodHandler, Method, useRequest } from 'alova';
 import { CaptchaHookConfig } from '~/typings/general';
 
@@ -12,7 +12,8 @@ export default <S, E, R, T, RC, RE, RH>(
   $: T$,
   upd$: Tupd$,
   _$: T_$,
-  _exp$: T_exp$
+  _exp$: T_exp$,
+  useFlag$: TuseFlag$
 ) => {
   const { initialCountdown, middleware } = config;
   assert(initialCountdown === undefinedValue || initialCountdown > 0, 'initialCountdown must be greater than 0');
@@ -24,7 +25,7 @@ export default <S, E, R, T, RC, RE, RH>(
     middleware: middleware ? (ctx, next) => middleware({ ...ctx, send }, next) : undefinedValue
   });
 
-  let timer: NodeJS.Timer;
+  const timer = useFlag$(undefinedValue as NodeJS.Timeout | undefined);
   const send = (...args: any[]) =>
     newInstance(PromiseCls, (resolve, reject) => {
       if (_$(countdown) <= 0) {
@@ -32,10 +33,10 @@ export default <S, E, R, T, RC, RE, RH>(
           .send(...args)
           .then(result => {
             upd$(countdown, config.initialCountdown || 60);
-            timer = setInterval(() => {
+            timer.v = setInterval(() => {
               upd$(countdown, val => val - 1);
               if (_$(countdown) <= 0) {
-                clearInterval(timer);
+                clearInterval(timer.v);
               }
             }, 1000);
             resolve(result);

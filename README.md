@@ -25,7 +25,7 @@ Response upon submission, greatly reducing the impact of network fluctuations, a
 
 ## What's next?
 
-As mentioned above, the mission of alova is to propose better request management solutions for different request scenarios, and solutions for specific scenarios will be found in [**alovajs/scene**](https://github.com/alovajs/ scene), if you have an expected request scene, welcome to discuss it through [issue](https://github.com/alovajs/extensions/issues), and welcome to contribute your ingenuity through [pull requests](https://github.com/alovajs/extensions/pulls) to make alova better together.
+As mentioned above, the mission of alova is to propose better request management solutions for different request scenarios, and solutions for specific scenarios will be found in [**alovajs/scene**](https://github.com/alovajs/scene), if you have an expected request scene, welcome to discuss it through [issue](https://github.com/alovajs/scene/issues), and welcome to contribute your ingenuity through [pull requests](https://github.com/alovajs/scene/pulls) to make alova better together.
 
 ## LICENSE
 
