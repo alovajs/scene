@@ -25,7 +25,7 @@
 
 ## 下一步做什么？
 
-就像上面所说，alova 的使命是针对不同的请求场景提出更好的请求管理方案，特定场景的方案将会在 [**alovajs/scene**](https://github.com/alovajs/scene) 中实现，如果你有期待的请求场景，欢迎通过 [issue](https://github.com/alovajs/extensions/issues) 来讨论，也欢迎贡献你的聪明才智，通过 [pull requests](https://github.com/alovajs/extensions/pulls) 来一起让 alova 变得更好。
+就像上面所说，alova 的使命是针对不同的请求场景提出更好的请求管理方案，特定场景的方案将会在 [**alovajs/scene**](https://github.com/alovajs/scene) 中实现，如果你有期待的请求场景，欢迎通过 [issue](https://github.com/alovajs/scene/issues) 来讨论，也欢迎贡献你的聪明才智，通过 [pull requests](https://github.com/alovajs/scene/pulls) 来一起让 alova 变得更好。
 
 ## LICENSE
 

@@ -1,4 +1,4 @@
-import { $, $$, upd$, watch, _$, _exp$, _expBatch$ } from '@/framework/react';
+import { $, $$, upd$, watch$, _$, _exp$, _expBatch$ } from '@/framework/react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React, { ReactElement } from 'react';
@@ -64,7 +64,7 @@ describe('react framework functions', () => {
     function Page() {
       const state1 = $(0);
       const state2 = $('a');
-      watch(_expBatch$(state1, state2), mockFn);
+      watch$(_expBatch$(state1, state2), mockFn);
       return (
         <div>
           <span>flag</span>

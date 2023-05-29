@@ -7,7 +7,7 @@ import {
   storageGetItem,
   storageRemoveItem,
   storageSetItem
-} from './helper';
+} from './performers';
 
 /**
  * 序列化并保存silentMethod实例

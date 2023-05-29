@@ -1,6 +1,6 @@
 import { isArray, map } from '@/helper';
-import { falseValue } from '@/helper/variables';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { falseValue, undefinedValue } from '@/helper/variables';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * 创建状态
@@ -45,10 +45,30 @@ export const upd$ = (state, newData) => state[1](newData);
  * @param {import('react').DependencyList} states 监听状态
  * @param {Function} cb 回调函数
  */
-export const watch = (states, cb) => {
+export const watch$ = (states, cb) => {
   // 当有监听状态时，状态变化再触发
   const needEmit = useRef(falseValue);
-  useLayoutEffect(() => {
+  useEffect(() => {
     needEmit.current ? cb() : (needEmit.current = true);
   }, states);
+};
+
+/**
+ * 组件挂载执行
+ * @param {Function} cb 回调函数
+ */
+export const onMounted$ = cb => {
+  useEffect(cb, []);
+};
+
+/**
+ * 使用标识，一般作为标识
+ * 在react中每次渲染都会调用hook，如果使用基础数据每次将会获得初始值
+ * 为解决这个问题，在react中需使用useRef作为标识
+ * @param initialValue 初始值
+ */
+export const useFlag$ = initialValue => {
+  const ref = useRef(initialValue);
+  ref.v === undefinedValue && (ref.v = initialValue);
+  return ref;
 };

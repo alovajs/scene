@@ -1,12 +1,10 @@
 import { createAlova, Method } from 'alova';
 import GlobalFetch from 'alova/GlobalFetch';
 import VueHook from 'alova/vue';
-import { setDependentAlova } from '../../src/hooks/silent/globalVariables';
-import { mergeSerializer, serializers } from '../../src/hooks/silent/serializer';
+import { customSerializers, setCustomSerializers, setDependentAlova } from '../../src/hooks/silent/globalVariables';
 import { SerializedSilentMethod, SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import convertPayload2SilentMethod from '../../src/hooks/silent/storage/convertPayload2SilentMethod';
-import decorateStorageAdapter from '../../src/hooks/silent/storage/decorateStorageAdapter';
-import { storageGetItem, storageSetItem } from '../../src/hooks/silent/storage/helper';
+import { storageGetItem, storageSetItem } from '../../src/hooks/silent/storage/performers';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import dehydrateVData from '../../src/hooks/silent/virtualResponse/dehydrateVData';
 import Null from '../../src/hooks/silent/virtualResponse/Null';
@@ -14,17 +12,17 @@ import Undefined from '../../src/hooks/silent/virtualResponse/Undefined';
 import { symbolVDataId } from '../../src/hooks/silent/virtualResponse/variables';
 
 // 虚拟响应测试
-describe('serializers', () => {
-  test('merge serializers', () => {
-    mergeSerializer({
+describe('serialized storage with virtual response', () => {
+  test('add custom serializers', () => {
+    setCustomSerializers({
       custom12: {
         forward: () => undefined,
         backward: () => undefined
       }
     });
 
-    // 内置两个，新增一个
-    expect(Object.keys(serializers)).toHaveLength(3);
+    // 新增一个自定义序列化器
+    expect(Object.keys(customSerializers)).toHaveLength(1);
   });
 
   test('serialized data must be the same as original data', () => {
@@ -45,11 +43,10 @@ describe('serializers', () => {
         }
       }
     });
-    decorateStorageAdapter(alovaInst.storage);
     setDependentAlova(alovaInst);
-    mergeSerializer({
+    setCustomSerializers({
       custom: {
-        forward: data => (data === 'a,a' ? '2a' : undefined),
+        forward: (data: any) => (data === 'a,a' ? '2a' : undefined),
         backward: () => 'a,a'
       }
     });

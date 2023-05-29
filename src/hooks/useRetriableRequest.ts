@@ -1,3 +1,4 @@
+import { TuseFlag$ } from '@/framework/type';
 import {
   buildErrorMsg,
   clearTimeoutFn,
@@ -24,20 +25,19 @@ const hookPrefix = 'useRetriableRequest';
 const assert = createAssert(hookPrefix);
 export default <S, E, R, T, RC, RE, RH>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config: RetriableHookConfig<S, E, R, T, RC, RE, RH>
+  config: RetriableHookConfig<S, E, R, T, RC, RE, RH>,
+  useFlag$: TuseFlag$
 ) => {
   const { retry = 3, backoff = { delay: 1000 }, middleware = noop } = config;
   const retryHandlers: RetryHandler<S, E, R, T, RC, RE, RH>[] = [];
   const failHandlers: FailHandler<S, E, R, T, RC, RE, RH>[] = [];
-  let retryTimes = 0;
-
-  // 停止错误对象，在手动触发停止时有值
-  let stopManuallyError: Error | undefined = undefinedValue;
-  let methodInstanceLastest: Method<S, E, R, T, RC, RE, RH>;
-  let sendArgsLatest: any[];
-  let currentLoadingState = falseValue;
-  let requesting = falseValue; // 是否正在请求
-  let retryTimer: NodeJS.Timer;
+  const retryTimes = useFlag$(0);
+  const stopManuallyError = useFlag$(undefinedValue as Error | undefined); // 停止错误对象，在手动触发停止时有值
+  const methodInstanceLastest = useFlag$(undefinedValue as Method<S, E, R, T, RC, RE, RH> | undefined);
+  const sendArgsLatest = useFlag$(undefinedValue as any[] | undefined);
+  const currentLoadingState = useFlag$(falseValue);
+  const requesting = useFlag$(falseValue); // 是否正在请求
+  const retryTimer = useFlag$(undefinedValue as string | number | NodeJS.Timeout | undefined);
 
   const emitOnFail = (method: Method<S, E, R, T, RC, RE, RH>, sendArgs: any[], error: any) => {
     // 需要异步触发onFail，让onError和onComplete先触发
@@ -50,7 +50,7 @@ export default <S, E, R, T, RC, RE, RH>(
           undefinedValue,
           undefinedValue,
           undefinedValue,
-          retryTimes,
+          retryTimes.v,
           undefinedValue,
           sendArgs,
           undefinedValue,
@@ -58,8 +58,8 @@ export default <S, E, R, T, RC, RE, RH>(
           error
         )
       );
-      stopManuallyError = undefinedValue;
-      retryTimes = 0; // 重置已重试次数
+      stopManuallyError.v = undefinedValue;
+      retryTimes.v = 0; // 重置已重试次数
     });
   };
 
@@ -69,15 +69,15 @@ export default <S, E, R, T, RC, RE, RH>(
    * 停止后将立即触发onFail事件
    */
   const stop = () => {
-    assert(currentLoadingState, 'there are no requests being retried');
-    stopManuallyError = new Error(buildErrorMsg(hookPrefix, 'stop retry manually'));
-    if (requesting) {
+    assert(currentLoadingState.v, 'there are no requests being retried');
+    stopManuallyError.v = new Error(buildErrorMsg(hookPrefix, 'stop retry manually'));
+    if (requesting.v) {
       requestReturns.abort();
     } else {
-      emitOnFail(methodInstanceLastest, sendArgsLatest, stopManuallyError);
-      requestReturns.update({ error: stopManuallyError, loading: falseValue });
-      currentLoadingState = falseValue;
-      clearTimeoutFn(retryTimer); // 清除重试定时器
+      emitOnFail(methodInstanceLastest.v as any, sendArgsLatest.v as any, stopManuallyError.v);
+      requestReturns.update({ error: stopManuallyError.v, loading: falseValue });
+      currentLoadingState.v = falseValue;
+      clearTimeoutFn(retryTimer.v); // 清除重试定时器
     }
   };
   const requestReturns = useRequest(handler, {
@@ -94,23 +94,23 @@ export default <S, E, R, T, RC, RE, RH>(
       );
       const { update, sendArgs, send, method, controlLoading } = ctx;
       const setLoading = (loading = falseValue) => {
-        if (loading !== currentLoadingState) {
+        if (loading !== currentLoadingState.v) {
           update({ loading });
-          currentLoadingState = loading;
+          currentLoadingState.v = loading;
         }
       };
       controlLoading();
       setLoading(trueValue);
-      methodInstanceLastest = method;
-      sendArgsLatest = sendArgs;
-      requesting = trueValue;
+      methodInstanceLastest.v = method;
+      sendArgsLatest.v = sendArgs;
+      requesting.v = trueValue;
       return promiseThen(
         next(),
 
         // 请求成功时设置loading为false
         val => {
-          retryTimes = 0; // 重置已重试次数
-          requesting = falseValue;
+          retryTimes.v = 0; // 重置已重试次数
+          requesting.v = falseValue;
           setLoading();
           return val;
         },
@@ -118,11 +118,11 @@ export default <S, E, R, T, RC, RE, RH>(
         // 请求失败时触发重试机制
         error => {
           // 没有手动触发停止，以及重试次数未到达最大时触发重试
-          if (!stopManuallyError && (isNumber(retry) ? retryTimes < retry : retry(error))) {
+          if (!stopManuallyError.v && (isNumber(retry) ? retryTimes.v < retry : retry(error))) {
             // 计算重试延迟时间
-            const retryDelay = delayWithBackoff(backoff, ++retryTimes);
+            const retryDelay = delayWithBackoff(backoff, ++retryTimes.v);
             // 延迟对应时间重试
-            retryTimer = setTimeoutFn(() => {
+            retryTimer.v = setTimeoutFn(() => {
               // 如果手动停止了则不再触发重试
               promiseCatch(send(...sendArgs), noop); // 捕获错误不再往外抛，否则重试时也会抛出错误
               // 触发重试事件
@@ -134,7 +134,7 @@ export default <S, E, R, T, RC, RE, RH>(
                   undefinedValue,
                   undefinedValue,
                   undefinedValue,
-                  retryTimes,
+                  retryTimes.v,
                   retryDelay,
                   sendArgs
                 )
@@ -142,11 +142,11 @@ export default <S, E, R, T, RC, RE, RH>(
             }, retryDelay);
           } else {
             setLoading();
-            error = stopManuallyError || error; // 如果stopManuallyError有值表示是通过stop函数触发停止的
+            error = stopManuallyError.v || error; // 如果stopManuallyError有值表示是通过stop函数触发停止的
             emitOnFail(method, sendArgs, error);
           }
 
-          requesting = falseValue;
+          requesting.v = falseValue;
           // 返回reject执行后续的错误流程
           return promiseReject(error);
         }

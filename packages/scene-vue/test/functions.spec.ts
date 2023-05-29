@@ -1,4 +1,4 @@
-import { $, $$, upd$, watch, _$, _exp$, _expBatch$ } from '@/framework/vue';
+import { $, $$, upd$, watch$, _$, _exp$, _expBatch$ } from '@/framework/vue';
 import { untilCbCalled } from '~/test/utils';
 
 // 测试vue的封装函数
@@ -25,7 +25,7 @@ describe('vue framework functions', () => {
     const mockFn = jest.fn();
     const state1 = $(0);
     const state2 = $('a');
-    watch(_expBatch$(state1, state2), mockFn);
+    watch$(_expBatch$(state1, state2), mockFn);
 
     upd$(state1, 1);
     await untilCbCalled(setTimeout);

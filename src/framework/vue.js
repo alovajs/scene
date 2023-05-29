@@ -1,6 +1,6 @@
 import { isFn, map } from '@/helper';
 import { trueValue } from '@/helper/variables';
-import { computed, ref, watch as vueWatch } from 'vue';
+import { computed, onMounted as vueOnMounted, ref, watch as vueWatch } from 'vue';
 
 /**
  * 创建状态
@@ -51,8 +51,24 @@ export const upd$ = (state, newData) => {
  * @param states 监听状态
  * @param {Function} cb 回调函数
  */
-export const watch = (states, cb) => {
+export const watch$ = (states, cb) => {
   vueWatch(states, cb, {
     deep: trueValue
   });
 };
+
+/**
+ * 组件挂载执行
+ * @param {Function} cb 回调函数
+ */
+export const onMounted$ = cb => {
+  vueOnMounted(cb);
+};
+
+/**
+ * 使用标识，一般作为标识
+ * 在react中每次渲染都会调用hook，如果使用基础数据每次将会获得初始值
+ * 兼容react
+ * @param initialValue 初始值
+ */
+export const useFlag$ = initialValue => ({ v: initialValue });

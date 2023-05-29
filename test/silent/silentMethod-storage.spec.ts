@@ -4,9 +4,11 @@ import { DEFAUT_QUEUE_NAME } from '../../src/helper/variables';
 import { setDependentAlova } from '../../src/hooks/silent/globalVariables';
 import { SilentMethod } from '../../src/hooks/silent/SilentMethod';
 import { clearSilentQueueMap, pushNewSilentMethod2Queue, silentQueueMap } from '../../src/hooks/silent/silentQueue';
-import decorateStorageAdapter from '../../src/hooks/silent/storage/decorateStorageAdapter';
-import { silentMethodIdQueueMapStorageKey, silentMethodStorageKeyPrefix } from '../../src/hooks/silent/storage/helper';
 import loadSilentQueueMapFromStorage from '../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
+import {
+  silentMethodIdQueueMapStorageKey,
+  silentMethodStorageKeyPrefix
+} from '../../src/hooks/silent/storage/performers';
 import { spliceStorageSilentMethod } from '../../src/hooks/silent/storage/silentMethodStorage';
 import { mockRequestAdapter } from '../mockData';
 
@@ -31,7 +33,6 @@ describe('manipulate silent method storage', () => {
       }
     });
     // 设置依赖的alova实例
-    decorateStorageAdapter(alovaInst.storage);
     setDependentAlova(alovaInst);
     const methodInstance = new Method('POST', alovaInst, '/detail');
     const silentMethodInstance = new SilentMethod(methodInstance, 'silent', undefined, undefined, /.*/, 2, {

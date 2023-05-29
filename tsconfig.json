@@ -7,7 +7,6 @@
     "noImplicitAny": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "charset": "utf8",
     "noEmitOnError": false,
     "noUnusedLocals": true,
     "noUnusedParameters": false,
@@ -36,7 +35,8 @@
     "typings/*.d.ts",
     "packages/**/*.ts",
     "packages/**/*.js",
-    "packages/**/*.tsx"
+    "packages/**/*.tsx",
+    "packages/**/*.vue"
   ],
   "exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]
 }
