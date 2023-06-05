@@ -5,7 +5,8 @@ import {
   Method,
   Progress,
   SuccessHandler,
-  updateState
+  updateState,
+  UseHookReturnType
 } from 'alova';
 import { ComputedRef, Ref, WatchSource } from 'vue';
 import {
@@ -33,11 +34,7 @@ import {
   SQRequestHookConfig
 } from './general';
 
-interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
-  loading: Ref<boolean>;
-  error: Ref<Error | undefined>;
-  downloading: Ref<Progress>;
-  uploading: Ref<Progress>;
+interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> extends UseHookReturnType<S, E, R, T, RC, RE, RH> {
   page: Ref<number>;
   pageSize: Ref<number>;
   data: Ref<
@@ -54,17 +51,11 @@ interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
   pageCount: ComputedRef<number | undefined>;
   total: ComputedRef<number | undefined>;
   isLastPage: ComputedRef<boolean>;
-
-  abort: () => void;
-  send: (...args: any[]) => Promise<R>;
-  onSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
-  onError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
-  onComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
-
   fetching: Ref<boolean>;
   onFetchSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
   onFetchError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
   onFetchComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
+  update: (newFrontStates: Partial<FrontRequestState<boolean, LD, Error | undefined, Progress, Progress>>) => void;
 
   /**
    * 刷新指定页码数据，此函数将忽略缓存强制发送请求

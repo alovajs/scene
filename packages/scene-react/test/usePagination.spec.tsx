@@ -2247,4 +2247,74 @@ describe('react => usePagination', () => {
       expect(queryCache(getter(page + 1, pageSize))).toBeUndefined();
     });
   });
+
+  test('should update list data when call update function that returns in hook', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number) =>
+      alovaInst.Get<ListResponse>('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    function Page() {
+      const {
+        data,
+        loading,
+        pageCount,
+        total,
+        page: [page],
+        pageSize: [pageSize],
+        isLastPage,
+        update
+      } = usePagination(getter, {
+        total: () => undefined,
+        data: res => res.list,
+        append: true,
+        initialPage: 2,
+        initialPageSize: 4
+      });
+
+      return (
+        <div>
+          <span role="status">{loading ? 'loading' : 'loaded'}</span>
+          <span role="page">{page}</span>
+          <span role="pageSize">{pageSize}</span>
+          <span role="pageCount">{pageCount}</span>
+          <span role="total">{total}</span>
+          <span role="isLastPage">{JSON.stringify(isLastPage)}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+          <button
+            role="setLoading"
+            onClick={() =>
+              update({
+                loading: true
+              })
+            }>
+            btn1
+          </button>
+          <button
+            role="clearData"
+            onClick={() =>
+              update({
+                data: []
+              })
+            }>
+            btn1
+          </button>
+        </div>
+      );
+    }
+    render((<Page />) as ReactElement<any, any>);
+
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([4, 5, 6, 7]));
+    });
+
+    fireEvent.click(screen.getByRole('setLoading'));
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
+    fireEvent.click(screen.getByRole('clearData'));
+    expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([]));
+  });
 });

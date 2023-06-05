@@ -2,12 +2,12 @@ import {
   AlovaMethodHandler,
   CompleteHandler,
   ErrorHandler,
+  FrontRequestState,
   Method,
-  Progress,
   RequestHookConfig,
   SuccessHandler,
-  UseHookReturnType,
-  updateState
+  updateState,
+  UseHookReturnType
 } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
 import {
@@ -24,24 +24,20 @@ import {
   PaginationHookConfig,
   RetriableHookConfig,
   RetriableReturnType,
-  SQHookReturnType,
-  SQRequestHookConfig,
   SilentFactoryBootOptions,
   SilentMethod,
   SilentQueueMap,
   SilentSubmitBootHandler,
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
-  SilentSubmitSuccessHandler
+  SilentSubmitSuccessHandler,
+  SQHookReturnType,
+  SQRequestHookConfig
 } from './general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
-interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
-  loading: boolean;
-  error: Error | undefined;
-  downloading: Progress;
-  uploading: Progress;
+interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> extends UseHookReturnType<S, E, R, T, RC, RE, RH> {
   page: ReactState<number>;
   pageSize: ReactState<number>;
   data: IsUnknown<
@@ -56,17 +52,11 @@ interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
   pageCount: number | undefined;
   total: number | undefined;
   isLastPage: boolean;
-
-  abort: () => void;
-  send: (...args: any[]) => Promise<R>;
-  onSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
-  onError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
-  onComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
-
   fetching: boolean;
   onFetchSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
   onFetchError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
   onFetchComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
+  update: (newFrontStates: Partial<FrontRequestState<boolean, LD, Error | undefined, Progress, Progress>>) => void;
 
   /**
    * 刷新指定页码数据，此函数将忽略缓存强制发送请求
