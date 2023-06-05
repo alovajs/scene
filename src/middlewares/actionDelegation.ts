@@ -1,3 +1,4 @@
+import { TuseFlag$ } from '@/framework/type';
 import { createAssert, filterItem, forEach, instanceOf, isNumber, isString, objectKeys, pushItem } from '@/helper';
 import { falseValue, trueValue } from '@/helper/variables';
 import { AlovaFetcherMiddlewareContext, AlovaFrontMiddlewareContext, AlovaGuardNext } from 'alova';
@@ -21,14 +22,14 @@ const assert = createAssert('subscriber');
  * @param id 委托者id
  * @returns alova中间件函数
  */
-export const actionDelegationMiddleware = (id: string | number | symbol) => {
-  let delegated = falseValue;
+export const actionDelegationMiddleware = (id: string | number | symbol, useFlag$: TuseFlag$) => {
+  const delegated = useFlag$(falseValue);
   return (
     context: (AnyAlovaFrontMiddlewareContext | AnyAlovaFetcherMiddlewareContext) & { delegatingActions?: Actions },
     next: AlovaGuardNext<any, any, any, any, any, any, any>
   ) => {
     // 中间件会重复调用，已经订阅过了就无需再订阅了
-    if (!delegated) {
+    if (!delegated.v) {
       const { abort, delegatingActions = {} } = context;
       // 相同id的将以数组形式保存在一起
       const handlersItems = (actionsMap[id] = actionsMap[id] || []);
@@ -46,7 +47,7 @@ export const actionDelegationMiddleware = (id: string | number | symbol) => {
             }
       );
 
-      delegated = trueValue;
+      delegated.v = trueValue;
     }
     return next();
   };
@@ -63,7 +64,7 @@ export const accessAction = (
 ) => {
   const matched = [] as Actions[];
   if (typeof id === 'symbol' || isString(id) || isNumber(id)) {
-    assert(!!actionsMap[id], `not match handlers which id is \`${id.toString()}\``);
+    assert(!!actionsMap[id], `no handler which id is \`${id.toString()}\` is matched`);
     pushItem(matched, ...actionsMap[id]);
   } else if (instanceOf(id, RegExp)) {
     forEach(

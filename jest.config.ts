@@ -175,6 +175,8 @@ export default {
     // react
     // '**/packages/scene-react/test/functions.spec.ts(x)?'
     // '**/packages/scene-react/test/useRetriableRequest.spec.ts(x)?'
+    // '**/packages/scene-react/test/usePagination.spec.ts(x)?'
+    // '**/packages/scene-react/test/useSerialRequest.spec.ts(x)?'
     // svelte
     // '**/packages/scene-svelte/test/functions.spec.ts(x)?'
   ],

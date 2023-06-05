@@ -27,7 +27,7 @@ const { form, onSuccess, onRestore, data } = useForm(poster, {
     age: ''
   },
   store: true,
-  resetAfterSubmit: true,
+  resetAfterSubmiting: true,
   immediate: true
 });
 const isRestore = ref(0);

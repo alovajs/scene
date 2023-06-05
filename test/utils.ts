@@ -7,6 +7,15 @@ export const untilCbCalled = <T>(setCb: (cb: (arg: T) => void, ...others: any[])
     }, ...args);
   });
 
+export const generateContinuousNumbers = (
+  end: number,
+  start = 0,
+  transform: ((i: number) => any) | Record<string | number, any> = i => i
+) => {
+  const transformFn = typeof transform === 'object' ? (i: number) => transform[i] || i : transform;
+  return Array.from({ length: Math.abs(end - start + 1) }).map((_, i) => transformFn(start + i));
+};
+
 export async function waitForWithFakeTimers(cb: () => void) {
   let waiting = true;
   while (waiting) {

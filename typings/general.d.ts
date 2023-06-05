@@ -507,7 +507,7 @@ type FormHookConfig<S, E, R, T, RC, RE, RH, F> = {
    * 提交后重置数据
    * @default false
    */
-  resetAfterSubmit?: boolean;
+  resetAfterSubmiting?: boolean;
 } & RequestHookConfig<S, E, R, T, RC, RE, RH>;
 
 type RestoreHandler = () => void;
@@ -610,14 +610,14 @@ interface Actions {
  * @param id 委托者id
  * @returns alova中间件函数
  */
-type ActionDelegationMiddleware = (id: string | number | symbol) => (
+type ActionDelegationMiddleware = (id: string | number | symbol) => <S, E, R, T, RC, RE, RH>(
   context: (
-    | AlovaFrontMiddlewareContext<any, any, any, any, any, any, any>
-    | AlovaFetcherMiddlewareContext<any, any, any, any, any, any, any>
+    | AlovaFrontMiddlewareContext<S, E, R, T, RC, RE, RH>
+    | AlovaFetcherMiddlewareContext<S, E, R, T, RC, RE, RH>
   ) & {
     delegatingActions?: Actions;
   },
-  next: AlovaGuardNext<any, any, any, any, any, any, any>
+  next: AlovaGuardNext<S, E, R, T, RC, RE, RH>
 ) => Promise<any>;
 
 /**

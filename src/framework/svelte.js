@@ -1,4 +1,4 @@
-import { createSyncOnceRunner, map } from '@/helper';
+import { __self, createSyncOnceRunner, isFn, map } from '@/helper';
 import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import { onMount } from 'svelte';
 import { derived, writable } from 'svelte/store';
@@ -49,7 +49,11 @@ export const _expBatch$ = (...states) => map(states, s => _exp$(s));
  * @param newData 新状态值
  */
 export const upd$ = (state, newData) => {
-  typeof newData === 'function' ? state.update(newData) : state.set(newData);
+  if (isFn(newData)) {
+    newData = newData(_$(state));
+  }
+  state.set(newData);
+  return newData;
 };
 
 /**
@@ -84,3 +88,18 @@ export const onMounted$ = cb => {
  * @param initialValue 初始值
  */
 export const useFlag$ = initialValue => ({ v: initialValue });
+
+/**
+ * 由于在react下，use hook返回的loading、data等状态为普遍值，将会受闭包影响
+ * 此函数作为兼容react而存在
+ * @param requestState 请求hook状态
+ */
+export const useRequestRefState$ = __self;
+
+/**
+ * 由于在react下，如果每次传入子组件的callback引用变化会导致子组件重新渲染，而引起性能问题
+ * 此函数作为兼容react而存在
+ * @param callback
+ * @returns
+ */
+export const useMemorizedCallback$ = __self;
