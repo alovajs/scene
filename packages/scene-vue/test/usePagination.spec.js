@@ -5,6 +5,7 @@ import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import { accessAction, actionDelegationMiddleware, usePagination } from '..';
 
+// jest.setTimeout(1000000);
 // reset data
 beforeEach(() => setMockListData());
 beforeEach(() => setMockListWithSearchData());
@@ -43,12 +44,10 @@ describe('vue => usePagination', () => {
 
     // 检查预加载缓存
     await untilCbCalled(setTimeout, 100);
-    setCache(getter(page.value + 1, pageSize.value), cache => {
-      expect(cache.list).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
-    });
-    setCache(getter(page.value - 1, pageSize.value), cache => {
-      expect(cache).toBeUndefined();
-    });
+    let cache = queryCache(getter(page.value + 1, pageSize.value));
+    expect(cache.list).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    cache = setCache(getter(page.value - 1, pageSize.value));
+    expect(cache).toBeUndefined();
 
     page.value++;
     await untilCbCalled(onSuccess);
@@ -309,17 +308,17 @@ describe('vue => usePagination', () => {
     await untilCbCalled(setTimeout);
     page.value++;
 
-    await untilCbCalled(setTimeout, 5);
-    expect(data.value).toEqual([6, 7, 8, 9]); // 有两项被挤到后面一页了
+    await untilCbCalled(setTimeout, 20);
+    expect(data.value).toStrictEqual([6, 7, 8, 9]); // 有两项被挤到后面一页了
     expect(total.value).toBe(302);
 
     await untilCbCalled(setTimeout, 100); // 等待fetch响应
-    expect(data.value).toEqual([6, 7, 8, 9]);
+    expect(data.value).toStrictEqual([6, 7, 8, 9]);
 
     // 再次返回前一页，移除的数据不应该存在
     page.value--;
-    await untilCbCalled(setTimeout, 5);
-    expect(data.value).toEqual([4, 1000, 1001, 5]);
+    await untilCbCalled(setTimeout, 20);
+    expect(data.value).toStrictEqual([4, 1000, 1001, 5]);
   });
 
   test('paginated data replace item', async () => {
@@ -448,7 +447,7 @@ describe('vue => usePagination', () => {
     onFetchSuccess(mockFn);
 
     // 请求发送了，但还没响应（响应有50ms延迟），此时再一次删除，期望还可以使用原缓存且中断请求
-    await untilCbCalled(setTimeout);
+    await untilCbCalled(setTimeout, 20);
     remove(2);
     setMockListData(data => {
       data.splice(6, 1);

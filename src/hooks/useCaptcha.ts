@@ -1,11 +1,11 @@
-import { T$, Tupd$, TuseFlag$, T_$, T_exp$ } from '@/framework/type';
+import { T$, T_$, T_exp$, Tupd$, TuseFlag$, TuseMemorizedCallback$ } from '@/framework/type';
 import { buildErrorMsg, createAssert, newInstance } from '@/helper';
-import { falseValue, PromiseCls, undefinedValue } from '@/helper/variables';
+import { PromiseCls, falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import { AlovaMethodHandler, Method, useRequest } from 'alova';
 import { CaptchaHookConfig } from '~/typings/general';
 
 const hookPrefix = 'useCaptcha';
-const assert = createAssert(hookPrefix);
+const captchaAssert = createAssert(hookPrefix);
 export default <S, E, R, T, RC, RE, RH>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config: CaptchaHookConfig<S, E, R, T, RC, RE, RH>,
@@ -13,12 +13,13 @@ export default <S, E, R, T, RC, RE, RH>(
   upd$: Tupd$,
   _$: T_$,
   _exp$: T_exp$,
-  useFlag$: TuseFlag$
+  useFlag$: TuseFlag$,
+  useMemorizedCallback$: TuseMemorizedCallback$
 ) => {
   const { initialCountdown, middleware } = config;
-  assert(initialCountdown === undefinedValue || initialCountdown > 0, 'initialCountdown must be greater than 0');
+  captchaAssert(initialCountdown === undefinedValue || initialCountdown > 0, 'initialCountdown must be greater than 0');
 
-  const countdown = $(0);
+  const countdown = $(0, trueValue);
   const requestReturned = useRequest(handler, {
     ...config,
     immediate: falseValue,
@@ -26,7 +27,7 @@ export default <S, E, R, T, RC, RE, RH>(
   });
 
   const timer = useFlag$(undefinedValue as NodeJS.Timeout | undefined);
-  const send = (...args: any[]) =>
+  const send = useMemorizedCallback$((...args: any[]) =>
     newInstance(PromiseCls, (resolve, reject) => {
       if (_$(countdown) <= 0) {
         requestReturned
@@ -45,7 +46,8 @@ export default <S, E, R, T, RC, RE, RH>(
       } else {
         reject(new Error(buildErrorMsg(hookPrefix, 'the countdown is not over yet')));
       }
-    });
+    })
+  );
   return {
     ...requestReturned,
     send,

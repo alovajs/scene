@@ -1,4 +1,4 @@
-import { TuseFlag$ } from '@/framework/type';
+import { TuseFlag$, TuseMemorizedCallback$ } from '@/framework/type';
 import {
   buildErrorMsg,
   clearTimeoutFn,
@@ -26,7 +26,8 @@ const assert = createAssert(hookPrefix);
 export default <S, E, R, T, RC, RE, RH>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config: RetriableHookConfig<S, E, R, T, RC, RE, RH>,
-  useFlag$: TuseFlag$
+  useFlag$: TuseFlag$,
+  useMemorizedCallback$: TuseMemorizedCallback$
 ) => {
   const { retry = 3, backoff = { delay: 1000 }, middleware = noop } = config;
   const retryHandlers: RetryHandler<S, E, R, T, RC, RE, RH>[] = [];
@@ -68,7 +69,7 @@ export default <S, E, R, T, RC, RE, RH>(
    * 如果正在请求中，则触发中断请求，让请求错误来抛出错误，否则手动修改状态以及触发onFail
    * 停止后将立即触发onFail事件
    */
-  const stop = () => {
+  const stop = useMemorizedCallback$(() => {
     assert(currentLoadingState.v, 'there are no requests being retried');
     stopManuallyError.v = new Error(buildErrorMsg(hookPrefix, 'stop retry manually'));
     if (requesting.v) {
@@ -79,7 +80,7 @@ export default <S, E, R, T, RC, RE, RH>(
       currentLoadingState.v = falseValue;
       clearTimeoutFn(retryTimer.v); // 清除重试定时器
     }
-  };
+  });
   const requestReturns = useRequest(handler, {
     ...config,
     middleware(ctx, next) {

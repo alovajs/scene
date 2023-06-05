@@ -1,9 +1,9 @@
-import { accessAction, actionDelegationMiddleware } from '@/middlewares/actionDelegation';
-import { createAlova, FetcherType, useFetcher, useRequest, useWatcher } from 'alova';
+import { FetcherType, createAlova, useFetcher, useRequest, useWatcher } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import { mockRequestAdapter } from '~/test/mockData';
 import { untilCbCalled } from '~/test/utils';
+import { accessAction, actionDelegationMiddleware } from '../';
 
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
@@ -178,7 +178,7 @@ describe('vue => subscriber middleware', () => {
   test('should throws a error when not match any handler', () => {
     expect(() => {
       accessAction('not_match', () => {});
-    }).toThrow('[alova/subscriber]not match handlers which id is `not_match`');
+    }).toThrow('[alova/subscriber]no handler which id is `not_match` is matched');
   });
 
   test("should throws a error when hasn't send request", () => {
@@ -193,7 +193,7 @@ describe('vue => subscriber middleware', () => {
     });
     expect(() => {
       accessAction('not_match2', () => {});
-    }).toThrow('[alova/subscriber]not match handlers which id is `not_match2`');
+    }).toThrow('[alova/subscriber]no handler which id is `not_match2` is matched');
   });
 
   test('should send by notification when use useWatcher', async () => {

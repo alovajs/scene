@@ -27,11 +27,11 @@
   "unpkg": "dist/alova-scene.umd.min.js",
   "scripts": {
     "clean": "rimraf ./dist",
-    "cp:dts": "node ../../config/cp-dts.js",
+    "cp:files": "cross-env FW=react node ../../config/cp-files.js",
     "build:esm": "cross-env NODE_ENV=development EXTENSION=reacthooks rollup -c ../../config/rollup.config.esm.js",
     "build:umd": "cross-env NODE_ENV=development EXTENSION=reacthooks rollup -c ../../config/rollup.config.umd.js",
     "build:umd.min": "cross-env NODE_ENV=production EXTENSION=reacthooks rollup -c ../../config/rollup.config.umd.js",
-    "build": "npm run clean && npm run build:esm && npm run build:umd && npm run build:umd.min && npm run cp:dts",
+    "build": "npm run clean && npm run cp:files && npm run build:esm && npm run build:umd && npm run build:umd.min",
     "publish": "npm publish"
   },
   "publishConfig": {

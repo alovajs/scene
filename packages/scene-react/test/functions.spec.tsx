@@ -1,4 +1,4 @@
-import { $, $$, upd$, watch$, _$, _exp$, _expBatch$ } from '@/framework/react';
+import { $, $$, _$, _exp$, _expBatch$, upd$, watch$ } from '@/framework/react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React, { ReactElement } from 'react';
@@ -16,7 +16,7 @@ describe('react framework functions', () => {
           <span role="pageCount">{pageCount}</span>
           <button
             role="btn"
-            onClick={() => setStateVal1(v => v + 1)}>
+            onClick={() => setStateVal1((v: number) => v + 1)}>
             btn
           </button>
           <button

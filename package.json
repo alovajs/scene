@@ -10,7 +10,7 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "cp:dts": "npm run cp:dts --workspaces",
+    "cp:files": "npm run cp:files --workspaces",
     "build": "npm run build --workspaces",
     "release": "semantic-release",
     "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info",

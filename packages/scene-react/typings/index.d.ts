@@ -4,7 +4,9 @@ import {
   ErrorHandler,
   Method,
   Progress,
+  RequestHookConfig,
   SuccessHandler,
+  UseHookReturnType,
   updateState
 } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
@@ -22,15 +24,15 @@ import {
   PaginationHookConfig,
   RetriableHookConfig,
   RetriableReturnType,
+  SQHookReturnType,
+  SQRequestHookConfig,
   SilentFactoryBootOptions,
   SilentMethod,
   SilentQueueMap,
   SilentSubmitBootHandler,
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
-  SilentSubmitSuccessHandler,
-  SQHookReturnType,
-  SQRequestHookConfig
+  SilentSubmitSuccessHandler
 } from './general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
@@ -165,7 +167,7 @@ declare function useCaptcha<S, E, R, T, RC, RE, RH>(
  * @param config 配置参数
  * @return useForm相关数据和操作函数
  */
-declare function useForm<S, E, R, T, RC, RE, RH, F = any>(
+declare function useForm<F = any, S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any>(
   handler: FormHookHandler<S, E, R, T, RC, RE, RH, F> | NonNullable<FormHookConfig<S, E, R, T, RC, RE, RH, F>['id']>,
   config?: FormHookConfig<S, E, R, T, RC, RE, RH, F>
 ): FormReturnType<S, E, R, T, RC, RE, RH, F>;
@@ -185,6 +187,139 @@ declare function useRetriableRequest<S, E, R, T, RC, RE, RH>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config?: RetriableHookConfig<S, E, R, T, RC, RE, RH>
 ): RetriableReturnType<S, E, R, T, RC, RE, RH>;
+
+/**
+ * useSerialRequest
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：使用一组状态，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>
+  ],
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R2, T, RC, RE, RH>;
+
+/**
+ * useSerialRequest(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：使用一组状态，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>
+  ],
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R3, T, RC, RE, RH>;
+
+/**
+ * useSerialRequest(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：使用一组状态，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>
+  ],
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R4, T, RC, RE, RH>;
+
+/**
+ * useSerialRequest(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：使用一组状态，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>
+  ],
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R5, T, RC, RE, RH>;
+
+/**
+ * useSerialRequest(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：使用一组状态，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>
+  ],
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R6, T, RC, RE, RH>;
+
+/**
+ * useSerialRequest(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：使用一组状态，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>
+  ],
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R7, T, RC, RE, RH>;
+
+/**
+ * useSerialRequest(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：使用一组状态，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useRetriableRequest相关数据和操作函数
+ */
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7, R8>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>,
+    (value: R7, ...args: any[]) => Method<S, E, R8, T, RC, RE, RH>
+  ],
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R8, T, RC, RE, RH>;
 
 /**
  * 操作函数委托中间件

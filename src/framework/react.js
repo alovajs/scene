@@ -1,30 +1,63 @@
-import { isArray, map } from '@/helper';
+import { isArray, isFn, isObject, map, noop, pushItem } from '@/helper';
 import { falseValue, undefinedValue } from '@/helper/variables';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * 创建状态
- * @param data 创建状态的数据
- * @returns {FrameworkState}
+ * 当isRef为true时，将会在_$中获得最新的值而不受闭包陷阱影响
+ * @param initialState 创建状态的数据
+ * @param {boolean|void} isRef 是否创建为引用值
+ * @returns
  */
-export const $ = useState;
+export const $ = (initialState, isRef) => {
+  const state = useState(initialState);
+  if (isRef) {
+    const ref = useFlag$();
+    ref.v = state[0];
+    state[2] = ref; // 将引用值保存到数组中
+  }
+  return state;
+};
 
 /**
  * 创建计算属性
- * @param data 创建计算属性的数据
- * @returns {FrameworkState}
+ * 为了兼容$函数中创建的状态可以在exportState中导出，将格式与$返回值靠齐
+ * @param factory 计算属性计算函数
+ * @param deps 依赖值
+ * @param {boolean|void} isRef 是否创建为引用值
+ * @returns 类$返回值
  */
-export const $$ = useMemo;
+export const $$ = (factory, deps, isRef) => {
+  const memo = useMemo(factory, deps);
+  const memoAry = [memo, noop];
+  if (isRef) {
+    const ref = useFlag$();
+    ref.v = memo;
+    pushItem(memoAry, ref);
+  }
+  return memoAry;
+};
 
 /**
  * 脱水普通状态、计算属性或alova导出的状态，返回状态原始值
+ * 有引用值时返回引用值，否则返回原始值
  * @param state 状态
  * @returns 状态原始值，即状态对应的数据
  */
-const exportState = state => (isArray(state) && typeof state[1] === 'function' ? state[0] : state);
+export const _$ = state => {
+  if (isArray(state) && isFn(state[1])) {
+    return state[2] ? state[2].v : state[0];
+  }
+  return state;
+};
 
-export const _$ = exportState;
-export const _exp$ = exportState;
+/**
+ * 返回导出值
+ * 导出状态原始值，一般用于导出use hook的值，或在依赖项使用
+ * @param state 状态
+ * @returns 状态原始值
+ */
+export const _exp$ = state => (isArray(state) && isFn(state[1]) ? state[0] : state);
 
 /**
  * 批量导出状态
@@ -38,7 +71,18 @@ export const _expBatch$ = (...states) => map(states, s => _exp$(s));
  * @param state 更新的状态
  * @param newData 新状态值
  */
-export const upd$ = (state, newData) => state[1](newData);
+export const upd$ = (state, newData) => {
+  if (isFn(newData)) {
+    const oldState = state[2] ? state[2].v : state[0];
+    newData = newData(isArray(oldState) ? [...oldState] : isObject(oldState) ? { ...oldState } : oldState);
+  }
+  state[1](newData);
+
+  // 如果有引用类型值，也要更新它
+  if (state[2]) {
+    state[2].v = newData;
+  }
+};
 
 /**
  * 监听状态触发回调
@@ -57,9 +101,7 @@ export const watch$ = (states, cb) => {
  * 组件挂载执行
  * @param {Function} cb 回调函数
  */
-export const onMounted$ = cb => {
-  useEffect(cb, []);
-};
+export const onMounted$ = cb => useEffect(cb, []);
 
 /**
  * 使用标识，一般作为标识
@@ -71,4 +113,31 @@ export const useFlag$ = initialValue => {
   const ref = useRef(initialValue);
   ref.v === undefinedValue && (ref.v = initialValue);
   return ref;
+};
+
+/**
+ * 将alova的hook返回状态如loading、data等转换为不受闭包陷阱影响的值
+ * 由于在react下，use hook返回的loading、data等状态为普遍值，将会受闭包影响
+ * 因此使用此函数将普通值转换为跨闭包的值
+ * @param requestState 请求hook状态
+ */
+export const useRequestRefState$ = requestState => {
+  const requestStateWrapper = [requestState, noop];
+  const ref = useFlag$();
+  ref.v = requestState;
+  pushItem(requestStateWrapper, ref);
+  return requestStateWrapper;
+};
+
+/**
+ * 它返回的回调函数始终为同一份引用，同时callback中访问的状态不受闭包陷阱影响
+ * @param callback
+ * @returns
+ */
+export const useMemorizedCallback$ = callback => {
+  const ref = useFlag$();
+  ref.v = callback;
+  return useCallback((...args) => {
+    callback.apply(null, args);
+  }, []);
 };

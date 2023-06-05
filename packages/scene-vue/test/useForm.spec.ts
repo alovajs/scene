@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/vue';
-import { Method, createAlova, getMethodKey } from 'alova';
+import { createAlova, getMethodKey, Method } from 'alova';
 import VueHook from 'alova/vue';
 import { mockRequestAdapter } from '~/test/mockData';
 import { untilCbCalled } from '~/test/utils';
@@ -60,7 +60,7 @@ describe('vue => useForm', () => {
     });
   });
 
-  test('should reset form data when set resetAfterSubmit to true', async () => {
+  test('should reset form data when set resetAfterSubmiting to true', async () => {
     const poster = (data: any) => alovaInst.Post('/saveData', data);
     const initialForm = {
       name: '',
@@ -68,7 +68,7 @@ describe('vue => useForm', () => {
     };
     const { form, loading, send } = useForm(poster, {
       initialForm,
-      resetAfterSubmit: true
+      resetAfterSubmiting: true
     });
 
     expect(form.value).toStrictEqual(initialForm);
@@ -92,7 +92,7 @@ describe('vue => useForm', () => {
     const { form, send, onRestore } = useForm(poster, {
       initialForm,
       store: true,
-      resetAfterSubmit: true
+      resetAfterSubmiting: true
     });
     const restoreMockHandler = jest.fn();
     onRestore(restoreMockHandler);
@@ -252,7 +252,7 @@ describe('vue => useForm', () => {
     const formRet1 = useForm(poster, {
       initialForm,
       id: 'personInfo',
-      resetAfterSubmit: true
+      resetAfterSubmiting: true
     });
     const newForm = {
       name: 'Ming',

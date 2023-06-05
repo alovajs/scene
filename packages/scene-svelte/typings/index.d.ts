@@ -174,7 +174,7 @@ declare function useCaptcha<S, E, R, T, RC, RE, RH>(
  * @param config 配置参数
  * @return useForm相关数据和操作函数
  */
-declare function useForm<S, E, R, T, RC, RE, RH, F = any>(
+declare function useForm<F = any, S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any>(
   handler: FormHookHandler<S, E, R, T, RC, RE, RH, F> | NonNullable<FormHookConfig<S, E, R, T, RC, RE, RH, F>['id']>,
   config?: FormHookConfig<S, E, R, T, RC, RE, RH, F>
 ): FormReturnType<S, E, R, T, RC, RE, RH, F>;

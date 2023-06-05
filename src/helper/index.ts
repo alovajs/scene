@@ -1,6 +1,6 @@
 import { CacheExpire, LocalCacheConfig, Method } from 'alova';
 import { BackoffPolicy } from '~/typings/general';
-import { ObjectCls, PromiseCls, StringCls, falseValue, nullValue, trueValue, undefinedValue } from './variables';
+import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, trueValue, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   promiseReject = <T>(value: T) => PromiseCls.reject(value),
@@ -84,7 +84,17 @@ export const getUniqueReferenceId = (reference: any) => {
   return existedRef.id;
 };
 
+/**
+ * 兼容函数
+ */
 export const noop = () => {};
+
+/**
+ * 兼容函数，返回自身
+ * @param value 任意值
+ * @returns 自身
+ */
+export const __self = <T>(value: T) => value;
 
 // 判断是否为某个类的实例
 export const instanceOf = <T>(arg: any, cls: new (...args: any[]) => T): arg is T => arg instanceof cls;
