@@ -1021,4 +1021,35 @@ describe('vue => usePagination', () => {
     await untilCbCalled(onSuccess);
     expect(successFn).toBeCalledTimes(2);
   });
+
+  test('should update list data when call update function that returns in hook', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { loading, onSuccess, data, update } = usePagination(getter, {
+      total: () => undefined,
+      data: res => res.list,
+      append: true,
+      initialPage: 2,
+      initialPageSize: 4
+    });
+
+    await untilCbCalled(onSuccess);
+    expect(data.value).toStrictEqual([4, 5, 6, 7]);
+    update({
+      loading: true
+    });
+    expect(loading.value).toBeTruthy();
+
+    update({
+      data: []
+    });
+    expect(data.value).toStrictEqual([]);
+  });
 });

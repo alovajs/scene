@@ -253,15 +253,7 @@ export default function (
 
     const pageSizeVal = _$(pageSize);
     const listData = listDataGetter(rawData); // 获取数组
-    try {
-      paginationAssert(
-        isArray(listData),
-        'Got wrong array, did you return the correct array of list in `data` function'
-      );
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    paginationAssert(isArray(listData), 'Got wrong array, did you return the correct array of list in `data` function');
 
     // 如果追加数据，才更新data
     if (append) {
