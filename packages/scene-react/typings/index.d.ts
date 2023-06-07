@@ -7,7 +7,8 @@ import {
   RequestHookConfig,
   SuccessHandler,
   updateState,
-  UseHookReturnType
+  UseHookReturnType,
+  WatcherHookConfig
 } from 'alova';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
 import {
@@ -181,10 +182,10 @@ declare function useRetriableRequest<S, E, R, T, RC, RE, RH>(
 /**
  * useSerialRequest
  * 串行请求hook，handlers中将接收上一个请求的结果
- * 适用场景：使用一组状态，串行请求一组接口
+ * 适用场景：串行请求一组接口
  * @param serialHandlers 串行请求回调数组
  * @param config 配置参数
- * @return useRetriableRequest相关数据和操作函数
+ * @return useSerialRequest相关数据和操作函数
  */
 declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2>(
   serialHandlers: [
@@ -197,10 +198,10 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2>(
 /**
  * useSerialRequest(重载)
  * 串行请求hook，handlers中将接收上一个请求的结果
- * 适用场景：使用一组状态，串行请求一组接口
+ * 适用场景：串行请求一组接口
  * @param serialHandlers 串行请求回调数组
  * @param config 配置参数
- * @return useRetriableRequest相关数据和操作函数
+ * @return useSerialRequest相关数据和操作函数
  */
 declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3>(
   serialHandlers: [
@@ -214,10 +215,10 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3>(
 /**
  * useSerialRequest(重载)
  * 串行请求hook，handlers中将接收上一个请求的结果
- * 适用场景：使用一组状态，串行请求一组接口
+ * 适用场景：串行请求一组接口
  * @param serialHandlers 串行请求回调数组
  * @param config 配置参数
- * @return useRetriableRequest相关数据和操作函数
+ * @return useSerialRequest相关数据和操作函数
  */
 declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4>(
   serialHandlers: [
@@ -232,10 +233,10 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4>(
 /**
  * useSerialRequest(重载)
  * 串行请求hook，handlers中将接收上一个请求的结果
- * 适用场景：使用一组状态，串行请求一组接口
+ * 适用场景：串行请求一组接口
  * @param serialHandlers 串行请求回调数组
  * @param config 配置参数
- * @return useRetriableRequest相关数据和操作函数
+ * @return useSerialRequest相关数据和操作函数
  */
 declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
   serialHandlers: [
@@ -251,10 +252,10 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
 /**
  * useSerialRequest(重载)
  * 串行请求hook，handlers中将接收上一个请求的结果
- * 适用场景：使用一组状态，串行请求一组接口
+ * 适用场景：串行请求一组接口
  * @param serialHandlers 串行请求回调数组
  * @param config 配置参数
- * @return useRetriableRequest相关数据和操作函数
+ * @return useSerialRequest相关数据和操作函数
  */
 declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
   serialHandlers: [
@@ -271,10 +272,10 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
 /**
  * useSerialRequest(重载)
  * 串行请求hook，handlers中将接收上一个请求的结果
- * 适用场景：使用一组状态，串行请求一组接口
+ * 适用场景：串行请求一组接口
  * @param serialHandlers 串行请求回调数组
  * @param config 配置参数
- * @return useRetriableRequest相关数据和操作函数
+ * @return useSerialRequest相关数据和操作函数
  */
 declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7>(
   serialHandlers: [
@@ -292,10 +293,10 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7
 /**
  * useSerialRequest(重载)
  * 串行请求hook，handlers中将接收上一个请求的结果
- * 适用场景：使用一组状态，串行请求一组接口
+ * 适用场景：串行请求一组接口
  * @param serialHandlers 串行请求回调数组
  * @param config 配置参数
- * @return useRetriableRequest相关数据和操作函数
+ * @return useSerialRequest相关数据和操作函数
  */
 declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7, R8>(
   serialHandlers: [
@@ -309,6 +310,146 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7
     (value: R7, ...args: any[]) => Method<S, E, R8, T, RC, RE, RH>
   ],
   config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R8, T, RC, RE, RH>;
+
+/**
+ * useSerialWatcher
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：监听状态变化后，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useSerialWatcher相关数据和操作函数
+ */
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>
+  ],
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R2, T, RC, RE, RH>;
+
+/**
+ * useSerialWatcher(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：监听状态变化后，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useSerialWatcher相关数据和操作函数
+ */
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>
+  ],
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R3, T, RC, RE, RH>;
+
+/**
+ * useSerialWatcher(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：监听状态变化后，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useSerialWatcher相关数据和操作函数
+ */
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>
+  ],
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R4, T, RC, RE, RH>;
+
+/**
+ * useSerialWatcher(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：监听状态变化后，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useSerialWatcher相关数据和操作函数
+ */
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>
+  ],
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R5, T, RC, RE, RH>;
+
+/**
+ * useSerialWatcher(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：监听状态变化后，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useSerialWatcher相关数据和操作函数
+ */
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>
+  ],
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R6, T, RC, RE, RH>;
+
+/**
+ * useSerialWatcher(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：监听状态变化后，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useSerialWatcher相关数据和操作函数
+ */
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>
+  ],
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R7, T, RC, RE, RH>;
+
+/**
+ * useSerialWatcher(重载)
+ * 串行请求hook，handlers中将接收上一个请求的结果
+ * 适用场景：监听状态变化后，串行请求一组接口
+ * @param serialHandlers 串行请求回调数组
+ * @param config 配置参数
+ * @return useSerialWatcher相关数据和操作函数
+ */
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7, R8>(
+  serialHandlers: [
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>,
+    (value: R7, ...args: any[]) => Method<S, E, R8, T, RC, RE, RH>
+  ],
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
 ): UseHookReturnType<S, E, R8, T, RC, RE, RH>;
 
 /**

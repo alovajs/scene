@@ -1,15 +1,15 @@
 import {
   $,
   $$,
-  _$,
-  _exp$,
-  _expBatch$,
   onMounted$,
   upd$,
   useFlag$,
   useMemorizedCallback$,
   useRequestRefState$,
-  watch$
+  watch$,
+  _$,
+  _exp$,
+  _expBatch$
 } from '@/framework/react';
 import usePagination_unified from '@/hooks/pagination/usePagination';
 import useSQRequest_unified from '@/hooks/silent/useSQRequest';
@@ -37,6 +37,8 @@ export const usePagination = (handler, config = {}) =>
 // 已通过 hooks/silent/useSQRequest 导入测试
 /* c8 ignore start */
 export const useSQRequest = (handler, config = {}) => useSQRequest_unified(handler, config);
+export { default as useSerialRequest } from '@/hooks/serial/useSerialRequest';
+export { default as useSerialWatcher } from '@/hooks/serial/useSerialWatcher';
 export {
   bootSilentFactory,
   onBeforeSilentSubmit,
@@ -52,7 +54,6 @@ export { filterSilentMethods, getSilentMethod } from '@/hooks/silent/virtualResp
 export { default as isVData } from '@/hooks/silent/virtualResponse/isVData';
 export { default as stringifyVData } from '@/hooks/silent/virtualResponse/stringifyVData';
 export { default as updateStateEffect } from '@/hooks/silent/virtualResponse/updateStateEffect';
-export { default as useSerialRequest } from '@/hooks/useSerialRequest';
 export { accessAction } from '@/middlewares/actionDelegation';
 
 // 导出actionDelegation中间件
