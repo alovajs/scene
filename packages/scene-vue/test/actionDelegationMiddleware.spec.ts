@@ -1,4 +1,4 @@
-import { FetcherType, createAlova, useFetcher, useRequest, useWatcher } from 'alova';
+import { createAlova, FetcherType, useFetcher, useRequest, useWatcher } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import { mockRequestAdapter } from '~/test/mockData';
@@ -33,7 +33,9 @@ describe('vue => subscriber middleware', () => {
     expect(completeFn).toBeCalledTimes(1);
 
     await new Promise<void>(resolve => {
-      accessAction('abc', async ({ send }) => {
+      accessAction('abc', async ({ send, update, abort }) => {
+        expect(update).toBeInstanceOf(Function);
+        expect(abort).toBeInstanceOf(Function);
         resolve(send({ name: 'aa' }));
       });
     });

@@ -30,7 +30,7 @@ export const actionDelegationMiddleware = (id: string | number | symbol, useFlag
   ) => {
     // 中间件会重复调用，已经订阅过了就无需再订阅了
     if (!delegated.v) {
-      const { abort, delegatingActions = {} } = context;
+      const { abort, update, delegatingActions = {} } = context;
       // 相同id的将以数组形式保存在一起
       const handlersItems = (actionsMap[id] = actionsMap[id] || []);
       handlersItems.push(
@@ -38,12 +38,14 @@ export const actionDelegationMiddleware = (id: string | number | symbol, useFlag
           ? {
               ...delegatingActions,
               send: context.send,
-              abort
+              abort,
+              update
             }
           : {
               ...delegatingActions,
               fetch: context.fetch,
-              abort
+              abort,
+              update
             }
       );
 

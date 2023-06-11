@@ -386,8 +386,11 @@ describe('react => usePagination', () => {
             btn3
           </button>
           <button
-            role="refresh3"
-            onClick={() => refresh(3)}>
+            role="refreshCurPage"
+            onClick={() => {
+              // 未传入参数时将默认刷新当前页，当前页为3
+              refresh();
+            }}>
             btn3
           </button>
         </div>
@@ -401,7 +404,7 @@ describe('react => usePagination', () => {
       return data;
     });
 
-    fireEvent.click(screen.getByRole('refresh3'));
+    fireEvent.click(screen.getByRole('refreshCurPage'));
     await waitFor(() => {
       expect(screen.getByRole('response')).toHaveTextContent(
         JSON.stringify(generateContinuousNumbers(29, 20, i => (i === 20 ? 200 : i)))
@@ -781,6 +784,97 @@ describe('react => usePagination', () => {
     });
   });
 
+  test('paginated data replace item by another item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number) =>
+      alovaInst.Get<SearchListResponse>('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    function Page() {
+      const {
+        data,
+        loading,
+        pageCount,
+        total,
+        page: [page, setPage],
+        pageSize: [pageSize],
+        isLastPage,
+        replace
+      } = usePagination((p, ps) => getter(p, ps), {
+        total: res => res.total,
+        data: res => res.list
+      });
+      const [error, setError] = useState(undefined as Error | undefined);
+
+      return (
+        <div>
+          <span role="status">{loading ? 'loading' : 'loaded'}</span>
+          <span role="page">{page}</span>
+          <span role="pageSize">{pageSize}</span>
+          <span role="pageCount">{pageCount}</span>
+          <span role="total">{total}</span>
+          <span role="error">{error?.message}</span>
+          <span role="isLastPage">{JSON.stringify(isLastPage)}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+          <button
+            role="addPage"
+            onClick={() => setPage(v => v + 1)}>
+            btn1
+          </button>
+          <button
+            role="subtractPage"
+            onClick={() => setPage(v => v - 1)}>
+            btn2
+          </button>
+          <button
+            role="replaceError1"
+            onClick={() => {
+              try {
+                replace({ id: 100, word: 'zzz' }, { id: 2, word: 'ccc' });
+              } catch (err: any) {
+                setError(err);
+              }
+            }}>
+            btn3
+          </button>
+          <button
+            role="replaceByItem"
+            onClick={() => {
+              replace({ id: 100, word: 'zzz' }, data[2]);
+            }}>
+            btn3
+          </button>
+        </div>
+      );
+    }
+
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    render((<Page />) as ReactElement<any, any>);
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+    });
+
+    fireEvent.click(screen.getByRole('replaceError1'));
+    await waitFor(() => {
+      expect(screen.getByRole('error')).toHaveTextContent('[alova/usePagination]item is not found in list');
+    });
+    fireEvent.click(screen.getByRole('replaceByItem'));
+    currentList[2] = { id: 100, word: 'zzz' };
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+    });
+  });
+
   test('paginated data insert item without preload', async () => {
     const alovaInst = createMockAlova();
     const getter = (page: number, pageSize: number) =>
@@ -867,6 +961,98 @@ describe('react => usePagination', () => {
     expect(cache).toBeUndefined();
     cache = queryCache(getter(page - 1, pageSize));
     expect(cache).toBeUndefined();
+  });
+
+  test('paginated data insert item by another item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number) =>
+      alovaInst.Get<SearchListResponse>('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    function Page() {
+      const {
+        data,
+        loading,
+        pageCount,
+        total,
+        page: [page, setPage],
+        pageSize: [pageSize],
+        isLastPage,
+        insert
+      } = usePagination((p, ps) => getter(p, ps), {
+        total: res => res.total,
+        data: res => res.list
+      });
+      const [error, setError] = useState(undefined as Error | undefined);
+
+      return (
+        <div>
+          <span role="status">{loading ? 'loading' : 'loaded'}</span>
+          <span role="page">{page}</span>
+          <span role="pageSize">{pageSize}</span>
+          <span role="pageCount">{pageCount}</span>
+          <span role="total">{total}</span>
+          <span role="error">{error?.message}</span>
+          <span role="isLastPage">{JSON.stringify(isLastPage)}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+          <button
+            role="addPage"
+            onClick={() => setPage(v => v + 1)}>
+            btn1
+          </button>
+          <button
+            role="subtractPage"
+            onClick={() => setPage(v => v - 1)}>
+            btn2
+          </button>
+          <button
+            role="insertError1"
+            onClick={() => {
+              try {
+                insert({ id: 100, word: 'zzz' }, { id: 2, word: 'ccc' });
+              } catch (err: any) {
+                setError(err);
+              }
+            }}>
+            btn3
+          </button>
+          <button
+            role="insertByItem"
+            onClick={() => {
+              insert({ id: 100, word: 'zzz' }, data[2]);
+            }}>
+            btn3
+          </button>
+        </div>
+      );
+    }
+
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    render((<Page />) as ReactElement<any, any>);
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+    });
+
+    fireEvent.click(screen.getByRole('insertError1'));
+    await waitFor(() => {
+      expect(screen.getByRole('error')).toHaveTextContent('[alova/usePagination]item is not found in list');
+    });
+    fireEvent.click(screen.getByRole('insertByItem'));
+    currentList.splice(3, 0, { id: 100, word: 'zzz' });
+    currentList.pop();
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+    });
   });
 
   test('paginated data remove item in preload mode', async () => {
@@ -1038,6 +1224,109 @@ describe('react => usePagination', () => {
       expect(cache?.list).toStrictEqual([0, 1, 2, 3]);
       cache = queryCache(getter(page + 1, pageSize));
       expect(cache?.list).toStrictEqual([16, 17, 18, 19]);
+    });
+  });
+
+  test('paginated data remove item by another item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number) =>
+      alovaInst.Get<SearchListResponse>('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const fetchMockFn = jest.fn();
+    function Page() {
+      const {
+        data,
+        loading,
+        pageCount,
+        total,
+        page: [page, setPage],
+        pageSize: [pageSize],
+        isLastPage,
+        onFetchSuccess,
+        remove
+      } = usePagination((p, ps) => getter(p, ps), {
+        total: res => res.total,
+        data: res => res.list
+      });
+      onFetchSuccess(fetchMockFn);
+      const [error, setError] = useState(undefined as Error | undefined);
+
+      return (
+        <div>
+          <span role="status">{loading ? 'loading' : 'loaded'}</span>
+          <span role="page">{page}</span>
+          <span role="pageSize">{pageSize}</span>
+          <span role="pageCount">{pageCount}</span>
+          <span role="total">{total}</span>
+          <span role="error">{error?.message}</span>
+          <span role="isLastPage">{JSON.stringify(isLastPage)}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+          <button
+            role="addPage"
+            onClick={() => setPage(v => v + 1)}>
+            btn1
+          </button>
+          <button
+            role="subtractPage"
+            onClick={() => setPage(v => v - 1)}>
+            btn2
+          </button>
+          <button
+            role="removeError1"
+            onClick={() => {
+              try {
+                remove({ id: 2, word: 'ccc' });
+              } catch (err: any) {
+                setError(err);
+              }
+            }}>
+            btn3
+          </button>
+          <button
+            role="removeByItem"
+            onClick={() => {
+              remove(data[2]);
+            }}>
+            btn3
+          </button>
+        </div>
+      );
+    }
+
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    render((<Page />) as ReactElement<any, any>);
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+      expect(fetchMockFn).toBeCalled();
+    });
+
+    fireEvent.click(screen.getByRole('removeError1'));
+    await waitFor(() => {
+      expect(screen.getByRole('error')).toHaveTextContent('[alova/usePagination]item is not found in list');
+    });
+    fireEvent.click(screen.getByRole('removeByItem'));
+
+    currentList = generateContinuousNumbers(10, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    currentList.splice(2, 1);
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
     });
   });
 
@@ -1778,7 +2067,7 @@ describe('react => usePagination', () => {
     });
   });
 
-  test('load more mode paginated data refersh page', async () => {
+  test('load more mode paginated data refersh page by page number', async () => {
     const alovaInst = createMockAlova();
     const getter = (page: number, pageSize: number) =>
       alovaInst.Get<ListResponse>('/list', {
@@ -1875,6 +2164,99 @@ describe('react => usePagination', () => {
       expect(screen.getByRole('response')).toHaveTextContent(
         JSON.stringify(generateContinuousNumbers(19, 0, { 0: 100 }))
       );
+    });
+  });
+
+  test('load more mode paginated data refersh page by item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number) =>
+      alovaInst.Get<SearchListResponse>('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    function Page() {
+      const {
+        data,
+        loading,
+        pageCount,
+        total,
+        page: [page, setPage],
+        pageSize: [pageSize],
+        isLastPage,
+        refresh
+      } = usePagination((p, ps) => getter(p, ps), {
+        total: res => res.total,
+        data: res => res.list,
+        append: true
+      });
+
+      return (
+        <div>
+          <span role="status">{loading ? 'loading' : 'loaded'}</span>
+          <span role="page">{page}</span>
+          <span role="pageSize">{pageSize}</span>
+          <span role="pageCount">{pageCount}</span>
+          <span role="total">{total}</span>
+          <span role="isLastPage">{JSON.stringify(isLastPage)}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+          <button
+            role="addPage"
+            onClick={() => setPage(v => v + 1)}>
+            btn1
+          </button>
+          <button
+            role="subtractPage"
+            onClick={() => setPage(v => v - 1)}>
+            btn2
+          </button>
+          <button
+            role="refreshByItem"
+            onClick={() => {
+              refresh(data[12]);
+            }}>
+            btn3
+          </button>
+        </div>
+      );
+    }
+
+    render((<Page />) as ReactElement<any, any>);
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+      expect(screen.getByRole('total')).toHaveTextContent('300');
+    });
+
+    fireEvent.click(screen.getByRole('addPage'));
+    currentList = generateContinuousNumbers(19, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+    });
+
+    setMockListWithSearchData(data => {
+      data.splice(12, 1, { id: 100, word: 'zzz' });
+      return data;
+    });
+
+    fireEvent.click(screen.getByRole('refreshByItem'));
+    currentList[12] = { id: 100, word: 'zzz' };
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
     });
   });
 

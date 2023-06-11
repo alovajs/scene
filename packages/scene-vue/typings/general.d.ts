@@ -136,8 +136,8 @@ interface BackoffPolicy {
    */
   delay?: number;
   /**
-   * 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒
-   * @default 0
+   * 指定延迟倍数，例如把multiplier设置为2、delay为1秒时，第一次重试为1秒，第二次为2秒，第三次为4秒，以此类推
+   * @default 1
    */
   multiplier?: number;
 
@@ -541,7 +541,15 @@ type FormReturnType<S, E, R, T, RC, RE, RH, F> = UseHookReturnType<S, E, R, T, R
  * useRetriableRequest配置
  */
 type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {
-  retry?: number | ((error: Error) => boolean);
+  /**
+   * 最大重试次数，也可以设置为返回 boolean 值的函数，来动态判断是否继续重试。
+   * @default 3
+   */
+  retry?: number | ((error: Error, ...args: any[]) => boolean);
+
+  /**
+   * 避让策略
+   */
   backoff?: BackoffPolicy;
 } & RequestHookConfig<S, E, R, T, RC, RE, RH>;
 

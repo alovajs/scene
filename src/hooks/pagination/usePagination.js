@@ -27,6 +27,7 @@ import createSnapshotMethodsManager from './createSnapshotMethodsManager';
 const paginationAssert = createAssert('usePagination');
 const indexAssert = (index, rawData) =>
   paginationAssert(isNumber(index) && index < len(rawData), 'index must be a number that less than list length');
+
 export default function (
   handler,
   {
@@ -93,8 +94,8 @@ export default function (
   const delegationActions = useFlag$({});
   const createDelegationAction =
     actionName =>
-    (...args) =>
-      delegationActions.v[actionName](...args);
+      (...args) =>
+        delegationActions.v[actionName](...args);
   const states = useWatcher(getHandlerMethod, [...watchingStates, _exp$(page), _exp$(pageSize)], {
     immediate,
     initialData,
@@ -150,6 +151,7 @@ export default function (
     ),
     requestDataRef = useRequestRefState$(states.data);
 
+  // 判断是否可预加载数据
   const canPreload = (rawData = _$(requestDataRef), preloadPage, fetchMethod, isNextPage = falseValue) => {
     const { e: expireMilliseconds } = getLocalCacheConfigParam(fetchMethod);
     // 如果缓存时间小于等于当前时间，表示没有设置缓存，此时不再预拉取数据
@@ -161,8 +163,8 @@ export default function (
     const exceedPageCount = pageCountVal
       ? preloadPage > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-      ? len(listDataGetter(rawData)) < _$(pageSize)
-      : falseValue;
+        ? len(listDataGetter(rawData)) < _$(pageSize)
+        : falseValue;
     return preloadPage > 0 && !exceedPageCount;
   };
 
@@ -275,16 +277,31 @@ export default function (
     requestCountInReseting.v = 0;
   });
 
+  // 获取列表项所在位置
+  const getItemIndex = item => {
+    const index = _$(data).indexOf(item);
+    paginationAssert(index >= 0, 'item is not found in list');
+    return index;
+  }
+
   /**
    * 刷新指定页码数据，此函数将忽略缓存强制发送请求
-   * @param refreshPage 刷新的页码
+   * 如果未传入页码则会刷新当前页
+   * 如果传入一个列表项，将会刷新此列表项所在页，只对append模式有效
+   * @param pageOrItemPage 刷新的页码或列表项
    */
-  const refresh = useMemorizedCallback$(refreshPage => {
+  const refresh = useMemorizedCallback$((pageOrItemPage = _$(page)) => {
+    let refreshPage = pageOrItemPage;
     if (append) {
+      if (!isNumber(pageOrItemPage)) {
+        const itemIndex = getItemIndex(pageOrItemPage);
+        refreshPage = Math.floor(itemIndex / _$(pageSize)) + 1;
+      }
       paginationAssert(refreshPage <= _$(page), "refresh page can't greater than page");
       // 更新当前页数据
       send(refreshPage, trueValue);
     } else {
+      paginationAssert(isNumber(refreshPage), 'unable to calculate refresh page by item in pagination mode');
       // 页数相等，则刷新当前页，否则fetch数据
       refreshPage === _$(page) ? send(undefinedValue, trueValue) : fetch(handler(refreshPage, _$(pageSize)), trueValue);
     }
@@ -354,10 +371,13 @@ export default function (
 
   /**
    * 插入一条数据
+   * 如果未传入index，将默认插入到最前面
+   * 如果传入一个列表项，将插入到这个列表项的后面，如果列表项未在列表数据中将会抛出错误
    * @param item 插入项
-   * @param config 插入配置
+   * @param position 插入位置（索引）或列表项
    */
-  const insert = useMemorizedCallback$((item, index = 0) => {
+  const insert = useMemorizedCallback$((item, position = 0) => {
+    const index = isNumber(position) ? position : getItemIndex(position) + 1;
     const pageVal = _$(page);
     let popItem = undefinedValue;
     upd$(data, rawd => {
@@ -392,11 +412,12 @@ export default function (
 
   /**
    * 移除一条数据
-   * @param index 移除的索引
+   * 如果传入的是列表项，将移除此列表项，如果列表项未在列表数据中将会抛出错误
+   * @param position 移除的索引或列表项
    */
-  // 临时保存的数据，以便当需要重新加载时用于数据恢复
-  let tempData;
-  const remove = useMemorizedCallback$(index => {
+  let tempData; // 临时保存的数据，以便当需要重新加载时用于数据恢复
+  const remove = useMemorizedCallback$(position => {
+    const index = isNumber(position) ? position : getItemIndex(position);
     indexAssert(index, _$(data));
     const pageVal = _$(page);
     const nextPage = pageVal + 1;
@@ -450,11 +471,13 @@ export default function (
   });
 
   /**
-   * 替换列表中的项
-   * @param {any} item 替换项
-   * @param {number} index 插入位置
+   * 替换一条数据
+   * 如果position传入的是列表项，将替换此列表项，如果列表项未在列表数据中将会抛出错误
+   * @param item 替换项
+   * @param position 替换位置（索引）或列表项
    */
-  const replace = useMemorizedCallback$((item, index) => {
+  const replace = useMemorizedCallback$((item, position) => {
+    const index = isNumber(position) ? position : getItemIndex(position);
     indexAssert(index, _$(data));
     upd$(data, rawd => {
       splice(rawd, index, 1, item);

@@ -1,7 +1,7 @@
 import { undefinedValue } from '@/helper/variables';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createAlova } from 'alova';
+import { Method, createAlova } from 'alova';
 import ReactHook from 'alova/react';
 import React, { ReactElement, useState } from 'react';
 import { mockRequestAdapter } from '~/test/mockData';
@@ -220,6 +220,7 @@ describe('react => useSerialWatcher', () => {
     const mockErrorFn = jest.fn();
     const mockCompleteFn = jest.fn();
     const mockSuccessFn = jest.fn();
+    let errorMethod: Method | null = null;
     const Page = () => {
       const { loading, error, data, onError, onComplete, onSuccess } = useSerialWatcher(
         [
@@ -227,7 +228,7 @@ describe('react => useSerialWatcher', () => {
           ret1 => {
             expect(ret1).toStrictEqual({ id: 1 });
             methodHandlerMockFn();
-            return alovaInst.Get<{ id: number; text: string }[]>('/list-error');
+            return (errorMethod = alovaInst.Get<{ id: number; text: string }[]>('/list-error'));
           },
           ret2 => {
             methodHandlerMockFn();
@@ -242,7 +243,10 @@ describe('react => useSerialWatcher', () => {
           immediate: true
         }
       );
-      onError(mockErrorFn);
+      onError(event => {
+        mockErrorFn();
+        expect(event.method).toBe(errorMethod);
+      });
       onComplete(mockCompleteFn);
       onSuccess(mockSuccessFn);
 

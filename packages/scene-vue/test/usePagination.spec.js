@@ -1,11 +1,11 @@
 import { mockRequestAdapter, setMockListData, setMockListWithSearchData, setMockShortListData } from '#/mockData';
-import { untilCbCalled } from '#/utils';
+import { generateContinuousNumbers, untilCbCalled } from '#/utils';
 import { createAlova, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import { accessAction, actionDelegationMiddleware, usePagination } from '..';
 
-// jest.setTimeout(1000000);
+jest.setTimeout(1000000);
 // reset data
 beforeEach(() => setMockListData());
 beforeEach(() => setMockListWithSearchData());
@@ -92,7 +92,7 @@ describe('vue => usePagination', () => {
     });
   });
 
-  test('should throw error when got wrong array', async () => {
+  test('should throws an error when got wrong array', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
       alovaInst.Get('/list', {
@@ -199,7 +199,7 @@ describe('vue => usePagination', () => {
       return data;
     });
 
-    refresh(3);
+    refresh(); // 未传入参数时将默认刷新当前页，当前页为3
     await untilCbCalled(onSuccess);
     expect(data.value).toEqual([200, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
 
@@ -359,6 +359,40 @@ describe('vue => usePagination', () => {
     expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 500, 7, 400, 9]);
   });
 
+  test('paginated data replace item by another item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+    const { page, data, onSuccess, total, replace } = usePagination((p, ps) => getter(p, ps), {
+      total: res => res.total,
+      data: res => res.list
+    });
+
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    await untilCbCalled(onSuccess);
+    expect(data.value).toStrictEqual(currentList);
+    expect(total.value).toBe(300);
+
+    // 需要使用对象的相同引用定位替换位置
+    expect(() => {
+      replace({ id: 100, word: 'zzz' }, { id: 2, word: 'ccc' });
+    }).toThrow('[alova/usePagination]item is not found in list');
+
+    replace({ id: 100, word: 'zzz' }, data.value[2]);
+    expect(data.value[2]).toStrictEqual({ id: 100, word: 'zzz' });
+  });
+
   test('paginated data insert item without preload', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
@@ -401,6 +435,40 @@ describe('vue => usePagination', () => {
     setCache(getter(page.value + 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
     });
+  });
+
+  test('paginated data insert item by another item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+    const { page, data, onSuccess, total, insert } = usePagination((p, ps) => getter(p, ps), {
+      total: res => res.total,
+      data: res => res.list
+    });
+
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    await untilCbCalled(onSuccess);
+    expect(data.value).toStrictEqual(currentList);
+    expect(total.value).toBe(300);
+
+    // 需要使用对象的相同引用定位替换位置
+    expect(() => {
+      insert({ id: 100, word: 'zzz' }, { id: 2, word: 'ccc' });
+    }).toThrow('[alova/usePagination]item is not found in list');
+
+    insert({ id: 100, word: 'zzz' }, data.value[2]); // 插入到索引2的后面
+    expect(data.value[3]).toStrictEqual({ id: 100, word: 'zzz' });
   });
 
   test('paginated data remove item in preload mode', async () => {
@@ -492,6 +560,49 @@ describe('vue => usePagination', () => {
     expect(cache.list).toEqual([0, 1, 2, 3]);
     cache = queryCache(getter(page.value + 1, pageSize.value));
     expect(cache.list).toEqual([16, 17, 18, 19]);
+  });
+
+  test('paginated data remove item by another item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+    const { page, data, onFetchSuccess, total, remove } = usePagination((p, ps) => getter(p, ps), {
+      total: res => res.total,
+      data: res => res.list
+    });
+
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    await untilCbCalled(onFetchSuccess);
+    expect(data.value).toStrictEqual(currentList);
+    expect(total.value).toBe(300);
+
+    // 需要使用对象的相同引用定位替换位置
+    expect(() => {
+      remove({ id: 2, word: 'ccc' });
+    }).toThrow('[alova/usePagination]item is not found in list');
+
+    remove(data.value[2]); // 移除到索引为2的项
+    await untilCbCalled(setTimeout, 10);
+    currentList = generateContinuousNumbers(10, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    currentList.splice(2, 1);
+    expect(data.value).toStrictEqual(currentList);
   });
 
   // 当操作了数据重新fetch但还未响应时，翻页到了正在fetch的页，此时也需要更新界面
@@ -787,7 +898,7 @@ describe('vue => usePagination', () => {
     expect(data.value.length).toBe(10);
   });
 
-  test('load more mode paginated data refersh page', async () => {
+  test('load more mode paginated data refersh page by page number', async () => {
     const alovaInst = createMockAlova();
     const getter = (page, pageSize) =>
       alovaInst.Get('/list', {
@@ -825,9 +936,61 @@ describe('vue => usePagination', () => {
 
     refresh(1);
     await untilCbCalled(onSuccess); // append模式下将使用send函数重新请求数据
-    expect(data.value[0]).toBe(100);
-    expect(data.value[data.value.length - 1]).toBe(19);
+    expect(data.value[0]).toStrictEqual(generateContinuousNumbers(19, 0, { 0: 100 }));
     expect(data.value.length).toBe(20);
+
+    setMockListData(data => {
+      data.splice(12, 1, 1200);
+      return data;
+    });
+  });
+
+  test('load more mode paginated data refersh page by item', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list-with-search', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+    const { page, data, onSuccess, total, refresh } = usePagination((p, ps) => getter(p, ps), {
+      total: res => res.total,
+      data: res => res.list,
+      append: true
+    });
+
+    await untilCbCalled(onSuccess);
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    expect(data.value).toStrictEqual(currentList);
+    expect(total.value).toBe(300);
+
+    page.value++;
+    await untilCbCalled(onSuccess);
+    currentList = generateContinuousNumbers(19, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    expect(data.value).toStrictEqual(currentList);
+
+    setMockListWithSearchData(data => {
+      data.splice(12, 1, { id: 100, word: 'zzz' });
+      return data;
+    });
+
+    refresh(data.value[12]);
+    await untilCbCalled(onSuccess);
+    currentList[12] = { id: 100, word: 'zzz' };
+    expect(data.value).toStrictEqual(currentList);
   });
 
   test('load more mode paginated data operate items with remove/insert/replace(open preload)', async () => {

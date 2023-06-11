@@ -1,4 +1,4 @@
-import { createAssert, isArray, len, promiseResolve, shift } from '@/helper';
+import { createAssert, isArray, len, promiseResolve, promiseThen, pushItem, shift } from '@/helper';
 import { undefinedValue } from '@/helper/variables';
 import { AlovaFrontMiddleware, AlovaMethodHandler, Method } from 'alova';
 
@@ -32,12 +32,22 @@ export const serialMiddleware = <S, E, R, T, RC, RE, RH>(
   shift(serialHandlers);
   return ((ctx, next) => {
     hookMiddleware?.(ctx, () => promiseResolve(undefinedValue as any));
+
+    const methods: Method[] = [];
     let serialPromise = next();
     for (const i in serialHandlers) {
-      serialPromise = serialPromise.then(value =>
-        (serialHandlers as AlovaMethodHandler<S, E, R, T, RC, RE, RH>[])[i](value, ...ctx.sendArgs).send()
-      );
+      serialPromise = promiseThen(serialPromise, value => {
+        const methodItem = (serialHandlers as AlovaMethodHandler<S, E, R, T, RC, RE, RH>[])[i](value, ...ctx.sendArgs);
+        pushItem(methods, methodItem);
+        return methodItem.send();
+      });
     }
+
+    // 装饰错误回调函数，将event.method设置为出错的实例
+    ctx.decorateError((handler, event) => {
+      event.method = methods[len(methods) - 1];
+      handler(event);
+    });
     return serialPromise;
   }) as AlovaFrontMiddleware<S, E, R, T, RC, RE, RH>;
 };

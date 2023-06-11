@@ -61,29 +61,35 @@ interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> extends UseHookRet
 
   /**
    * 刷新指定页码数据，此函数将忽略缓存强制发送请求
-   * @param refreshPage 刷新的页码
+   * 如果未传入页码则会刷新当前页
+   * 如果传入一个列表项，将会刷新此列表项所在页，只对append模式有效
+   * @param pageOrItemPage 刷新的页码或列表项
    */
-  refresh: (refreshPage: number) => void;
+  refresh: (pageOrItemPage?: number | LD[number]) => void;
 
   /**
-   * 插入一条数据，未传入index时默认插入到最前面
+   * 插入一条数据
+   * 如果未传入index，将默认插入到最前面
+   * 如果传入一个列表项，将插入到这个列表项的后面，如果列表项未在列表数据中将会抛出错误
    * @param item 插入项
-   * @param index 插入位置（索引）
+   * @param position 插入位置（索引）或列表项
    */
-  insert: (item: LD extends any[] ? LD[number] : any, index?: number) => void;
+  insert: (item: LD extends any[] ? LD[number] : any, position?: number | LD[number]) => void;
 
   /**
    * 移除一条数据
-   * @param index 移除的索引
+   * 如果传入的是列表项，将移除此列表项，如果列表项未在列表数据中将会抛出错误
+   * @param position 移除的索引或列表项
    */
-  remove: (index: number) => void;
+  remove: (position: number | LD[number]) => void;
 
   /**
    * 替换一条数据
+   * 如果position传入的是列表项，将替换此列表项，如果列表项未在列表数据中将会抛出错误
    * @param item 替换项
-   * @param index 替换位置（索引）
+   * @param position 替换位置（索引）或列表项
    */
-  replace: (item: LD extends any[] ? LD[number] : any, index: number) => void;
+  replace: (item: LD extends any[] ? LD[number] : any, position: number | LD[number]) => void;
 
   /**
    * 从第一页开始重新加载列表，并清空缓存

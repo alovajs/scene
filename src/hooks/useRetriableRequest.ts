@@ -119,7 +119,7 @@ export default <S, E, R, T, RC, RE, RH>(
         // 请求失败时触发重试机制
         error => {
           // 没有手动触发停止，以及重试次数未到达最大时触发重试
-          if (!stopManuallyError.v && (isNumber(retry) ? retryTimes.v < retry : retry(error))) {
+          if (!stopManuallyError.v && (isNumber(retry) ? retryTimes.v < retry : retry(error, ...sendArgs))) {
             // 计算重试延迟时间
             const retryDelay = delayWithBackoff(backoff, ++retryTimes.v);
             // 延迟对应时间重试

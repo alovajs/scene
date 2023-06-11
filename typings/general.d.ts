@@ -541,7 +541,15 @@ type FormReturnType<S, E, R, T, RC, RE, RH, F> = UseHookReturnType<S, E, R, T, R
  * useRetriableRequest配置
  */
 type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {
-  retry?: number | ((error: Error) => boolean);
+  /**
+   * 最大重试次数，也可以设置为返回 boolean 值的函数，来动态判断是否继续重试。
+   * @default 3
+   */
+  retry?: number | ((error: Error, ...args: any[]) => boolean);
+
+  /**
+   * 避让策略
+   */
   backoff?: BackoffPolicy;
 } & RequestHookConfig<S, E, R, T, RC, RE, RH>;
 
