@@ -1,15 +1,18 @@
 import { mockRequestAdapter, setMockListData, setMockListWithSearchData, setMockShortListData } from '#/mockData';
 import { generateContinuousNumbers, untilCbCalled } from '#/utils';
-import { createAlova, queryCache, setCache } from 'alova';
+import { createAlova, invalidateCache, queryCache, setCache } from 'alova';
 import VueHook from 'alova/vue';
 import { ref } from 'vue';
 import { accessAction, actionDelegationMiddleware, usePagination } from '..';
 
-jest.setTimeout(1000000);
+// jest.setTimeout(1000000);
 // reset data
-beforeEach(() => setMockListData());
-beforeEach(() => setMockListWithSearchData());
-beforeEach(() => setMockShortListData());
+beforeEach(() => {
+  setMockListData();
+  setMockListWithSearchData();
+  setMockShortListData();
+  invalidateCache();
+});
 const createMockAlova = () =>
   createAlova({
     baseURL: 'http://localhost:8080',
@@ -347,9 +350,8 @@ describe('vue => usePagination', () => {
     replace(300, 0);
     expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     // 检查当前页缓存
-    setCache(getter(page.value, pageSize.value), cache => {
-      expect(cache.list).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    });
+    let cache = queryCache(getter(page.value, pageSize.value));
+    expect(cache.list).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
     // 正向顺序替换
     replace(400, 8);
@@ -368,7 +370,7 @@ describe('vue => usePagination', () => {
           pageSize
         }
       });
-    const { page, data, onSuccess, total, replace } = usePagination((p, ps) => getter(p, ps), {
+    const { data, onSuccess, total, replace } = usePagination((p, ps) => getter(p, ps), {
       total: res => res.total,
       data: res => res.list
     });
@@ -446,7 +448,7 @@ describe('vue => usePagination', () => {
           pageSize
         }
       });
-    const { page, data, onSuccess, total, insert } = usePagination((p, ps) => getter(p, ps), {
+    const { data, onSuccess, total, insert } = usePagination((p, ps) => getter(p, ps), {
       total: res => res.total,
       data: res => res.list
     });
@@ -571,7 +573,7 @@ describe('vue => usePagination', () => {
           pageSize
         }
       });
-    const { page, data, onFetchSuccess, total, remove } = usePagination((p, ps) => getter(p, ps), {
+    const { data, onFetchSuccess, total, remove } = usePagination((p, ps) => getter(p, ps), {
       total: res => res.total,
       data: res => res.list
     });
@@ -936,7 +938,7 @@ describe('vue => usePagination', () => {
 
     refresh(1);
     await untilCbCalled(onSuccess); // append模式下将使用send函数重新请求数据
-    expect(data.value[0]).toStrictEqual(generateContinuousNumbers(19, 0, { 0: 100 }));
+    expect(data.value).toStrictEqual(generateContinuousNumbers(19, 0, { 0: 100 }));
     expect(data.value.length).toBe(20);
 
     setMockListData(data => {

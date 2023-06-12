@@ -1,7 +1,7 @@
 import { mockRequestAdapter, setMockListData, setMockListWithSearchData, setMockShortListData } from '#/mockData';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createAlova, queryCache } from 'alova';
+import { createAlova, invalidateCache, queryCache } from 'alova';
 import ReactHook from 'alova/react';
 import React, { ReactElement, useState } from 'react';
 import { generateContinuousNumbers, untilCbCalled } from '~/test/utils';
@@ -18,9 +18,12 @@ interface SearchListResponse {
 
 // jest.setTimeout(1000000);
 // reset data
-beforeEach(() => setMockListData());
-beforeEach(() => setMockListWithSearchData());
-beforeEach(() => setMockShortListData());
+beforeEach(() => {
+  setMockListData();
+  setMockListWithSearchData();
+  setMockShortListData();
+  invalidateCache();
+});
 const createMockAlova = () =>
   createAlova({
     baseURL: 'http://localhost:8080',
@@ -739,9 +742,7 @@ describe('react => usePagination', () => {
 
     fireEvent.click(screen.getByRole('replaceError1'));
     await waitFor(() => {
-      expect(screen.getByRole('error')).toHaveTextContent(
-        '[alova/usePagination]index must be a number that less than list length'
-      );
+      expect(screen.getByRole('error')).toHaveTextContent('[alova/usePagination]must specify replace position');
     });
     fireEvent.click(screen.getByRole('replaceError2'));
     await waitFor(() => {

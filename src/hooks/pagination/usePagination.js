@@ -94,8 +94,8 @@ export default function (
   const delegationActions = useFlag$({});
   const createDelegationAction =
     actionName =>
-      (...args) =>
-        delegationActions.v[actionName](...args);
+    (...args) =>
+      delegationActions.v[actionName](...args);
   const states = useWatcher(getHandlerMethod, [...watchingStates, _exp$(page), _exp$(pageSize)], {
     immediate,
     initialData,
@@ -163,8 +163,8 @@ export default function (
     const exceedPageCount = pageCountVal
       ? preloadPage > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-        ? len(listDataGetter(rawData)) < _$(pageSize)
-        : falseValue;
+      ? len(listDataGetter(rawData)) < _$(pageSize)
+      : falseValue;
     return preloadPage > 0 && !exceedPageCount;
   };
 
@@ -282,7 +282,7 @@ export default function (
     const index = _$(data).indexOf(item);
     paginationAssert(index >= 0, 'item is not found in list');
     return index;
-  }
+  };
 
   /**
    * 刷新指定页码数据，此函数将忽略缓存强制发送请求
@@ -477,6 +477,7 @@ export default function (
    * @param position 替换位置（索引）或列表项
    */
   const replace = useMemorizedCallback$((item, position) => {
+    paginationAssert(position !== undefinedValue, 'must specify replace position');
     const index = isNumber(position) ? position : getItemIndex(position);
     indexAssert(index, _$(data));
     upd$(data, rawd => {
