@@ -1,20 +1,20 @@
+import { instanceOf, isArray, splice, uuid } from '@/helper';
+import { falseValue, undefinedValue } from '@/helper/variables';
 import { matchSnapshotMethod, Method, MethodFilter, MethodMatcher } from 'alova';
 import {
+  BackoffPolicy,
   FallbackHandler,
   RetryHandler,
   SilentMethod as SilentMethodInterface,
   SilentQueueMap,
   SQHookBehavior
-} from '../../../typings/general';
-import { instanceOf, isArray, splice, uuid } from '../../helper';
-import { falseValue, undefinedValue } from '../../helper/variables';
+} from '~/typings/general';
 import { silentAssert } from './globalVariables';
 import { silentQueueMap } from './silentQueue';
 import { persistSilentMethod, spliceStorageSilentMethod } from './storage/silentMethodStorage';
 
 export type PromiseExecuteParameter = Parameters<ConstructorParameters<typeof Promise<any>>['0']>;
 export type MethodHandler<S, E, R, T, RC, RE, RH> = (...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
-export type BackoffPolicy = NonNullable<SilentMethodInterface['backoff']>;
 export type MaxRetryTimes = NonNullable<SilentMethodInterface['maxRetryTimes']>;
 export type RetryError = NonNullable<SilentMethodInterface['retryError']>;
 

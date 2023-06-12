@@ -1,4 +1,4 @@
-import { undefinedValue } from '../../../helper/variables';
+import { undefinedValue } from '@/helper/variables';
 import { vDataIdCollectBasket } from '../globalVariables';
 import { symbolVDataId } from './variables';
 

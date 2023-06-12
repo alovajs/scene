@@ -1,6 +1,7 @@
+import { __self, createSyncOnceRunner, isFn, map } from '@/helper';
+import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
+import { onMount } from 'svelte';
 import { derived, writable } from 'svelte/store';
-import { createSyncOnceRunner, map } from '../helper';
-import { falseValue, trueValue, undefinedValue } from '../helper/variables';
 
 /**
  * 创建状态
@@ -48,7 +49,11 @@ export const _expBatch$ = (...states) => map(states, s => _exp$(s));
  * @param newData 新状态值
  */
 export const upd$ = (state, newData) => {
-  typeof newData === 'function' ? state.update(newData) : state.set(newData);
+  if (isFn(newData)) {
+    newData = newData(_$(state));
+  }
+  state.set(newData);
+  return newData;
 };
 
 /**
@@ -56,20 +61,45 @@ export const upd$ = (state, newData) => {
  * @param {import('svelte/store').Readable[]} states 监听状态
  * @param {Function} cb 回调函数
  */
-export const watch = (states, cb) => {
-  let emited = falseValue;
-  let subscribeStage = trueValue;
+export const watch$ = (states, handler) => {
+  let needEmit = falseValue;
   const syncRunner = createSyncOnceRunner();
-  const subscribeCb = () => {
-    if (!emited && !subscribeStage) {
-      cb();
-      emited = trueValue;
-    }
-    syncRunner(() => {
-      emited = subscribeStage = falseValue;
-    });
-  };
   states.forEach(state => {
-    state.subscribe(subscribeCb);
+    state.subscribe(() => {
+      syncRunner(() => {
+        needEmit ? handler() : (needEmit = trueValue);
+      });
+    });
   });
 };
+
+/**
+ * 组件挂载执行
+ * @param {Function} cb 回调函数
+ */
+export const onMounted$ = cb => {
+  onMount(cb);
+};
+
+/**
+ * 使用标识，一般作为标识
+ * 在react中每次渲染都会调用hook，如果使用基础数据每次将会获得初始值
+ * 兼容react
+ * @param initialValue 初始值
+ */
+export const useFlag$ = initialValue => ({ v: initialValue });
+
+/**
+ * 由于在react下，use hook返回的loading、data等状态为普遍值，将会受闭包影响
+ * 此函数作为兼容react而存在
+ * @param requestState 请求hook状态
+ */
+export const useRequestRefState$ = __self;
+
+/**
+ * 由于在react下，如果每次传入子组件的callback引用变化会导致子组件重新渲染，而引起性能问题
+ * 此函数作为兼容react而存在
+ * @param callback
+ * @returns
+ */
+export const useMemorizedCallback$ = __self;

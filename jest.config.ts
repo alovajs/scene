@@ -76,12 +76,16 @@ export default {
     'tsx',
     'json',
     'node',
-    'svelte'
+    'svelte',
+    'vue'
   ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
-    // must use absolute paths
+    '@/(.*)': '<rootDir>/src/$1',
+    '~/(.*)': '<rootDir>/$1',
+    '#/(.*)': '<rootDir>/test/$1',
+    '^vue$': 'vue/dist/vue.cjs.js'
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
@@ -129,7 +133,7 @@ export default {
   // setupFiles: [],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  // setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,
@@ -140,11 +144,17 @@ export default {
   // The test environment that will be used for testing
   testEnvironment: 'jsdom',
 
+  // resolve the problem that `Vue is not define` in `@testing-library/vue`
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons']
+  },
+
   testMatch: [
     '**/test/**/*.spec.[tj]s?(x)'
     // '**/test/modules/uuid.spec.ts(x)?'
+    // '**/test/modules/serializer.spec.ts(x)?'
     // '**/test/silent/virtualResponse.spec.ts(x)?'
-    // '**/test/silent/serializers.spec.ts(x)?'
+    // '**/test/silent/serializedStorage.spec.ts(x)?'
     // '**/test/silent/bootSilentQueue.spec.ts(x)?'
     // '**/test/silent/methodQueue-silent-request.spec.ts(x)?'
     // '**/test/silent/methodQueue-requestWait.spec.ts(x)?'
@@ -155,10 +165,21 @@ export default {
     // '**/test/silent/silentMethod-filter.spec.ts(x)?'
     // '**/test/silent/silentMethod-instance.spec.ts(x)?'
     // '**/test/silent/response-serialize.spec.ts(x)?'
-
     // vue
+    // '**/packages/scene-vue/test/functions.spec.ts(x)?'
     // '**/packages/scene-vue/test/usePagination.spec.js(x)?'
     // '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
+    // '**/packages/scene-vue/test/useCaptcha.spec.ts(x)?'
+    // '**/packages/scene-vue/test/useForm.spec.ts(x)?'
+    // '**/packages/scene-vue/test/actionDelegationMiddleware.spec.ts(x)?'
+    // react
+    // '**/packages/scene-react/test/functions.spec.ts(x)?'
+    // '**/packages/scene-react/test/useRetriableRequest.spec.ts(x)?'
+    // '**/packages/scene-react/test/usePagination.spec.ts(x)?'
+    // '**/packages/scene-react/test/useSerialRequest.spec.ts(x)?'
+    // '**/packages/scene-react/test/useSerialWatcher.spec.ts(x)?'
+    // svelte
+    // '**/packages/scene-svelte/test/functions.spec.ts(x)?'
   ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
@@ -205,7 +226,8 @@ export default {
         }
       }
     ],
-    '^.+\\.svelte$': 'svelte-jester'
+    '^.+\\.svelte$': 'svelte-jester',
+    '^.+\\.vue$': '@vue/vue3-jest'
   },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation

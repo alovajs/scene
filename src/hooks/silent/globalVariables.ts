@@ -1,14 +1,15 @@
+import { createAssert, isArray } from '@/helper';
+import { DEFAUT_QUEUE_NAME } from '@/helper/variables';
 import { Alova } from 'alova';
 import {
   BeforeSilentSubmitHandler,
+  DataSerializer,
   QueueRequestWaitSetting,
   SilentSubmitBootHandler,
   SilentSubmitErrorHandler,
   SilentSubmitFailHandler,
   SilentSubmitSuccessHandler
-} from '../../../typings/general';
-import { createAssert, isArray } from '../../helper';
-import { DEFAUT_QUEUE_NAME } from '../../helper/variables';
+} from '~/typings/general';
 
 /**
  * 全局的虚拟数据收集数组
@@ -39,10 +40,20 @@ import { DEFAUT_QUEUE_NAME } from '../../helper/variables';
 export let vDataIdCollectBasket: Record<string, undefined> | undefined;
 export const setVDataIdCollectBasket = (value: typeof vDataIdCollectBasket) => (vDataIdCollectBasket = value);
 
-/** 依赖的alova实例，它的存储适配器、请求适配器等将用于存取SilentMethod实例，以及发送静默提交 */
+/**
+ * 依赖的alova实例，它的存储适配器、请求适配器等将用于存取SilentMethod实例，以及发送静默提交
+ */
 export let dependentAlovaInstance: Alova<any, any, any, any, any>;
 export const setDependentAlova = (alovaInst: Alova<any, any, any, any, any>) => {
   dependentAlovaInstance = alovaInst;
+};
+
+/**
+ * 设置自定义的序列化器
+ */
+export let customSerializers: Record<string | number, DataSerializer> = {};
+export const setCustomSerializers = (serializers: typeof customSerializers = {}) => {
+  customSerializers = serializers;
 };
 
 /**

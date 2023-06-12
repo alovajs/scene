@@ -1,12 +1,12 @@
-import { SilentQueueMap } from '../../../../typings/general';
-import { forEach, objectKeys, pushItem } from '../../../helper';
+import { forEach, objectKeys, pushItem } from '@/helper';
+import { SilentQueueMap } from '~/typings/general';
 import convertPayload2SilentMethod from './convertPayload2SilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,
   silentMethodIdQueueMapStorageKey,
   silentMethodStorageKeyPrefix,
   storageGetItem
-} from './helper';
+} from './performers';
 
 /**
  * 从storage中载入静默队列数据

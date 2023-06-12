@@ -1,4 +1,4 @@
-import { len, objectKeys, pushItem, splice } from '../../../helper';
+import { len, objectKeys, pushItem, splice } from '@/helper';
 import { SilentMethod } from '../SilentMethod';
 import {
   SerializedSilentMethodIdQueueMap,
@@ -7,7 +7,7 @@ import {
   storageGetItem,
   storageRemoveItem,
   storageSetItem
-} from './helper';
+} from './performers';
 
 /**
  * 序列化并保存silentMethod实例

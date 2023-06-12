@@ -1,20 +1,21 @@
+import { mockRequestAdapter } from '#/mockData';
+import { untilCbCalled } from '#/utils';
+import { setSilentFactoryStatus } from '@/hooks/silent/globalVariables';
+import { bootSilentFactory, onSilentSubmitSuccess } from '@/hooks/silent/silentFactory';
+import { SilentMethod } from '@/hooks/silent/SilentMethod';
+import { silentQueueMap } from '@/hooks/silent/silentQueue';
+import loadSilentQueueMapFromStorage from '@/hooks/silent/storage/loadSilentQueueMapFromStorage';
+import useSQRequest from '@/hooks/silent/useSQRequest';
+import createVirtualResponse from '@/hooks/silent/virtualResponse/createVirtualResponse';
+import dehydrateVData from '@/hooks/silent/virtualResponse/dehydrateVData';
+import stringifyVData from '@/hooks/silent/virtualResponse/stringifyVData';
+import Undefined from '@/hooks/silent/virtualResponse/Undefined';
+import updateStateEffect from '@/hooks/silent/virtualResponse/updateStateEffect';
+import { symbolVDataId } from '@/hooks/silent/virtualResponse/variables';
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
-import { setSilentFactoryStatus } from '../../../src/hooks/silent/globalVariables';
-import { bootSilentFactory, onSilentSubmitSuccess } from '../../../src/hooks/silent/silentFactory';
-import { SilentMethod } from '../../../src/hooks/silent/SilentMethod';
-import { silentQueueMap } from '../../../src/hooks/silent/silentQueue';
-import loadSilentQueueMapFromStorage from '../../../src/hooks/silent/storage/loadSilentQueueMapFromStorage';
-import useSQRequest from '../../../src/hooks/silent/useSQRequest';
-import createVirtualResponse from '../../../src/hooks/silent/virtualResponse/createVirtualResponse';
-import dehydrateVData from '../../../src/hooks/silent/virtualResponse/dehydrateVData';
-import stringifyVData from '../../../src/hooks/silent/virtualResponse/stringifyVData';
-import Undefined from '../../../src/hooks/silent/virtualResponse/Undefined';
-import updateStateEffect from '../../../src/hooks/silent/virtualResponse/updateStateEffect';
-import { symbolVDataId } from '../../../src/hooks/silent/virtualResponse/variables';
-import { mockRequestAdapter } from '../../../test/mockData';
-import { untilCbCalled } from '../../../test/utils';
-import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '../../../typings/general';
+import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '~/typings/general';
+import { accessAction, actionDelegationMiddleware } from '..';
 
 const alovaInst = createAlova({
   baseURL: 'http://xxx',
@@ -39,8 +40,7 @@ beforeAll(() => {
     alova: alovaInst
   });
 });
-// jest.setTimeout(1000000);
-describe('useSQRequest', () => {
+describe('vue => useSQRequest', () => {
   test('request immediately with queue behavior', async () => {
     const queue = 'tb1';
     const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
@@ -387,7 +387,7 @@ describe('useSQRequest', () => {
       behavior: () => behaviorStr,
       queue
     });
-    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    let event = (await untilCbCalled(onSuccess)) as unknown as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(data.value).toBeInstanceOf(Undefined);
     expect(data.value[symbolVDataId]).not.toBeUndefined();
     expect(event.data).toBeInstanceOf(Undefined);
@@ -397,7 +397,7 @@ describe('useSQRequest', () => {
 
     behaviorStr = 'static';
     send(1, 2, 3);
-    event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    event = (await untilCbCalled(onSuccess)) as unknown as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(data.value).toStrictEqual({ id: 1 });
     expect(event.data).toStrictEqual({ id: 1 });
     expect(event.behavior).toBe('static');
@@ -421,7 +421,7 @@ describe('useSQRequest', () => {
       }
     });
 
-    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    let event = (await untilCbCalled(onSuccess)) as unknown as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ localData: 'abc' });
     expect(data.value).toStrictEqual({ localData: 'abc' });
 
@@ -430,7 +430,7 @@ describe('useSQRequest', () => {
       behavior: 'queue',
       queue
     });
-    event = (await untilCbCalled(onSuccess2)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    event = (await untilCbCalled(onSuccess2)) as unknown as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ id: 1 });
     expect(data2.value).toStrictEqual({ id: 1 });
   });
@@ -452,7 +452,7 @@ describe('useSQRequest', () => {
       }
     });
 
-    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    let event = (await untilCbCalled(onSuccess)) as unknown as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ localData: 'abc' });
     expect(data.value).toStrictEqual({ localData: 'abc' });
   });
@@ -476,7 +476,7 @@ describe('useSQRequest', () => {
       }
     });
 
-    let event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    let event = (await untilCbCalled(onSuccess)) as unknown as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
     expect(event.data).toStrictEqual({ localData: 'abc' });
     expect(data.value).toStrictEqual({ localData: 'abc' });
   });
@@ -489,7 +489,15 @@ describe('useSQRequest', () => {
       queue
     });
 
-    const event = (await untilCbCalled(onSuccess)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    const event = (await untilCbCalled(onSuccess)) as unknown as ScopedSQSuccessEvent<
+      any,
+      any,
+      any,
+      any,
+      any,
+      any,
+      any
+    >;
     expect(event.behavior).toBe('silent');
     expect(event.method).not.toBeUndefined();
     expect(event.silentMethod).not.toBeUndefined();
@@ -506,7 +514,15 @@ describe('useSQRequest', () => {
         b: 'bb'
       })
     });
-    const event2 = (await untilCbCalled(onSuccess2)) as ScopedSQSuccessEvent<any, any, any, any, any, any, any>;
+    const event2 = (await untilCbCalled(onSuccess2)) as unknown as ScopedSQSuccessEvent<
+      any,
+      any,
+      any,
+      any,
+      any,
+      any,
+      any
+    >;
     expect(data2.value[symbolVDataId]).not.toBeUndefined();
     expect(data2.value.a.toFixed(2)).toBe('1.00');
     expect(data2.value.b.replace('b', 'a')).toBe('ab');
@@ -695,5 +711,34 @@ describe('useSQRequest', () => {
         status: [1, 2]
       }
     });
+  });
+
+  test('should access actions by middleware actionDelegation', async () => {
+    const queue = 'tb33221';
+    const Get = alovaInst.Get<{ total: number; list: number[] }>('/list');
+    const { onSuccess, onComplete } = useSQRequest(() => Get, {
+      queue,
+      behavior: 'queue',
+      middleware: actionDelegationMiddleware('test_page')
+    });
+
+    const successFn = jest.fn();
+    const completeFn = jest.fn();
+    onSuccess(successFn);
+    onComplete(completeFn);
+
+    await untilCbCalled(onSuccess);
+    expect(successFn).toBeCalledTimes(1);
+    expect(completeFn).toBeCalledTimes(1);
+
+    accessAction('test_page', handlers => {
+      expect(handlers.send).toBeInstanceOf(Function);
+      expect(handlers.abort).toBeInstanceOf(Function);
+      handlers.send();
+    });
+
+    await untilCbCalled(onSuccess);
+    expect(successFn).toBeCalledTimes(2);
+    expect(completeFn).toBeCalledTimes(2);
   });
 });

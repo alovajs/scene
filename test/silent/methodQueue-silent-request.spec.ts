@@ -83,7 +83,7 @@ describe('silent method request in queue with silent behavior', () => {
     expect(successMockFn).toBeCalledTimes(1);
   });
 
-  test('should emit success and not emit fallback after retry one time and success', async () => {
+  test('should emit success and not emit fallback after retry one times and success', async () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
@@ -288,7 +288,7 @@ describe('silent method request in queue with silent behavior', () => {
     expect(retryMockFn).toBeCalledTimes(0);
   });
 
-  test('should catch the error that throws in responsed interception', async () => {
+  test('should catch the error that throws in responded interception', async () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,

@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@alova/scene-svelte)](https://www.npmjs.com/package/@alova/scene)
 [![Coverage Status](https://coveralls.io/repos/github/alovajs/scene/badge.svg?branch=main)](https://coveralls.io/github/alovajs/scene?branch=main)
-[![build](https://github.com/alovajs/scene/actions/workflows/main-scene.yml/badge.svg?branch=main)](https://github.com/alovajs/scene/actions/workflows/main-scene.yml)
+[![build](https://github.com/alovajs/scene/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/alovajs/scene/actions/workflows/release.yml)
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
 [alova](https://github.com/alovajs/alova) is a request strategy library, **Its mission is to make applications manage Client-Server data interaction more efficiently**, allowing developers to more elegantly implement more High performance and experience better request function. This library implements different request strategies for specific scenarios around the [core library](https://github.com/alovajs/alova). If you need to give full play to the power of alova, you can use it together with this library.

@@ -1,6 +1,12 @@
 import {
   Alova,
   AlovaCompleteEvent,
+  AlovaErrorEvent,
+  AlovaEvent,
+  AlovaFetcherMiddlewareContext,
+  AlovaFrontMiddlewareContext,
+  AlovaGuardNext,
+  ExportedType,
   Method,
   MethodMatcher,
   RequestHookConfig,
@@ -16,7 +22,7 @@ type IsUnknown<T, P, N> = 1 extends 1 & T ? P : N;
 
 /** @description usePagination相关 */
 type ArgGetter<R, LD> = (data: R) => LD | undefined;
-interface PaginationConfig<R, LD, WS> {
+interface PaginationHookConfig<R, LD, WS> {
   preloadPreviousPage?: boolean;
   preloadNextPage?: boolean;
   total?: ArgGetter<R, number>;
@@ -28,6 +34,7 @@ interface PaginationConfig<R, LD, WS> {
   debounce?: WatcherHookConfig<any, any, any, any, any, any, any>['debounce'];
   watchingStates?: WS;
   immediate?: boolean;
+  middleware?: AlovaFrontMiddleware<any, any, R, any, any, any, any>;
 }
 
 // =========================
@@ -122,6 +129,35 @@ interface RetryErrorDetailed {
   message?: RegExp;
 }
 
+interface BackoffPolicy {
+  /**
+   * 再次请求的延迟时间，单位毫秒
+   * @default 1000
+   */
+  delay?: number;
+  /**
+   * 指定延迟倍数，例如把multiplier设置为2、delay为1秒时，第一次重试为1秒，第二次为2秒，第三次为4秒，以此类推
+   * @default 1
+   */
+  multiplier?: number;
+
+  /**
+   * 延迟请求的抖动起始百分比值，范围为0-1
+   * 当只设置了startQuiver时，endQuiver默认为1
+   * 例如设置为0.5，它将在当前延迟时间上增加50%到100%的随机时间
+   * 如果endQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
+   */
+  startQuiver?: number;
+
+  /**
+   * 延迟请求的抖动结束百分比值，范围为0-1
+   * 当只设置了endQuiver时，startQuiver默认为0
+   * 例如设置为0.5，它将在当前延迟时间上增加0%到50%的随机时间
+   * 如果startQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
+   */
+  endQuiver?: number;
+}
+
 /**
  * silentMethod实例
  * 需要进入silentQueue的请求都将被包装成silentMethod实例，它将带有请求策略的各项参数
@@ -147,34 +183,7 @@ interface SilentMethod<S = any, E = any, R = any, T = any, RC = any, RE = any, R
   /** 重试次数 */
   readonly maxRetryTimes?: number;
   /** 避让策略 */
-  readonly backoff?: {
-    /**
-     * 再次请求的延迟时间，单位毫秒
-     * @default {1000}
-     */
-    delay?: number;
-    /**
-     * 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒
-     * @default {0}
-     */
-    multiplier?: number;
-
-    /**
-     * 延迟请求的抖动起始百分比值，范围为0-1
-     * 当只设置了startQuiver时，endQuiver默认为1
-     * 例如设置为0.5，它将在当前延迟时间上增加50%到100%的随机时间
-     * 如果endQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
-     */
-    startQuiver?: number;
-
-    /**
-     * 延迟请求的抖动结束百分比值，范围为0-1
-     * 当只设置了endQuiver时，startQuiver默认为0
-     * 例如设置为0.5，它将在当前延迟时间上增加0%到50%的随机时间
-     * 如果startQuiver有值，则延迟时间将增加startQuiver和endQuiver范围的随机值
-     */
-    endQuiver?: number;
-  };
+  readonly backoff?: BackoffPolicy;
 
   /**
    * 回退事件回调，当重试次数达到上限但仍然失败时，此回调将被调用
@@ -321,9 +330,9 @@ interface SQHookConfig<S, E, R, T, RC, RE, RH> {
 }
 
 type SQRequestHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
-  Omit<RequestHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
+  RequestHookConfig<S, E, R, T, RC, RE, RH>;
 type SQWatcherHookConfig<S, E, R, T, RC, RE, RH> = SQHookConfig<S, E, R, T, RC, RE, RH> &
-  Omit<WatcherHookConfig<S, E, R, T, RC, RE, RH>, 'middleware'>;
+  WatcherHookConfig<S, E, R, T, RC, RE, RH>;
 
 type FallbackHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQEvent<S, E, R, T, RC, RE, RH>) => void;
 type RetryHandler<S, E, R, T, RC, RE, RH> = (event: ScopedSQRetryEvent<S, E, R, T, RC, RE, RH>) => void;
@@ -427,3 +436,204 @@ type SilentSubmitErrorHandler = (event: GlobalSQErrorEvent) => void;
 type SilentSubmitFailHandler = (event: GlobalSQFailEvent) => void;
 type OffEventCallback = () => void;
 type SilentQueueMap = Record<string, SilentMethod[]>;
+
+/**
+ * useCaptcha配置
+ */
+type CaptchaHookConfig<S, E, R, T, RC, RE, RH> = {
+  /**
+   * 初始倒计时，当验证码发送成功时将会以此数据来开始倒计时
+   * @default 60
+   */
+  initialCountdown?: number;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+
+/**
+ * useCaptcha返回值
+ */
+type CaptchaReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+  /**
+   * 当前倒计时，每秒-1，当倒计时到0时可再次发送验证码
+   */
+  countdown: ExportedType<number, S>;
+};
+
+/**
+ * useForm的handler函数类型
+ */
+type FormHookHandler<S, E, R, T, RC, RE, RH, F> = (form: F, ...args: any[]) => Method<S, E, R, T, RC, RE, RH>;
+
+/**
+ * useForm配置
+ */
+interface StoreDetailConfig {
+  /**
+   * 是否启用持久化数据
+   */
+  enable: boolean;
+
+  /**
+   * 序列化器集合，用于自定义转换为序列化时某些不能直接转换的数据
+   * 集合的key作为它的名字进行序列化，当反序列化时会将对应名字的值传入backward函数中
+   * 因此，在forward中序列化时需判断是否为指定的数据，并返回转换后的数据，否则返回undefined或不返回
+   * 而在backward中可通过名字来识别，因此只需直接反序列化即可
+   * 内置的序列化器：
+   * 1. date序列化器用于转换日期
+   * 2. regexp序列化器用于转化正则表达式
+   *
+   * >>> 可以通过设置同名序列化器来覆盖内置序列化器
+   */
+  serializers?: Record<string | number, DataSerializer>;
+}
+type FormHookConfig<S, E, R, T, RC, RE, RH, F> = {
+  /**
+   * 初始表单数据
+   */
+  initialForm?: F;
+
+  /**
+   * form id，相同id的data数据是同一份引用，可以用于在多页表单时共用同一份表单数据
+   * 单页表单不需要指定id
+   */
+  id?: string | number;
+
+  /**
+   * 是否持久化保存数据，设置为true后将实时持久化未提交的数据
+   * @default false
+   */
+  store?: boolean | StoreDetailConfig;
+
+  /**
+   * 提交后重置数据
+   * @default false
+   */
+  resetAfterSubmiting?: boolean;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+
+type RestoreHandler = () => void;
+/**
+ * useForm返回值
+ */
+type FormReturnType<S, E, R, T, RC, RE, RH, F> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+  /**
+   * 表单数据
+   */
+  form: ExportedType<F, S>;
+
+  /**
+   * 持久化数据恢复事件绑定，数据恢复后触发
+   */
+  onRestore(handler: RestoreHandler): void;
+
+  /**
+   * 更新表单数据，可传入
+   * @param newForm 新表单数据
+   */
+  updateForm(newForm: Partial<F> | ((oldForm: F) => F)): void;
+
+  /**
+   * 重置为初始化数据，如果有持久化数据则清空
+   */
+  reset(): void;
+};
+
+/**
+ * useRetriableRequest配置
+ */
+type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {
+  /**
+   * 最大重试次数，也可以设置为返回 boolean 值的函数，来动态判断是否继续重试。
+   * @default 3
+   */
+  retry?: number | ((error: Error, ...args: any[]) => boolean);
+
+  /**
+   * 避让策略
+   */
+  backoff?: BackoffPolicy;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+
+/**
+ * useRetriableRequest onRetry回调事件实例
+ */
+interface RetriableRetryEvent<S, E, R, T, RC, RE, RH> extends AlovaEvent<S, E, R, T, RC, RE, RH> {
+  /**
+   * 当前的重试次数
+   */
+  retryTimes: number;
+
+  /**
+   * 本次重试的延迟时间
+   */
+  retryDelay: number;
+}
+/**
+ * useRetriableRequest onFail回调事件实例
+ */
+interface RetriableFailEvent<S, E, R, T, RC, RE, RH> extends AlovaErrorEvent<S, E, R, T, RC, RE, RH> {
+  /**
+   * 失败时的重试次数
+   */
+  retryTimes: number;
+}
+/**
+ * useRetriableRequest返回值
+ */
+type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+  /**
+   * 停止重试，只在重试期间调用有效
+   * 停止后将立即触发onFail事件
+   *
+   */
+  stop(): void;
+
+  /**
+   * 重试事件绑定
+   * 它们将在重试发起后触发
+   * @param handler 重试事件回调
+   */
+  onRetry(handler: (event: RetriableRetryEvent<S, E, R, T, RC, RE, RH>) => void): void;
+
+  /**
+   * 失败事件绑定
+   * 它们将在不再重试时触发，例如到达最大重试次数时，重试回调返回false时，手动调用stop停止重试时
+   * 而alova的onError事件是在每次请求报错时都将被触发
+   *
+   * 注意：如果没有重试次数时，onError、onComplete和onFail会被同时触发
+   *
+   * @param handler 失败事件回调
+   */
+  onFail(handler: (event: RetriableFailEvent<S, E, R, T, RC, RE, RH>) => void): void;
+};
+
+// middlewares
+interface Actions {
+  [x: string]: (...args: any[]) => any;
+}
+/**
+ * 操作函数委托中间件
+ * 使用此中间件后可通过accessAction调用委托的函数
+ * 可以委托多个相同id
+ * 以此来消除组件的层级限制
+ * @param id 委托者id
+ * @returns alova中间件函数
+ */
+type ActionDelegationMiddleware = (id: string | number | symbol) => <S, E, R, T, RC, RE, RH>(
+  context: (
+    | AlovaFrontMiddlewareContext<S, E, R, T, RC, RE, RH>
+    | AlovaFetcherMiddlewareContext<S, E, R, T, RC, RE, RH>
+  ) & {
+    delegatingActions?: Actions;
+  },
+  next: AlovaGuardNext<S, E, R, T, RC, RE, RH>
+) => Promise<any>;
+
+/**
+ * 访问操作函数，如果匹配多个则会以此调用onMatch
+ * @param id 委托者id，或正则表达式
+ * @param onMatch 匹配的订阅者
+ */
+type AccessAction = (
+  id: string | number | symbol | RegExp,
+  onMatch: (matchedSubscriber: Handlers, index: number) => void
+) => void;

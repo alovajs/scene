@@ -1,9 +1,7 @@
 import { createAlova, updateState, useRequest } from 'alova';
 import VueHook from 'alova/vue';
 import { setDependentAlova } from '../../src/hooks/silent/globalVariables';
-import { mergeSerializer } from '../../src/hooks/silent/serializer';
-import decorateStorageAdapter from '../../src/hooks/silent/storage/decorateStorageAdapter';
-import { storageGetItem } from '../../src/hooks/silent/storage/helper';
+import { storageGetItem } from '../../src/hooks/silent/storage/performers';
 import createVirtualResponse from '../../src/hooks/silent/virtualResponse/createVirtualResponse';
 import { mockRequestAdapter } from '../mockData';
 import { untilCbCalled } from '../utils';
@@ -28,9 +26,7 @@ describe('serialize response data', () => {
         }
       }
     });
-    decorateStorageAdapter(alovaInst.storage);
     setDependentAlova(alovaInst);
-    mergeSerializer(); // 初始化序列化器，否则没有默认的序列化器
 
     // 先构造一个带虚拟数据和可序列化的缓存
     const Get = alovaInst.Get('/list', {

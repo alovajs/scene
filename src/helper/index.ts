@@ -1,12 +1,15 @@
 import { CacheExpire, LocalCacheConfig, Method } from 'alova';
+import { BackoffPolicy } from '~/typings/general';
 import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, trueValue, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
+  promiseReject = <T>(value: T) => PromiseCls.reject(value),
   promiseThen = <T, T2 = never>(
     promise: Promise<T>,
     onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined | null,
     onrejected?: ((reason: any) => T2 | PromiseLike<T2>) | undefined | null
   ): Promise<T | T2> => promise.then(onFulfilled, onrejected),
+  promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected),
   forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn),
   pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item),
   filterItem = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.filter(fn),
@@ -17,6 +20,7 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   shift = <T>(ary: T[]) => ary.shift(),
   splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) => ary.splice(start, deleteCount, ...items),
   getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.config,
+  getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.context,
   JSONStringify = (
     value: any,
     replacer?: ((this: any, key: string, value: any) => any) | undefined,
@@ -27,22 +31,23 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   objectKeys = (obj: any) => ObjectCls.keys(obj),
   objectValues = (obj: any) => ObjectCls.values(obj),
   setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
+  clearTimeoutFn = (timeoutId?: string | number | NodeJS.Timeout) => clearTimeout(timeoutId),
   regexpTest = (reg: RegExp, str: string) => reg.test(str);
 
 /**
  * 创建同步多次调用只在异步执行一次的执行器
  */
 export const createSyncOnceRunner = (delay = 0) => {
-  let timer: NodeJS.Timer;
+  let timer: NodeJS.Timeout | number | undefined = undefinedValue;
 
   /**
    * 执行多次调用此函数将异步执行一次
    */
   return (fn: () => void) => {
     if (timer) {
-      clearTimeout(timer);
+      clearTimeoutFn(timer);
     }
-    timer = setTimeout(fn, delay);
+    timer = setTimeoutFn(fn, delay);
   };
 };
 
@@ -79,10 +84,28 @@ export const getUniqueReferenceId = (reference: any) => {
   return existedRef.id;
 };
 
+/**
+ * 兼容函数
+ */
 export const noop = () => {};
+
+/**
+ * 兼容函数，返回自身
+ * @param value 任意值
+ * @returns 自身
+ */
+export const __self = <T>(value: T) => value;
 
 // 判断是否为某个类的实例
 export const instanceOf = <T>(arg: any, cls: new (...args: any[]) => T): arg is T => arg instanceof cls;
+
+/**
+ * 构建格式化的错误消息
+ * @param prefix 错误前缀
+ * @param msg 错误消息
+ * @returns 格式化的错误消息
+ */
+export const buildErrorMsg = (prefix: string, msg: string) => `[alova/${prefix}]${msg}`;
 
 /**
  * 自定义断言函数，表达式为false时抛出错误
@@ -92,7 +115,7 @@ export const instanceOf = <T>(arg: any, cls: new (...args: any[]) => T): arg is 
 export const createAssert = (prefix: string) => {
   return (expression: boolean, msg: string) => {
     if (!expression) {
-      throw newInstance(Error, `[alova/${prefix}]${msg}`);
+      throw newInstance(Error, buildErrorMsg(prefix, msg));
     }
   };
 };
@@ -258,14 +281,16 @@ export const getLocalCacheConfigParam = <S, E, R, T, RC, RE, RH>(
   let expire = 0;
   let storage = falseValue;
   let tag: undefined | string = undefinedValue;
-  if (isNumber(_localCache) || instanceOf(_localCache, Date)) {
-    expire = getCacheExpireTs(_localCache);
-  } else {
-    const { mode = MEMORY, expire: configExpire = 0, tag: configTag } = _localCache || {};
-    cacheMode = mode;
-    expire = getCacheExpireTs(configExpire);
-    storage = [STORAGE_PLACEHOLDER, STORAGE_RESTORE].includes(mode);
-    tag = configTag ? configTag.toString() : undefinedValue;
+  if (!isFn(_localCache)) {
+    if (isNumber(_localCache) || instanceOf(_localCache, Date)) {
+      expire = getCacheExpireTs(_localCache);
+    } else {
+      const { mode = MEMORY, expire: configExpire = 0, tag: configTag } = _localCache || {};
+      cacheMode = mode;
+      expire = getCacheExpireTs(configExpire);
+      storage = [STORAGE_PLACEHOLDER, STORAGE_RESTORE].includes(mode);
+      tag = configTag ? configTag.toString() : undefinedValue;
+    }
   }
   return {
     e: expire,
@@ -273,4 +298,24 @@ export const getLocalCacheConfigParam = <S, E, R, T, RC, RE, RH>(
     s: storage,
     t: tag
   };
+};
+
+/**
+ * 根据避让策略和重试次数计算重试延迟时间
+ * @param backoff 避让参数
+ * @param retryTimes 重试次数
+ * @returns 重试延迟时间
+ */
+export const delayWithBackoff = (backoff: BackoffPolicy, retryTimes: number) => {
+  let { delay, multiplier = 1, startQuiver, endQuiver } = backoff;
+  let retryDelayFinally = (delay || 0) * Math.pow(multiplier, retryTimes - 1);
+  // 如果startQuiver或endQuiver有值，则需要增加指定范围的随机抖动值
+  if (startQuiver || endQuiver) {
+    startQuiver = startQuiver || 0;
+    endQuiver = endQuiver || 1;
+    retryDelayFinally +=
+      retryDelayFinally * startQuiver + Math.random() * retryDelayFinally * (endQuiver - startQuiver);
+    retryDelayFinally = Math.floor(retryDelayFinally); // 取整数延迟
+  }
+  return retryDelayFinally;
 };

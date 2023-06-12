@@ -8,6 +8,22 @@ branches:
 plugins:
   - '@semantic-release/commit-analyzer'
   - '@semantic-release/release-notes-generator'
-  - '@semantic-release/npm'
+  - - '@semantic-release/npm'
+    - npmPublish: false
+
   - '@semantic-release/github'
-  - '@semantic-release/git'
+  - - '@semantic-release/git'
+    - assets:
+        - 'packages/scene-react/package.json'
+        - 'packages/scene-react/typings/general.d.ts'
+        - 'packages/scene-svelte/package.json'
+        - 'packages/scene-svelte/typings/general.d.ts'
+        - 'packages/scene-vue/package.json'
+        - 'packages/scene-vue/typings/general.d.ts'
+
+  - - '@semantic-release/exec'
+
+    # 使用下一个版本号执行命令
+    - prepareCmd: 'npm version ${nextRelease.version} --workspaces && cross-env VERSION=${nextRelease.version} npm run build --workspaces'
+      # publishCmd: "npm publish --tag ${branch.name === 'main' ? 'latest' : branch.name} --workspaces"
+      publishCmd: 'npm run publish --workspaces'
