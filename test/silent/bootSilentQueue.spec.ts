@@ -74,7 +74,8 @@ describe('boot silent queue', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
     const targetQueueName = 'tt2';
     // 启动silentFactory
@@ -116,7 +117,8 @@ describe('boot silent queue', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const methodResolveFn = jest.fn();
@@ -277,7 +279,8 @@ describe('boot silent queue', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
     const pms = new Promise(resolve => {
       const virtualResponse = createVirtualResponse({ id: undefined, other: undefined });
@@ -342,7 +345,8 @@ describe('boot silent queue', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
     const pms = new Promise(resolve => {
       const virtualResponse = createVirtualResponse(undefined);

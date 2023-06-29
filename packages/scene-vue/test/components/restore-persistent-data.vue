@@ -17,7 +17,8 @@ import { useForm } from '../..';
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
   statesHook: VueHook,
-  requestAdapter: mockRequestAdapter
+  requestAdapter: mockRequestAdapter,
+  cacheLogger: false
 });
 
 const poster = (data: any) => alovaInst.Post('/saveData?d=2', data);

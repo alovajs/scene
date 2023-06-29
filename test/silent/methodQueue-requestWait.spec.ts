@@ -16,7 +16,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const methodInstance = new Method('POST', alovaInst, '/detail');
@@ -77,7 +78,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const queueName = 'ttt1';
@@ -144,7 +146,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
     const methodInstance = new Method('POST', alovaInst, '/detail');
     const delayRequestTs = [] as number[];
@@ -229,7 +232,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const queueName = 'ttt2';

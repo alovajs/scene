@@ -19,7 +19,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -87,7 +88,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -151,7 +153,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -247,7 +250,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -295,7 +299,8 @@ describe('silent method request in queue with silent behavior', () => {
       requestAdapter: mockRequestAdapter,
       responsed: () => {
         throw new Error('custom error');
-      }
+      },
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -350,7 +355,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -405,7 +411,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -463,7 +470,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const fallbackMockFn = jest.fn();
@@ -512,7 +520,8 @@ describe('silent method request in queue with silent behavior', () => {
     const alovaInst = createAlova({
       baseURL: 'http://xxx',
       statesHook: VueHook,
-      requestAdapter: mockRequestAdapter
+      requestAdapter: mockRequestAdapter,
+      cacheLogger: false
     });
 
     const methodInstance = new Method('POST', alovaInst, '/detail-error', {}, { id: 'hh' });

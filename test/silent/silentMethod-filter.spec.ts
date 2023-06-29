@@ -11,7 +11,8 @@ import { untilCbCalled } from '../utils';
 const alovaInst = createAlova({
   baseURL: 'http://xxx',
   statesHook: vueHook,
-  requestAdapter: mockRequestAdapter
+  requestAdapter: mockRequestAdapter,
+  cacheLogger: false
 });
 beforeAll(() => {
   // 启动silentFactory

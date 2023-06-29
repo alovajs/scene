@@ -8,7 +8,8 @@ import { accessAction, actionDelegationMiddleware } from '../';
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
   statesHook: VueHook,
-  requestAdapter: mockRequestAdapter
+  requestAdapter: mockRequestAdapter,
+  cacheLogger: false
 });
 describe('vue => subscriber middleware', () => {
   test('should send by notification with keyword string', async () => {

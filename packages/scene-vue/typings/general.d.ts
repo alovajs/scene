@@ -136,8 +136,8 @@ interface BackoffPolicy {
    */
   delay?: number;
   /**
-   * 指定延迟倍数，例如把multiplier设置为2、delay为1秒时，第一次重试为1秒，第二次为2秒，第三次为4秒，以此类推
-   * @default 1
+   * 指定延迟倍数，例如把multiplier设置为1.5，delay为2秒，则第一次重试为2秒，第二次为3秒，第三次为4.5秒
+   * @default 0
    */
   multiplier?: number;
 

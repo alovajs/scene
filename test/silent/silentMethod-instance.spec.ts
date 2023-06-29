@@ -9,7 +9,8 @@ import { mockRequestAdapter } from '../mockData';
 const alovaInst = createAlova({
   baseURL: 'http://xxx',
   statesHook: vueHook,
-  requestAdapter: mockRequestAdapter
+  requestAdapter: mockRequestAdapter,
+  cacheLogger: false
 });
 beforeAll(() => {
   // 启动silentFactory
