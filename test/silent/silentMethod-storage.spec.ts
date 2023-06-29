@@ -20,6 +20,7 @@ describe('manipulate silent method storage', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
+      cacheLogger: false,
       storageAdapter: {
         set(key, value) {
           storageMock[key] = value;
@@ -51,6 +52,7 @@ describe('manipulate silent method storage', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
+      cacheLogger: false,
       storageAdapter: {
         set(key, value) {
           storageMock[key] = value;
@@ -88,6 +90,7 @@ describe('manipulate silent method storage', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
+      cacheLogger: false,
       storageAdapter: {
         set(key, value) {
           storageMock[key] = value;

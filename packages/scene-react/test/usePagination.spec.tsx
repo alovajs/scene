@@ -28,7 +28,8 @@ const createMockAlova = () =>
   createAlova({
     baseURL: 'http://localhost:8080',
     statesHook: ReactHook,
-    requestAdapter: mockRequestAdapter
+    requestAdapter: mockRequestAdapter,
+    cacheLogger: false
   });
 describe('react => usePagination', () => {
   // 分页相关测试

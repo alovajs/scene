@@ -7,7 +7,8 @@ import { accessAction, actionDelegationMiddleware, useCaptcha } from '..';
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
   statesHook: VueHook,
-  requestAdapter: mockRequestAdapter
+  requestAdapter: mockRequestAdapter,
+  cacheLogger: false
 });
 describe('vue => useCaptcha', () => {
   test('should throw error when initialCountdown is less than 0', () => {

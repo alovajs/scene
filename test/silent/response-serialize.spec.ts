@@ -14,6 +14,7 @@ describe('serialize response data', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
+      cacheLogger: false,
       storageAdapter: {
         set(key, value) {
           mockStorage[key] = value;

@@ -17,7 +17,8 @@ const createMockAlova = () =>
   createAlova({
     baseURL: 'http://localhost:8080',
     statesHook: VueHook,
-    requestAdapter: mockRequestAdapter
+    requestAdapter: mockRequestAdapter,
+    cacheLogger: false
   });
 describe('vue => usePagination', () => {
   // 分页相关测试

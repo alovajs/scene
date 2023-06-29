@@ -14,7 +14,8 @@ const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || 
 const alovaInst = createAlova({
   baseURL: 'http://localhost:8080',
   statesHook: VueHook,
-  requestAdapter: mockRequestAdapter
+  requestAdapter: mockRequestAdapter,
+  cacheLogger: false
 });
 describe('vue => useForm', () => {
   test('should default not request immediately', async () => {

@@ -31,6 +31,7 @@ describe('serialized storage with virtual response', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: GlobalFetch(),
+      cacheLogger: false,
       storageAdapter: {
         set(key, value) {
           mockStorage[key] = value;
@@ -124,6 +125,7 @@ describe('serialized storage with virtual response', () => {
       baseURL: 'http://xxx',
       statesHook: VueHook,
       requestAdapter: GlobalFetch(),
+      cacheLogger: false,
       storageAdapter: {
         set(key, value) {
           mockStorage[key] = value;

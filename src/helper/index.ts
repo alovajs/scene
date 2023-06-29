@@ -242,7 +242,7 @@ export const newInstance = <T extends { new (...args: any[]): InstanceType<T> }>
 export const sloughConfig = <T>(config: T | ((...args: any[]) => T), args: any[] = []) =>
   isFn(config) ? config(...args) : config;
 
-export const getTime = (date?: Date) => (date ? date.getTime() : Date.now());
+export const getTime = (date?: Date | null) => (date ? date.getTime() : Date.now());
 
 /**
  * 判断参数是否为数字
