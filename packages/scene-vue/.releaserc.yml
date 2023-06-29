@@ -7,3 +7,19 @@ branches:
 
 extends:
   - 'semantic-release-monorepo'
+
+plugins:
+  - '@semantic-release/commit-analyzer'
+  - '@semantic-release/release-notes-generator'
+  - - '@semantic-release/npm'
+    - npmPublish: false
+
+  - '@semantic-release/github'
+  - - '@semantic-release/git'
+    - assets:
+        - 'package.json'
+        - 'typings/general.d.ts'
+  - - '@semantic-release/exec'
+
+    # 使用下一个版本号执行命令
+    - prepareCmd: 'cross-env VERSION=${nextRelease.version} npm run build'
