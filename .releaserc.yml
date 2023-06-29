@@ -8,9 +8,6 @@ branches:
 plugins:
   - '@semantic-release/commit-analyzer'
   - '@semantic-release/release-notes-generator'
-  - - '@semantic-release/npm'
-    - npmPublish: false
-
   - '@semantic-release/github'
   - - '@semantic-release/git'
     - assets:
@@ -25,5 +22,5 @@ plugins:
 
     # 使用下一个版本号执行命令
     - prepareCmd: 'npm version ${nextRelease.version} --workspaces && cross-env VERSION=${nextRelease.version} npm run build --workspaces'
-      # publishCmd: "npm publish --tag ${branch.name === 'main' ? 'latest' : branch.name} --workspaces"
-      publishCmd: 'npm run publish --workspaces'
+      publishCmd: "npm publish --tag ${branch.name === 'main' ? 'latest' : branch.name} --workspaces"
+      # publishCmd: 'npm run publish --workspaces'
