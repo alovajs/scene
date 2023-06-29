@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Release
-        run: npm run release --workspace @alova/scene-vue
+        run: npm run release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ALOVA_PUBLISH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
