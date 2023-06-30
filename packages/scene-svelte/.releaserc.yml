@@ -5,5 +5,14 @@ branches:
   - name: alpha
     prerelease: true
 
+tagFormat: 'scene-svelte-${version}'
 plugins:
+  - '@semantic-release/commit-analyzer'
+  - '@semantic-release/release-notes-generator'
   - '@semantic-release/npm'
+  - '@semantic-release/github'
+  - '@semantic-release/git'
+  - - '@semantic-release/exec'
+
+    # 使用下一个版本号执行打包命令
+    - prepareCmd: 'cross-env VERSION=${nextRelease.version} npm run build'
