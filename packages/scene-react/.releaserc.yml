@@ -5,7 +5,7 @@ branches:
   - name: alpha
     prerelease: true
 
-tagFormat: 'scene-react-${version}'
+tagFormat: 'scene-react-v${version}'
 plugins:
   - '@semantic-release/commit-analyzer'
   - '@semantic-release/release-notes-generator'
