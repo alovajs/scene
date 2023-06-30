@@ -11,6 +11,7 @@ plugins:
   - '@semantic-release/github'
   - - '@semantic-release/git'
     - assets:
+        - 'package.json'
         - 'packages/scene-react/package.json'
         - 'packages/scene-react/typings/general.d.ts'
         - 'packages/scene-svelte/package.json'
@@ -21,6 +22,5 @@ plugins:
   - - '@semantic-release/exec'
 
     # 使用下一个版本号执行命令
-    - prepareCmd: 'npm version ${nextRelease.version} --workspaces && cross-env VERSION=${nextRelease.version} npm run build --workspaces'
-      publishCmd: "npm publish --tag ${branch.name === 'main' ? 'latest' : branch.name} --workspaces"
-      # publishCmd: 'npm run publish --workspaces'
+    - prepareCmd: 'npm version ${nextRelease.version} && cross-env VERSION=${nextRelease.version} npm run build --workspaces'
+    - publishCmd: 'npm run publish --workspaces'
