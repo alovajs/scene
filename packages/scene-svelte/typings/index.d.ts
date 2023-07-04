@@ -2,6 +2,7 @@ import {
   AlovaMethodHandler,
   CompleteHandler,
   ErrorHandler,
+  FrontRequestState,
   Method,
   Progress,
   RequestHookConfig,
@@ -35,11 +36,10 @@ import {
   SQRequestHookConfig
 } from './general';
 
-interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
-  loading: Writable<boolean>;
-  error: Writable<Error | undefined>;
-  downloading: Writable<Progress>;
-  uploading: Writable<Progress>;
+type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = Omit<
+  UseHookReturnType<S, E, R, T, RC, RE, RH>,
+  'data'
+> & {
   page: Writable<number>;
   pageSize: Writable<number>;
   data: Writable<
@@ -56,12 +56,6 @@ interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
   pageCount: Readable<number | undefined>;
   total: Readable<number | undefined>;
   isLastPage: Readonly<Readable<boolean>>;
-
-  abort: () => void;
-  send: (...args: any[]) => Promise<R>;
-  onSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
-  onError: (handler: ErrorHandler<S, E, R, T, RC, RE, RH>) => void;
-  onComplete: (handler: CompleteHandler<S, E, R, T, RC, RE, RH>) => void;
 
   fetching: Writable<boolean>;
   onFetchSuccess: (handler: SuccessHandler<S, E, R, T, RC, RE, RH>) => void;
@@ -105,7 +99,7 @@ interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> {
    * 从第一页开始重新加载列表，并清空缓存
    */
   reload: () => void;
-}
+};
 
 /**
  * 基于alova.js的svelte分页hook
@@ -123,7 +117,7 @@ declare function usePagination<
   RC,
   RE,
   RH,
-  LD,
+  LD extends any[],
   WS extends Readable<any>[]
 >(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
