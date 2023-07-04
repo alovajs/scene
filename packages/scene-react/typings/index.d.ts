@@ -4,6 +4,7 @@ import {
   ErrorHandler,
   FrontRequestState,
   Method,
+  Progress,
   RequestHookConfig,
   SuccessHandler,
   updateState,
@@ -38,7 +39,10 @@ import {
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
-interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> extends UseHookReturnType<S, E, R, T, RC, RE, RH> {
+type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = Omit<
+  UseHookReturnType<S, E, R, T, RC, RE, RH>,
+  'data'
+> & {
   page: ReactState<number>;
   pageSize: ReactState<number>;
   data: IsUnknown<
@@ -95,7 +99,7 @@ interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> extends UseHookRet
    * 从第一页开始重新加载列表，并清空缓存
    */
   reload: () => void;
-}
+};
 
 /**
  * 基于alova.js的react分页hook
@@ -105,7 +109,7 @@ interface UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD> extends UseHookRet
  * @param config pagination hook配置
  * @returns {UsePaginationReturnType}
  */
-declare function usePagination<S, E, R, T, RC, RE, RH, LD, WS extends DependencyList>(
+declare function usePagination<S, E, R, T, RC, RE, RH, LD extends any[], WS extends DependencyList>(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
   config?: PaginationHookConfig<R, LD, WS>
 ): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;
