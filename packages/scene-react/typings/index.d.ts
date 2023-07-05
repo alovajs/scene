@@ -39,10 +39,7 @@ import {
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
 
-type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = Omit<
-  UseHookReturnType<S, E, R, T, RC, RE, RH>,
-  'data'
-> & {
+type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
   page: ReactState<number>;
   pageSize: ReactState<number>;
   data: IsUnknown<
