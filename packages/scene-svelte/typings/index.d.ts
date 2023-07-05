@@ -36,10 +36,7 @@ import {
   SQRequestHookConfig
 } from './general';
 
-type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = Omit<
-  UseHookReturnType<S, E, R, T, RC, RE, RH>,
-  'data'
-> & {
+type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
   page: Writable<number>;
   pageSize: Writable<number>;
   data: Writable<
