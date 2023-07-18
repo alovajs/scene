@@ -11,7 +11,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "cp:files": "npm run cp:files --workspaces",
-    "release": "npm run release",
+    "release": "npm run cp:files && npm run release --workspaces",
     "coveralls": "npm run test:coverage && coveralls < coverage/lcov.info",
     "commit": "git-cz && git push",
     "lint": "eslint --ext .ts,.js src/**",
