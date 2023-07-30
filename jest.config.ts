@@ -149,38 +149,7 @@ export default {
     customExportConditions: ['node', 'node-addons']
   },
 
-  testMatch: [
-    '**/test/**/*.spec.[tj]s?(x)'
-    // '**/test/modules/uuid.spec.ts(x)?'
-    // '**/test/modules/serializer.spec.ts(x)?'
-    // '**/test/silent/virtualResponse.spec.ts(x)?'
-    // '**/test/silent/serializedStorage.spec.ts(x)?'
-    // '**/test/silent/bootSilentQueue.spec.ts(x)?'
-    // '**/test/silent/methodQueue-silent-request.spec.ts(x)?'
-    // '**/test/silent/methodQueue-requestWait.spec.ts(x)?'
-    // '**/test/silent/silentMethod-storage.spec.ts(x)?'
-    // '**/test/silent/methodQueue-queue-request.spec.ts(x)?'
-    // '**/test/silent/dehydrateVData.spec.ts(x)?'
-    // '**/test/silent/equals.spec.ts(x)?'
-    // '**/test/silent/silentMethod-filter.spec.ts(x)?'
-    // '**/test/silent/silentMethod-instance.spec.ts(x)?'
-    // '**/test/silent/response-serialize.spec.ts(x)?'
-    // vue
-    // '**/packages/scene-vue/test/functions.spec.ts(x)?'
-    // '**/packages/scene-vue/test/usePagination.spec.js(x)?'
-    // '**/packages/scene-vue/test/useSQRequest.spec.ts(x)?'
-    // '**/packages/scene-vue/test/useCaptcha.spec.ts(x)?'
-    // '**/packages/scene-vue/test/useForm.spec.ts(x)?'
-    // '**/packages/scene-vue/test/actionDelegationMiddleware.spec.ts(x)?'
-    // react
-    // '**/packages/scene-react/test/functions.spec.ts(x)?'
-    // '**/packages/scene-react/test/useRetriableRequest.spec.ts(x)?'
-    // '**/packages/scene-react/test/usePagination.spec.ts(x)?'
-    // '**/packages/scene-react/test/useSerialRequest.spec.ts(x)?'
-    // '**/packages/scene-react/test/useSerialWatcher.spec.ts(x)?'
-    // svelte
-    // '**/packages/scene-svelte/test/functions.spec.ts(x)?'
-  ],
+  testMatch: ['**/test/**/*.spec.[tj]s?(x)'],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
   testPathIgnorePatterns: [

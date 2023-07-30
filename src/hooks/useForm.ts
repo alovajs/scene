@@ -2,27 +2,30 @@ import {
   FrameworkState,
   T$,
   T$$,
-  T_$,
-  T_exp$,
   TonMounted$,
   Tupd$,
   TuseFlag$,
   TuseMemorizedCallback$,
-  Twatch$
+  Twatch$,
+  T_$,
+  T_exp$
 } from '@/framework/type';
 import {
   createAssert,
   getContext,
+  isArray,
   isNumber,
   isObject,
+  isPlainOrCustomObject,
   isString,
   pushItem,
   runArgsHandler,
-  sloughConfig
+  sloughConfig,
+  walkObject
 } from '@/helper';
 import createSerializerPerformer from '@/helper/serializer';
 import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
-import { Method, UseHookReturnType, getMethodKey, useRequest } from 'alova';
+import { getMethodKey, Method, UseHookReturnType, useRequest } from 'alova';
 import { FormHookConfig, FormHookHandler, RestoreHandler, StoreDetailConfig } from '~/typings/general';
 
 const getStoragedKey = (methodInstance: Method, id?: ID) => `alova/form-${id || getMethodKey(methodInstance)}`;
@@ -32,6 +35,8 @@ interface SharedState {
   config: FormHookConfig<any, any, any, any, any, any, any, any>;
 }
 const sharedStates = {} as Record<ID, SharedState>;
+const cloneFormData = (form: any) =>
+  walkObject(form, value => (isArray(value) ? [...value] : isPlainOrCustomObject(value) ? { ...value } : value));
 const assert = createAssert('useForm');
 export default <S, E, R, T, RC, RE, RH, F>(
   handler: FormHookHandler<S, E, R, T, RC, RE, RH, F> | ID,
@@ -55,7 +60,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
   }
 
   const { id, initialForm, store, resetAfterSubmiting, immediate = falseValue, middleware } = config,
-    form = $(initialForm, trueValue),
+    form = $(cloneFormData(initialForm), trueValue),
     methodHandler = handler as FormHookHandler<S, E, R, T, RC, RE, RH, F>,
     restoreHandlers: RestoreHandler[] = [],
     // 使用计算属性，避免每次执行此use hook都调用一遍methodHandler
@@ -79,7 +84,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
    */
   const reset = useMemorizedCallback$(() => {
     reseting.v = trueValue;
-    upd$(form, initialForm);
+    upd$(form, cloneFormData(initialForm));
     enableStore && storageContext.remove(storagedKey.v);
   });
 
