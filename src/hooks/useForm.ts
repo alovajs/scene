@@ -35,8 +35,11 @@ interface SharedState {
   config: FormHookConfig<any, any, any, any, any, any, any, any>;
 }
 const sharedStates = {} as Record<ID, SharedState>;
-const cloneFormData = (form: any) =>
-  walkObject(form, value => (isArray(value) ? [...value] : isPlainOrCustomObject(value) ? { ...value } : value));
+const cloneFormData = (form: any) => {
+  const shallowClone = (value: any) =>
+    isArray(value) ? [...value] : isPlainOrCustomObject(value) ? { ...value } : value;
+  return walkObject(shallowClone(form), shallowClone);
+};
 const assert = createAssert('useForm');
 export default <S, E, R, T, RC, RE, RH, F>(
   handler: FormHookHandler<S, E, R, T, RC, RE, RH, F> | ID,
