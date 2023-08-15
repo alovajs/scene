@@ -98,7 +98,7 @@ export default {
   // notifyMode: "failure-change",
 
   // A preset that is used as a base for Jest's configuration
-  // preset: 'ts-jest/presets/js-with-ts',
+  // preset: 'ts-jest',
 
   // Run tests from one or more projects
   // projects: undefined,
@@ -168,33 +168,7 @@ export default {
 
   // A map from regular expressions to paths to transformers
   transform: {
-    '\\.(j|t)sx?$': [
-      'ts-jest',
-      // mock import.meta, see https://www.npmjs.com/package/ts-jest-mock-import-meta
-      {
-        diagnostics: {
-          ignoreCodes: [1343]
-        },
-        astTransformers: {
-          // 转换import.meta
-          before: [
-            {
-              path: 'node_modules/ts-jest-mock-import-meta',
-              options: {
-                metaObjectReplacement: {
-                  url: 'https://xxx',
-                  env: {
-                    PROD: false,
-                    DEV: true
-                  },
-                  status: 2
-                }
-              }
-            }
-          ]
-        }
-      }
-    ],
+    '\\.(j|t)sx?$': 'ts-jest',
     '^.+\\.svelte$': 'svelte-jester',
     '^.+\\.vue$': '@vue/vue3-jest'
   },
