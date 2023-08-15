@@ -1,5 +1,5 @@
 import { createAssert, isArray, len, promiseResolve, promiseThen, pushItem, shift } from '@/helper';
-import { undefinedValue } from '@/helper/variables';
+import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import { AlovaFrontMiddleware, AlovaMethodHandler, Method } from 'alova';
 
 /**
@@ -33,6 +33,8 @@ export const serialMiddleware = <S, E, R, T, RC, RE, RH>(
   return ((ctx, next) => {
     hookMiddleware?.(ctx, () => promiseResolve(undefinedValue as any));
 
+    ctx.controlLoading();
+    ctx.update({ loading: trueValue });
     const methods: Method[] = [];
     let serialPromise = next();
     for (const i in serialHandlers) {
@@ -48,6 +50,8 @@ export const serialMiddleware = <S, E, R, T, RC, RE, RH>(
       event.method = methods[len(methods) - 1];
       handler(event);
     });
-    return serialPromise;
+    return serialPromise.finally(() => {
+      ctx.update({ loading: falseValue });
+    });
   }) as AlovaFrontMiddleware<S, E, R, T, RC, RE, RH>;
 };
