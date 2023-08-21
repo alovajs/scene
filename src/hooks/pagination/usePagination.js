@@ -63,7 +63,7 @@ export default function (
   const pageSize = $(initialPageSize, trueValue);
   const data = $([], trueValue);
   const handerRef = useFlag$();
-  handerRef.v = handler;
+  handerRef.current = handler;
 
   // 保存当前hook所使用到的所有method实例快照
   const {
@@ -71,7 +71,7 @@ export default function (
     get: getSnapshotMethods,
     save: saveSnapshot,
     remove: removeSnapshot
-  } = useFlag$(createSnapshotMethodsManager(page => handerRef.v(page, _$(pageSize)))).v;
+  } = useFlag$(createSnapshotMethodsManager(page => handerRef.current(page, _$(pageSize)))).current;
 
   const listDataGetter = rawData => dataGetter(rawData) || rawData;
   const getHandlerMethod = (refreshPage = _$(page)) => {
@@ -86,7 +86,7 @@ export default function (
   // 监听状态变化时，重置page为1
   watch$(watchingStates, () => {
     upd$(page, 1);
-    isReset.v = trueValue;
+    isReset.current = trueValue;
   });
 
   // 兼容react，将需要代理的函数存放在此
@@ -95,11 +95,12 @@ export default function (
   const createDelegationAction =
     actionName =>
     (...args) =>
-      delegationActions.v[actionName](...args);
+      delegationActions.current[actionName](...args);
   const states = useWatcher(getHandlerMethod, [...watchingStates, _exp$(page), _exp$(pageSize)], {
     immediate,
     initialData,
     debounce,
+    abortLast: falseValue,
     middleware(ctx, next) {
       middleware(
         {
@@ -128,10 +129,10 @@ export default function (
 
       // 监听值改变时将会重置为第一页，此时会触发两次请求，在这边过滤掉一次请求
       let requestPromise = promiseResolve();
-      if (!isReset.v) {
+      if (!isReset.current) {
         requestPromise = next();
-      } else if (requestCountInReseting.v === 0) {
-        requestCountInReseting.v++;
+      } else if (requestCountInReseting.current === 0) {
+        requestCountInReseting.current++;
         requestPromise = next();
       }
       return requestPromise;
@@ -260,7 +261,7 @@ export default function (
     // 如果追加数据，才更新data
     if (append) {
       // 如果是reset则先清空数据
-      isReset.v && upd$(data, []);
+      isReset.current && upd$(data, []);
       if (refreshPage === undefinedValue) {
         upd$(data, [..._$(data), ...listData]);
       } else if (refreshPage) {
@@ -273,8 +274,8 @@ export default function (
     } else {
       upd$(data, listData);
     }
-    isReset.v = falseValue;
-    requestCountInReseting.v = 0;
+    isReset.current = falseValue;
+    requestCountInReseting.current = 0;
   });
 
   // 获取列表项所在位置
@@ -307,7 +308,7 @@ export default function (
     }
   });
 
-  const removeSyncRunner = useFlag$(createSyncOnceRunner()).v;
+  const removeSyncRunner = useFlag$(createSyncOnceRunner()).current;
   // 删除除此usehook当前页和下一页的所有相关缓存
   const invalidatePaginationCache = (all = falseValue) => {
     const pageVal = _$(page);
@@ -338,7 +339,7 @@ export default function (
 
   // 单独拿出来的原因是
   // 无论同步调用几次insert、remove，或它们组合调用，reset操作只需要异步执行一次
-  const resetSyncRunner = useFlag$(createSyncOnceRunner()).v;
+  const resetSyncRunner = useFlag$(createSyncOnceRunner()).current;
   const resetCache = () =>
     resetSyncRunner(() => {
       _$(fetchingRef) && abortFetch();
@@ -493,12 +494,12 @@ export default function (
    */
   const reload = useMemorizedCallback$(() => {
     invalidatePaginationCache(trueValue);
-    isReset.v = trueValue;
+    isReset.current = trueValue;
     _$(page) === 1 ? send() : upd$(page, 1);
   });
 
   // 兼容react，每次缓存最新的操作函数，避免闭包陷阱
-  delegationActions.v = {
+  delegationActions.current = {
     refresh,
     insert,
     remove,

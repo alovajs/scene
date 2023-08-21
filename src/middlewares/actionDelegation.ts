@@ -29,7 +29,7 @@ export const actionDelegationMiddleware = (id: string | number | symbol, useFlag
     next: AlovaGuardNext<any, any, any, any, any, any, any>
   ) => {
     // 中间件会重复调用，已经订阅过了就无需再订阅了
-    if (!delegated.v) {
+    if (!delegated.current) {
       const { abort, update, delegatingActions = {} } = context;
       // 相同id的将以数组形式保存在一起
       const handlersItems = (actionsMap[id] = actionsMap[id] || []);
@@ -49,7 +49,7 @@ export const actionDelegationMiddleware = (id: string | number | symbol, useFlag
             }
       );
 
-      delegated.v = trueValue;
+      delegated.current = trueValue;
     }
     return next();
   };

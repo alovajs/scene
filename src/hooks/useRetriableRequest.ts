@@ -51,7 +51,7 @@ export default <S, E, R, T, RC, RE, RH>(
           undefinedValue,
           undefinedValue,
           undefinedValue,
-          retryTimes.v,
+          retryTimes.current,
           undefinedValue,
           sendArgs,
           undefinedValue,
@@ -59,8 +59,8 @@ export default <S, E, R, T, RC, RE, RH>(
           error
         )
       );
-      stopManuallyError.v = undefinedValue;
-      retryTimes.v = 0; // 重置已重试次数
+      stopManuallyError.current = undefinedValue;
+      retryTimes.current = 0; // 重置已重试次数
     });
   };
 
@@ -70,15 +70,15 @@ export default <S, E, R, T, RC, RE, RH>(
    * 停止后将立即触发onFail事件
    */
   const stop = useMemorizedCallback$(() => {
-    assert(currentLoadingState.v, 'there are no requests being retried');
-    stopManuallyError.v = new Error(buildErrorMsg(hookPrefix, 'stop retry manually'));
-    if (requesting.v) {
+    assert(currentLoadingState.current, 'there are no requests being retried');
+    stopManuallyError.current = new Error(buildErrorMsg(hookPrefix, 'stop retry manually'));
+    if (requesting.current) {
       requestReturns.abort();
     } else {
-      emitOnFail(methodInstanceLastest.v as any, sendArgsLatest.v as any, stopManuallyError.v);
-      requestReturns.update({ error: stopManuallyError.v, loading: falseValue });
-      currentLoadingState.v = falseValue;
-      clearTimeoutFn(retryTimer.v); // 清除重试定时器
+      emitOnFail(methodInstanceLastest.current as any, sendArgsLatest.current as any, stopManuallyError.current);
+      requestReturns.update({ error: stopManuallyError.current, loading: falseValue });
+      currentLoadingState.current = falseValue;
+      clearTimeoutFn(retryTimer.current); // 清除重试定时器
     }
   });
   const requestReturns = useRequest(handler, {
@@ -95,23 +95,23 @@ export default <S, E, R, T, RC, RE, RH>(
       );
       const { update, sendArgs, send, method, controlLoading } = ctx;
       const setLoading = (loading = falseValue) => {
-        if (loading !== currentLoadingState.v) {
+        if (loading !== currentLoadingState.current) {
           update({ loading });
-          currentLoadingState.v = loading;
+          currentLoadingState.current = loading;
         }
       };
       controlLoading();
       setLoading(trueValue);
-      methodInstanceLastest.v = method;
-      sendArgsLatest.v = sendArgs;
-      requesting.v = trueValue;
+      methodInstanceLastest.current = method;
+      sendArgsLatest.current = sendArgs;
+      requesting.current = trueValue;
       return promiseThen(
         next(),
 
         // 请求成功时设置loading为false
         val => {
-          retryTimes.v = 0; // 重置已重试次数
-          requesting.v = falseValue;
+          retryTimes.current = 0; // 重置已重试次数
+          requesting.current = falseValue;
           setLoading();
           return val;
         },
@@ -119,11 +119,14 @@ export default <S, E, R, T, RC, RE, RH>(
         // 请求失败时触发重试机制
         error => {
           // 没有手动触发停止，以及重试次数未到达最大时触发重试
-          if (!stopManuallyError.v && (isNumber(retry) ? retryTimes.v < retry : retry(error, ...sendArgs))) {
+          if (
+            !stopManuallyError.current &&
+            (isNumber(retry) ? retryTimes.current < retry : retry(error, ...sendArgs))
+          ) {
             // 计算重试延迟时间
-            const retryDelay = delayWithBackoff(backoff, ++retryTimes.v);
+            const retryDelay = delayWithBackoff(backoff, ++retryTimes.current);
             // 延迟对应时间重试
-            retryTimer.v = setTimeoutFn(() => {
+            retryTimer.current = setTimeoutFn(() => {
               // 如果手动停止了则不再触发重试
               promiseCatch(send(...sendArgs), noop); // 捕获错误不再往外抛，否则重试时也会抛出错误
               // 触发重试事件
@@ -135,7 +138,7 @@ export default <S, E, R, T, RC, RE, RH>(
                   undefinedValue,
                   undefinedValue,
                   undefinedValue,
-                  retryTimes.v,
+                  retryTimes.current,
                   retryDelay,
                   sendArgs
                 )
@@ -143,11 +146,11 @@ export default <S, E, R, T, RC, RE, RH>(
             }, retryDelay);
           } else {
             setLoading();
-            error = stopManuallyError.v || error; // 如果stopManuallyError有值表示是通过stop函数触发停止的
+            error = stopManuallyError.current || error; // 如果stopManuallyError有值表示是通过stop函数触发停止的
             emitOnFail(method, sendArgs, error);
           }
 
-          requesting.v = falseValue;
+          requesting.current = falseValue;
           // 返回reject执行后续的错误流程
           return promiseReject(error);
         }
