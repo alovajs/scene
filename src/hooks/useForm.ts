@@ -86,9 +86,9 @@ export default <S, E, R, T, RC, RE, RH, F>(
    * 重置form数据
    */
   const reset = useMemorizedCallback$(() => {
-    reseting.v = trueValue;
+    reseting.current = trueValue;
     upd$(form, cloneFormData(initialForm));
-    enableStore && storageContext.remove(storagedKey.v);
+    enableStore && storageContext.remove(storagedKey.current);
   });
 
   /**
@@ -138,11 +138,11 @@ export default <S, E, R, T, RC, RE, RH, F>(
   if (id) {
     // 还没有共享状态则表示当前hook是创建的hook
     if (!sharedState) {
-      isCreateShardState.v = trueValue;
+      isCreateShardState.current = trueValue;
     }
 
     // 只保存创建hook的共享状态
-    if (isCreateShardState.v) {
+    if (isCreateShardState.current) {
       sharedStates[id] = {
         hookReturns,
         config
@@ -156,7 +156,7 @@ export default <S, E, R, T, RC, RE, RH, F>(
     if (enableStore && !sharedState) {
       // 获取存储并更新data
       // 需要在onMounted中调用，否则会导致在react中重复被调用
-      const storagedForm = serializerPerformer.v.deserialize(storageContext.get(storagedKey.v));
+      const storagedForm = serializerPerformer.current.deserialize(storageContext.get(storagedKey.current));
 
       // 有草稿数据时，异步恢复数据，否则无法正常绑定onRetore事件
       if (storagedForm) {
@@ -170,11 +170,11 @@ export default <S, E, R, T, RC, RE, RH, F>(
 
   // 监听变化同步存储，如果是reset触发的则不需要再序列化
   watch$([form], () => {
-    if (reseting.v || !enableStore) {
-      reseting.v = falseValue;
+    if (reseting.current || !enableStore) {
+      reseting.current = falseValue;
       return;
     }
-    storageContext.set(storagedKey.v, serializerPerformer.v.serialize(_$(form)));
+    storageContext.set(storagedKey.current, serializerPerformer.current.serialize(_$(form)));
   });
   // 如果在提交后需要清除数据，则调用reset
   onSuccess(() => {
@@ -183,5 +183,5 @@ export default <S, E, R, T, RC, RE, RH, F>(
 
   // 有已保存的sharedState，则返回它
   // 如果是当前hook创建的共享状态，则返回最新的而非缓存的
-  return sharedState && !isCreateShardState.v ? sharedState.hookReturns : hookReturns;
+  return sharedState && !isCreateShardState.current ? sharedState.hookReturns : hookReturns;
 };

@@ -1,4 +1,4 @@
-import { __self, createSyncOnceRunner, isFn, map } from '@/helper';
+import { createSyncOnceRunner, isFn, map, __self } from '@/helper';
 import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import { onMount } from 'svelte';
 import { derived, writable } from 'svelte/store';
@@ -87,7 +87,7 @@ export const onMounted$ = cb => {
  * 兼容react
  * @param initialValue 初始值
  */
-export const useFlag$ = initialValue => ({ v: initialValue });
+export const useFlag$ = initialValue => ({ current: initialValue });
 
 /**
  * 由于在react下，use hook返回的loading、data等状态为普遍值，将会受闭包影响

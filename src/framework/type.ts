@@ -73,7 +73,7 @@ export type TonMounted$ = (cb: () => void) => void;
  * 兼容react
  * @param initialValue 初始值
  */
-export type TuseFlag$ = <T>(initialValue: T) => { v: T };
+export type TuseFlag$ = <T>(initialValue: T) => { current: T };
 
 /**
  * 将alova的hook返回状态如loading、data等转换为不受闭包陷阱影响的值

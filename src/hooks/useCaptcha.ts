@@ -1,6 +1,6 @@
-import { T$, T_$, T_exp$, Tupd$, TuseFlag$, TuseMemorizedCallback$ } from '@/framework/type';
+import { T$, Tupd$, TuseFlag$, TuseMemorizedCallback$, T_$, T_exp$ } from '@/framework/type';
 import { buildErrorMsg, createAssert, newInstance } from '@/helper';
-import { PromiseCls, falseValue, trueValue, undefinedValue } from '@/helper/variables';
+import { falseValue, PromiseCls, trueValue, undefinedValue } from '@/helper/variables';
 import { AlovaMethodHandler, Method, useRequest } from 'alova';
 import { CaptchaHookConfig } from '~/typings/general';
 
@@ -34,10 +34,10 @@ export default <S, E, R, T, RC, RE, RH>(
           .send(...args)
           .then(result => {
             upd$(countdown, config.initialCountdown || 60);
-            timer.v = setInterval(() => {
+            timer.current = setInterval(() => {
               upd$(countdown, val => val - 1);
               if (_$(countdown) <= 0) {
-                clearInterval(timer.v);
+                clearInterval(timer.current);
               }
             }, 1000);
             resolve(result);

@@ -1,6 +1,6 @@
-import { __self, isFn, map } from '@/helper';
+import { isFn, map, __self } from '@/helper';
 import { trueValue } from '@/helper/variables';
-import { computed, ref, onMounted as vueOnMounted, watch as vueWatch } from 'vue';
+import { computed, onMounted as vueOnMounted, ref, watch as vueWatch } from 'vue';
 
 /**
  * 创建状态
@@ -69,7 +69,7 @@ export const onMounted$ = cb => {
  * 兼容react
  * @param initialValue 初始值
  */
-export const useFlag$ = initialValue => ({ v: initialValue });
+export const useFlag$ = initialValue => ({ current: initialValue });
 
 /**
  * 由于在react下，use hook返回的loading、data等状态为普遍值，将会受闭包影响

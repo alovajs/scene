@@ -1,5 +1,5 @@
 import { isArray, isFn, isObject, map, noop, pushItem } from '@/helper';
-import { falseValue, undefinedValue } from '@/helper/variables';
+import { falseValue } from '@/helper/variables';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
@@ -13,7 +13,7 @@ export const $ = (initialState, isRef) => {
   const state = useState(initialState);
   if (isRef) {
     const ref = useFlag$();
-    ref.v = state[0];
+    ref.current = state[0];
     state[2] = ref; // 将引用值保存到数组中
   }
   return state;
@@ -32,7 +32,7 @@ export const $$ = (factory, deps, isRef) => {
   const memoAry = [memo, noop];
   if (isRef) {
     const ref = useFlag$();
-    ref.v = memo;
+    ref.current = memo;
     pushItem(memoAry, ref);
   }
   return memoAry;
@@ -46,7 +46,7 @@ export const $$ = (factory, deps, isRef) => {
  */
 export const _$ = state => {
   if (isArray(state) && isFn(state[1])) {
-    return state[2] ? state[2].v : state[0];
+    return state[2] ? state[2].current : state[0];
   }
   return state;
 };
@@ -73,14 +73,14 @@ export const _expBatch$ = (...states) => map(states, s => _exp$(s));
  */
 export const upd$ = (state, newData) => {
   if (isFn(newData)) {
-    const oldState = state[2] ? state[2].v : state[0];
+    const oldState = state[2] ? state[2].current : state[0];
     newData = newData(isArray(oldState) ? [...oldState] : isObject(oldState) ? { ...oldState } : oldState);
   }
   state[1](newData);
 
   // 如果有引用类型值，也要更新它
   if (state[2]) {
-    state[2].v = newData;
+    state[2].current = newData;
   }
 };
 
@@ -109,11 +109,7 @@ export const onMounted$ = cb => useEffect(cb, []);
  * 为解决这个问题，在react中需使用useRef作为标识
  * @param initialValue 初始值
  */
-export const useFlag$ = initialValue => {
-  const ref = useRef(initialValue);
-  ref.v === undefinedValue && (ref.v = initialValue);
-  return ref;
-};
+export const useFlag$ = initialValue => useRef(initialValue);
 
 /**
  * 将alova的hook返回状态如loading、data等转换为不受闭包陷阱影响的值
@@ -124,7 +120,7 @@ export const useFlag$ = initialValue => {
 export const useRequestRefState$ = requestState => {
   const requestStateWrapper = [requestState, noop];
   const ref = useFlag$();
-  ref.v = requestState;
+  ref.current = requestState;
   pushItem(requestStateWrapper, ref);
   return requestStateWrapper;
 };
@@ -136,7 +132,7 @@ export const useRequestRefState$ = requestState => {
  */
 export const useMemorizedCallback$ = callback => {
   const ref = useFlag$();
-  ref.v = callback;
+  ref.current = callback;
   return useCallback((...args) => {
     callback.apply(null, args);
   }, []);
