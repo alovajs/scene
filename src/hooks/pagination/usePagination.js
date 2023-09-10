@@ -490,12 +490,12 @@ export default function (
   });
 
   /**
-   * 从第一页开始重新加载列表，并清空缓存
+   * 从第${initialPage}页开始重新加载列表，并清空缓存
    */
   const reload = useMemorizedCallback$(() => {
     invalidatePaginationCache(trueValue);
     isReset.current = trueValue;
-    _$(page) === 1 ? send() : upd$(page, 1);
+    _$(page) === initialPage ? send() : upd$(page, initialPage);
   });
 
   // 兼容react，每次缓存最新的操作函数，避免闭包陷阱
