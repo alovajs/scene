@@ -19,6 +19,7 @@ import {
   CaptchaHookConfig,
   CaptchaReturnType,
   FormHookConfig,
+  FormHookHandler,
   FormReturnType,
   IsUnknown,
   OffEventCallback,
