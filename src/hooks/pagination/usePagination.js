@@ -162,7 +162,7 @@ export default function (
 
     const pageCountVal = _$(pageCount);
     const exceedPageCount = pageCountVal
-        ? preloadPage - initialPage + 1 > pageCountVal
+      ? preloadPage - initialPage + 1 > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
       ? len(listDataGetter(rawData)) < _$(pageSize)
       : falseValue;
@@ -251,8 +251,8 @@ export default function (
     const { total: cachedTotal } = getSnapshotMethods(method) || {};
     upd$(total, cachedTotal !== undefinedValue ? cachedTotal : totalGetter(rawData));
     if (!isRefresh) {
-     fetchPreviousPage(rawData);
-     fetchNextPage(rawData);
+      fetchPreviousPage(rawData);
+      fetchNextPage(rawData);
     }
 
     const pageSizeVal = _$(pageSize);
