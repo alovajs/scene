@@ -148,6 +148,20 @@ const mocks = defineMock({
       code: 200,
       data
     };
+  },
+  '/list-auth': ({ headers }) => {
+    if (headers.Authorization !== '123') {
+      return {
+        status: 401,
+        statusText: 'unauthorized'
+      };
+    }
+    return [0, 1, 2, 3, 4, 5];
+  },
+  '/refresh-token': () => {
+    return {
+      token: '123'
+    };
   }
 });
 
@@ -162,7 +176,7 @@ export const mockRequestAdapter = createAlovaMockAdapter([mocks], {
     }
     return {
       response: body,
-      headers: {}
+      headers: {} as Record<string, number | string>
     };
   },
   mockRequestLogger: false

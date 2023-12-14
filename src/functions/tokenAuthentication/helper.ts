@@ -1,6 +1,6 @@
 import { forEach, instanceOf, isFn, isPlainOrCustomObject, len, noop, splice } from '@/helper';
-import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
-import { AlovaRequestAdapter, Method, ResponseCompleteHandler, ResponsedHandler, ResponseErrorHandler } from 'alova';
+import { PromiseCls, falseValue, trueValue, undefinedValue } from '@/helper/variables';
+import { AlovaRequestAdapter, Method, ResponseCompleteHandler, ResponseErrorHandler, ResponsedHandler } from 'alova';
 import { AlovaResponded, MetaMatches, ResponseAuthorizationInterceptor } from '~/typings/general';
 
 export type PosibbleAuthMap =
@@ -10,7 +10,7 @@ export type PosibbleAuthMap =
     }
   | undefined;
 export const defaultIgnoreMeta = {
-    authRole: 'none'
+    authRole: null
   },
   defaultLoginMeta = {
     authRole: 'login'
@@ -60,7 +60,12 @@ export const defaultIgnoreMeta = {
       handler: (...args: any[]) => Promise<void>;
     }
   ) => {
-    const isExpired = await refreshToken?.isExpired(...handlerParams);
+    let isExpired = refreshToken?.isExpired(...handlerParams);
+    // 兼容处理同步函数和异步函数
+    if (instanceOf(isExpired, PromiseCls)) {
+      isExpired = await isExpired;
+    }
+
     if (
       isExpired &&
       !checkMethodRole(method, (refreshToken as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)

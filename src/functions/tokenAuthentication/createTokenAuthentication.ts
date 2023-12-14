@@ -1,5 +1,5 @@
-import { newInstance, noop, pushItem } from '@/helper';
-import { falseValue, PromiseCls } from '@/helper/variables';
+import { __self, newInstance, noop, pushItem } from '@/helper';
+import { PromiseCls, falseValue } from '@/helper/variables';
 import { AlovaRequestAdapter } from 'alova';
 import {
   ClientTokenAuthenticationOptions,
@@ -7,13 +7,14 @@ import {
   TokenAuthenticationResult
 } from '~/typings/general';
 import {
+  PosibbleAuthMap,
   callHandlerIfMatchesMeta,
   checkMethodRole,
   defaultIgnoreMeta,
   defaultLoginMeta,
   defaultLogoutMeta,
+  defaultRefreshTokenMeta,
   onResponded2Record,
-  PosibbleAuthMap,
   refreshTokenIfExpired
 } from './helper';
 
@@ -29,12 +30,13 @@ export const createClientTokenAuthentication = ({
   refreshToken
 }: ClientTokenAuthenticationOptions<AlovaRequestAdapter<any, any, any, any, any>>) => {
   let tokenRefreshing = falseValue,
-    waitingList: (typeof noop)[];
+    waitingList: (typeof noop)[] = [];
   return {
     onAuthRequired: onBeforeRequest => async method => {
       if (
         !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
-        !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta)
+        !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
+        !checkMethodRole(method, (refreshToken as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
       ) {
         // 如果正在刷新token，则等待刷新完成后再发请求
         if (tokenRefreshing) {
@@ -59,7 +61,7 @@ export const createClientTokenAuthentication = ({
         onSuccess: (response, method) => {
           callHandlerIfMatchesMeta(method, login, defaultLoginMeta, response);
           callHandlerIfMatchesMeta(method, logout, defaultLogoutMeta, response);
-          return respondedRecord.onSuccess?.(response, method);
+          return (respondedRecord.onSuccess || __self)(response, method);
         }
       };
     }
@@ -79,7 +81,7 @@ export const createServerTokenAuthentication = ({
   refreshTokenOnError
 }: ServerTokenAuthenticationOptions<AlovaRequestAdapter<any, any, any, any, any>>) => {
   let tokenRefreshing = falseValue,
-    waitingList: (typeof noop)[];
+    waitingList: (typeof noop)[] = [];
   return {
     onAuthRequired: onBeforeRequest => async method => {
       if (
@@ -113,7 +115,7 @@ export const createServerTokenAuthentication = ({
 
           callHandlerIfMatchesMeta(method, login, defaultLoginMeta, response);
           callHandlerIfMatchesMeta(method, logout, defaultLogoutMeta, response);
-          return respondedRecord.onSuccess?.(response, method);
+          return (respondedRecord.onSuccess || __self)(response, method);
         },
         onError: async (error, method) => {
           const dataResent = await refreshTokenIfExpired(
@@ -126,7 +128,7 @@ export const createServerTokenAuthentication = ({
           if (dataResent) {
             return dataResent;
           }
-          return respondedRecord.onError?.(error, method);
+          return (respondedRecord.onError || noop)(error, method);
         }
       };
     }

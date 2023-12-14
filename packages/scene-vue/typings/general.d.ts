@@ -641,7 +641,7 @@ type AccessAction = (
   onMatch: (matchedSubscriber: Record<string, any>, index: number) => void
 ) => void;
 
-type MetaMatches = Record<string, string | number | RegExp>;
+type MetaMatches = Record<string, any>;
 type ResponseInterceptHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RESULT = Promise<void>> = (
   response: ReturnType<ReturnType<RA>['response']> extends Promise<infer RE> ? RE : never,
   method: Parameters<RA>[1]
@@ -657,7 +657,7 @@ type ResponseAuthorizationInterceptor<RA extends AlovaRequestAdapter<any, any, a
       handler: ResponseInterceptHandler<RA, void | Promise<void>>;
     };
 
-type RequestHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RESULT = Promise<void>> = (
+type RequestHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RESULT = void | Promise<void>> = (
   method: Parameters<RA>[1]
 ) => RESULT;
 
