@@ -4,8 +4,11 @@ import {
   AlovaErrorEvent,
   AlovaEvent,
   AlovaFetcherMiddlewareContext,
+  AlovaFrontMiddleware,
   AlovaFrontMiddlewareContext,
   AlovaGuardNext,
+  AlovaOptions,
+  AlovaRequestAdapter,
   ExportedType,
   Method,
   MethodMatcher,
@@ -635,5 +638,123 @@ type ActionDelegationMiddleware = (id: string | number | symbol) => <S, E, R, T,
  */
 type AccessAction = (
   id: string | number | symbol | RegExp,
-  onMatch: (matchedSubscriber: Handlers, index: number) => void
+  onMatch: (matchedSubscriber: Record<string, any>, index: number) => void
 ) => void;
+
+type MetaMatches = Record<string, string | number | RegExp>;
+type ResponseInterceptHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RESULT = Promise<void>> = (
+  response: ReturnType<ReturnType<RA>['response']> extends Promise<infer RE> ? RE : never,
+  method: Parameters<RA>[1]
+) => RESULT;
+type ResponseErrorInterceptHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RESULT = Promise<void>> = (
+  error: any,
+  method: Parameters<RA>[1]
+) => RESULT;
+type ResponseAuthorizationInterceptor<RA extends AlovaRequestAdapter<any, any, any, any, any>> =
+  | ResponseInterceptHandler<RA, void | Promise<void>>
+  | {
+      metaMatches?: MetaMatches;
+      handler: ResponseInterceptHandler<RA, void | Promise<void>>;
+    };
+
+type RequestHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RESULT = Promise<void>> = (
+  method: Parameters<RA>[1]
+) => RESULT;
+
+interface TokenAuthenticationOptions {
+  /**
+   * 忽略拦截的method
+   */
+  ignoreMetas?: MetaMatches;
+}
+interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>>
+  extends TokenAuthenticationOptions {
+  /**
+   * 登录请求拦截器
+   */
+  login?: ResponseAuthorizationInterceptor<RA>;
+
+  /**
+   * 登出请求拦截器
+   */
+  logout?: ResponseAuthorizationInterceptor<RA>;
+  /**
+   * 在请求前的拦截器中判断token是否过期，并刷新token
+   */
+  refreshToken?: {
+    metaMatches?: MetaMatches;
+    /**
+     * 判断token是否过期
+     */
+    isExpired: RequestHandler<RA, boolean | Promise<boolean>>;
+    /**
+     * 刷新token
+     */
+    handler: RequestHandler<RA>;
+  };
+}
+interface ServerTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>>
+  extends TokenAuthenticationOptions {
+  /**
+   * 登录请求拦截器
+   */
+  login?: ResponseAuthorizationInterceptor<RA>;
+
+  /**
+   * 登出请求拦截器
+   */
+  logout?: ResponseAuthorizationInterceptor<RA>;
+  /**
+   * 在请求成功拦截器中判断token是否过期，并刷新token
+   */
+  refreshTokenOnSuccess?: {
+    /**
+     * 判断token是否过期
+     */
+    isExpired: ResponseInterceptHandler<RA, boolean | Promise<boolean>>;
+    /**
+     * 刷新token
+     */
+    handler: ResponseInterceptHandler<RA>;
+  };
+
+  /**
+   * 在请求失败拦截器中判断token是否过期，并刷新token
+   */
+  refreshTokenOnError?: {
+    /**
+     * 判断token是否过期
+     */
+    isExpired: ResponseErrorInterceptHandler<RA, boolean | Promise<boolean>>;
+    /**
+     * 刷新token
+     */
+    handler: ResponseErrorInterceptHandler<RA>;
+  };
+}
+
+type AlovaBeforeRequest<RA extends AlovaRequestAdapter<any, any, any, any, any>> = (
+  method: Parameters<RA>[1]
+) => void | Promise<void>;
+type AlovaResponded<RA extends AlovaRequestAdapter<any, any, any, any, any>> = NonNullable<
+  AlovaOptions<
+    any,
+    any,
+    Parameters<RA>[1] extends Method<any, any, any, any, infer RC> ? RC : never,
+    Parameters<RA>[1] extends Method<any, any, any, any, any, infer RE> ? RE : never,
+    Parameters<RA>[1] extends Method<any, any, any, any, any, any, infer RH> ? RH : never
+  >['responded']
+>;
+interface TokenAuthenticationResult<RA extends AlovaRequestAdapter<any, any, any, any, any>> {
+  onAuthRequired(originalBeforeRequest?: AlovaBeforeRequest<RA>): AlovaBeforeRequest<RA>;
+  onResponseRefreshToken(originalResponded?: AlovaResponded<RA>): AlovaResponded<RA>;
+}
+
+/**
+ * 统一获取AlovaRequestAdapter的类型
+ */
+type AlovaRequestAdapterUnified<
+  RA extends
+    | AlovaRequestAdapter<any, any, any, any, any>
+    | ((...args: any[]) => AlovaRequestAdapter<any, any, any, any, any>) = AlovaRequestAdapter<any, any, any, any, any>
+> = RA extends AlovaRequestAdapter<any, any, any, any, any> ? RA : ReturnType<RA>;
