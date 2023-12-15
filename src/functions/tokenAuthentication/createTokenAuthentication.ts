@@ -1,5 +1,5 @@
-import { __self, newInstance, noop, pushItem } from '@/helper';
-import { PromiseCls, falseValue } from '@/helper/variables';
+import { noop, __self } from '@/helper';
+import { falseValue } from '@/helper/variables';
 import { AlovaRequestAdapter } from 'alova';
 import {
   ClientTokenAuthenticationOptions,
@@ -7,7 +7,6 @@ import {
   TokenAuthenticationResult
 } from '~/typings/general';
 import {
-  PosibbleAuthMap,
   callHandlerIfMatchesMeta,
   checkMethodRole,
   defaultIgnoreMeta,
@@ -15,7 +14,10 @@ import {
   defaultLogoutMeta,
   defaultRefreshTokenMeta,
   onResponded2Record,
-  refreshTokenIfExpired
+  PosibbleAuthMap,
+  refreshTokenIfExpired,
+  waitForTokenRefreshed,
+  WaitingRequestList
 } from './helper';
 
 /**
@@ -30,9 +32,11 @@ export const createClientTokenAuthentication = ({
   refreshToken
 }: ClientTokenAuthenticationOptions<AlovaRequestAdapter<any, any, any, any, any>>) => {
   let tokenRefreshing = falseValue,
-    waitingList: (typeof noop)[] = [];
+    waitingList: WaitingRequestList = [];
   return {
+    waitingList,
     onAuthRequired: onBeforeRequest => async method => {
+      // 被忽略的、登录、刷新token的请求不进行token认证
       if (
         !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
         !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
@@ -40,9 +44,7 @@ export const createClientTokenAuthentication = ({
       ) {
         // 如果正在刷新token，则等待刷新完成后再发请求
         if (tokenRefreshing) {
-          await newInstance(PromiseCls, resolve => {
-            pushItem(waitingList, resolve);
-          });
+          await waitForTokenRefreshed(method, waitingList);
         }
         await refreshTokenIfExpired(
           method,
@@ -81,18 +83,20 @@ export const createServerTokenAuthentication = ({
   refreshTokenOnError
 }: ServerTokenAuthenticationOptions<AlovaRequestAdapter<any, any, any, any, any>>) => {
   let tokenRefreshing = falseValue,
-    waitingList: (typeof noop)[] = [];
+    waitingList: WaitingRequestList = [];
   return {
+    waitingList,
     onAuthRequired: onBeforeRequest => async method => {
+      // 被忽略的、登录、刷新token的请求不进行token认证
       if (
         !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
-        !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta)
+        !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
+        !checkMethodRole(method, (refreshTokenOnSuccess as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta) &&
+        !checkMethodRole(method, (refreshTokenOnError as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
       ) {
         // 如果正在刷新token，则等待刷新完成后再发请求
         if (tokenRefreshing) {
-          await newInstance(PromiseCls, resolve => {
-            pushItem(waitingList, resolve);
-          });
+          await waitForTokenRefreshed(method, waitingList);
         }
       }
       onBeforeRequest?.(method);
@@ -102,15 +106,22 @@ export const createServerTokenAuthentication = ({
       return {
         ...respondedRecord,
         onSuccess: async (response, method) => {
-          const dataResent = await refreshTokenIfExpired(
-            method,
-            waitingList,
-            refreshing => (tokenRefreshing = refreshing),
-            [response, method],
-            refreshTokenOnSuccess
-          );
-          if (dataResent) {
-            return dataResent;
+          if (
+            !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
+            !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
+            !checkMethodRole(method, (refreshTokenOnSuccess as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
+          ) {
+            const dataResent = await refreshTokenIfExpired(
+              method,
+              waitingList,
+              refreshing => (tokenRefreshing = refreshing),
+              [response, method],
+              refreshTokenOnSuccess,
+              tokenRefreshing
+            );
+            if (dataResent) {
+              return dataResent;
+            }
           }
 
           callHandlerIfMatchesMeta(method, login, defaultLoginMeta, response);
@@ -118,15 +129,22 @@ export const createServerTokenAuthentication = ({
           return (respondedRecord.onSuccess || __self)(response, method);
         },
         onError: async (error, method) => {
-          const dataResent = await refreshTokenIfExpired(
-            method,
-            waitingList,
-            refreshing => (tokenRefreshing = refreshing),
-            [error, method],
-            refreshTokenOnError
-          );
-          if (dataResent) {
-            return dataResent;
+          if (
+            !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
+            !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
+            !checkMethodRole(method, (refreshTokenOnError as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
+          ) {
+            const dataResent = await refreshTokenIfExpired(
+              method,
+              waitingList,
+              refreshing => (tokenRefreshing = refreshing),
+              [error, method],
+              refreshTokenOnError,
+              tokenRefreshing
+            );
+            if (dataResent) {
+              return dataResent;
+            }
           }
           return (respondedRecord.onError || noop)(error, method);
         }

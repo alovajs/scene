@@ -1,6 +1,6 @@
 import { createAlova, Method } from 'alova';
 import VueHook from 'alova/vue';
-import { createClientTokenAuthentication } from '../../packages/scene-vue';
+import { createServerTokenAuthentication } from '../../packages/scene-vue';
 import { mockRequestAdapter } from '../mockData';
 import { generateContinuousNumbers } from '../utils';
 
@@ -8,9 +8,10 @@ interface ListResponse {
   total: number;
   list: number[];
 }
-describe('createClientTokenAuthentication', () => {
+jest.setTimeout(1000000);
+describe('createServerTokenAuthentication', () => {
   test('should emit custom request and response interceptors', async () => {
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({});
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({});
     const beforeRequestFn = jest.fn();
     const responseFn = jest.fn();
     const alovaInst = createAlova({
@@ -77,7 +78,7 @@ describe('createClientTokenAuthentication', () => {
 
   test('should emit login interceptor when set authRole to `login`', async () => {
     const loginInterceptorFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
       login(response, method) {
         expect(response.total).toBe(300);
         expect(method).toBeInstanceOf(Method);
@@ -100,7 +101,7 @@ describe('createClientTokenAuthentication', () => {
     expect(loginInterceptorFn).toHaveBeenCalledTimes(1);
 
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createClientTokenAuthentication<typeof mockRequestAdapter>({
+      createServerTokenAuthentication<typeof mockRequestAdapter>({
         login: {
           metaMatches: {
             login: true
@@ -129,7 +130,7 @@ describe('createClientTokenAuthentication', () => {
   });
   test('should emit logout interceptor when set authRole to `logout`', async () => {
     const logoutInterceptorFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
       logout(response, method) {
         expect(response.total).toBe(300);
         expect(method).toBeInstanceOf(Method);
@@ -152,7 +153,7 @@ describe('createClientTokenAuthentication', () => {
     expect(logoutInterceptorFn).toHaveBeenCalledTimes(1);
 
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createClientTokenAuthentication<typeof mockRequestAdapter>({
+      createServerTokenAuthentication<typeof mockRequestAdapter>({
         logout: {
           metaMatches: {
             logout: true
@@ -179,14 +180,21 @@ describe('createClientTokenAuthentication', () => {
     expect(res2.list).toStrictEqual(generateContinuousNumbers(9));
     expect(logoutInterceptorFn).toHaveBeenCalledTimes(2);
   });
-  test('should refresh token first when it is expired', async () => {
+  test('should refresh token first on error event when it is expired', async () => {
     let token = '';
+    const expireFn = jest.fn();
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
-      refreshToken: {
-        isExpired: () => !token,
-        handler: async method => {
+    const responseFn = jest.fn();
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+      refreshTokenOnError: {
+        isExpired: (error, method) => {
+          expect(method).toBeInstanceOf(Method);
+          expireFn();
+          return error.name === '401';
+        },
+        handler: async (error, method) => {
+          expect(error.name).toBe('401');
           expect(method).toBeInstanceOf(Method);
           const refreshMethod = alovaInst.Get<{ token: string }>('/refresh-token');
           refreshMethod.meta = {
@@ -205,30 +213,91 @@ describe('createClientTokenAuthentication', () => {
         beforeRequestFn();
         config.headers.Authorization = token;
       }),
-      responded: onResponseRefreshToken()
+      responded: onResponseRefreshToken(response => {
+        responseFn();
+        return response;
+      })
     });
     const list = await alovaInst.Get<number[]>('/list-auth');
     expect(list).toStrictEqual(generateContinuousNumbers(5));
     expect(refreshTokenFn).toHaveBeenCalledTimes(1);
-    expect(beforeRequestFn).toHaveBeenCalledTimes(2);
+    expect(beforeRequestFn).toHaveBeenCalledTimes(3); // list-auth两次，refreshToken一次
+    expect(responseFn).toHaveBeenCalledTimes(2); // refreshToken和list-auth各进入一次
+    expect(expireFn).toHaveBeenCalledTimes(1); // 只有list-auth在报错时进入一次，refreshToken不进入
+  });
+  test('should refresh token first on success event when it is expired', async () => {
+    let token = '';
+    const expireFn = jest.fn();
+    const refreshTokenFn = jest.fn();
+    const beforeRequestFn = jest.fn();
+    const responseFn = jest.fn();
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+      refreshTokenOnSuccess: {
+        isExpired: (response, method) => {
+          expect(method).toBeInstanceOf(Method);
+          expireFn();
+          return response.status === 401;
+        },
+        handler: async (response, method) => {
+          expect(response.status).toBe(401);
+          expect(method).toBeInstanceOf(Method);
+          const refreshMethod = alovaInst.Get<{ token: string }>('/refresh-token');
+          refreshMethod.meta = {
+            authRole: 'refreshToken'
+          };
+          token = (await refreshMethod).token;
+          refreshTokenFn();
+        }
+      }
+    });
+    const alovaInst = createAlova({
+      statesHook: VueHook,
+      requestAdapter: mockRequestAdapter,
+      localCache: null,
+      beforeRequest: onAuthRequired(({ config }) => {
+        beforeRequestFn();
+        config.headers.Authorization = token;
+      }),
+      responded: onResponseRefreshToken(response => {
+        responseFn();
+        return response;
+      })
+    });
+
+    // 设置notError=1，当遇到错误时不抛出错误，而是以错误格式返回
+    const list = await alovaInst.Get('/list-auth?notError=1', {
+      transformData: (data: number[]) => data.map(i => i + 5)
+    });
+    expect(list).toStrictEqual(generateContinuousNumbers(10, 5));
+    expect(refreshTokenFn).toHaveBeenCalledTimes(1);
+    expect(beforeRequestFn).toHaveBeenCalledTimes(3); // list-auth两次，refreshToken一次
+    expect(responseFn).toHaveBeenCalledTimes(2); // refreshToken和list-auth各进入一次
+    expect(expireFn).toHaveBeenCalledTimes(2); // list-auth进入两次，refreshToken不进入
   });
   test('the requests should wait until token refreshed when token is refreshing', async () => {
     let token = '';
+    const expireFn = jest.fn();
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken, waitingList } = createClientTokenAuthentication<
+    const { onAuthRequired, onResponseRefreshToken, waitingList } = createServerTokenAuthentication<
       typeof mockRequestAdapter
     >({
-      refreshToken: {
-        isExpired: () => !token,
-        handler: async method => {
-          expect(method).toBeInstanceOf(Method);
+      refreshTokenOnError: {
+        isExpired: error => {
+          expireFn();
+          return error.name === '401';
+        },
+        handler: async () => {
           const refreshMethod = alovaInst.Get<{ token: string }>('/refresh-token');
           refreshMethod.meta = {
             refreshToken: true
           };
+
+          // 当tokenRefreshing为true时又发出了请求时，会等待token刷新再发出，因此可以正常请求到数据
+          method('2').then(list => {
+            expect(list).toStrictEqual(generateContinuousNumbers(10, 5));
+          });
           token = (await refreshMethod).token;
-          expect(waitingList).toHaveLength(1); // 等待列表中有一个请求
           refreshTokenFn();
         },
         metaMatches: {
@@ -251,27 +320,77 @@ describe('createClientTokenAuthentication', () => {
         return response;
       })
     });
-    const method = alovaInst.Get('/list-auth', {
-      transformData: (data: number[]) => data.map(i => i + 5)
+    const method = (a: string) =>
+      alovaInst.Get('/list-auth?a=' + a, {
+        transformData: (data: number[]) => data.map(i => i + 5)
+      });
+    const list = await method('1');
+    expect(list).toStrictEqual(generateContinuousNumbers(10, 5));
+    expect(refreshTokenFn).toHaveBeenCalledTimes(1); // 多次请求，只会刷新一次token
+    expect(beforeRequestFn).toHaveBeenCalledTimes(4); // 三次list-auth，1次refresh-token
+    expect(expireFn).toHaveBeenCalledTimes(1); // list-auth在401时进入1次，另外两次进入了onSuccess，refreshToken不进入
+    expect(waitingList).toHaveLength(0); // 等待列表中的请求已发出
+  });
+  test("shouldn't resend refresh request when multiple requests emit at the same time", async () => {
+    let token = '';
+    const refreshTokenFn = jest.fn();
+    const beforeRequestFn = jest.fn();
+    const { onAuthRequired, onResponseRefreshToken, waitingList } = createServerTokenAuthentication<
+      typeof mockRequestAdapter
+    >({
+      refreshTokenOnError: {
+        isExpired: error => {
+          return error.name === '401';
+        },
+        handler: async (error, method) => {
+          const refreshMethod = alovaInst.Get<{ token: string }>('/refresh-token');
+          refreshMethod.meta = {
+            authRole: 'refreshToken'
+          };
+          token = (await refreshMethod).token;
+          console.log(error, method);
+          refreshTokenFn();
+        }
+      }
     });
-    const [list, list2] = await Promise.all([method, method]);
+    const alovaInst = createAlova({
+      statesHook: VueHook,
+      requestAdapter: mockRequestAdapter,
+      localCache: null,
+      beforeRequest: onAuthRequired(({ config }) => {
+        beforeRequestFn();
+        config.headers.Authorization = token;
+      }),
+      responded: onResponseRefreshToken((response, method) => {
+        if (method.meta?.authRole !== 'refreshToken') {
+          expect(method.config.headers.Authorization).toBe('123');
+        }
+        return response;
+      })
+    });
+    const method = (a: string) =>
+      alovaInst.Get('/list-auth?a=' + a, {
+        transformData: (data: number[]) => data.map(i => i + 5)
+      });
+    const [list, list2] = await Promise.all([method('1'), method('2')]);
     expect(list).toStrictEqual(generateContinuousNumbers(10, 5));
     expect(list2).toStrictEqual(generateContinuousNumbers(10, 5));
     expect(refreshTokenFn).toHaveBeenCalledTimes(1); // 多次请求，只会刷新一次token
-    expect(beforeRequestFn).toHaveBeenCalledTimes(3); // 两次list-auth，1次refresh-token
+    expect(beforeRequestFn).toHaveBeenCalledTimes(5); // 分别是两次失败和两次重新请求后成功的list-auth，1次refresh-token
     expect(waitingList).toHaveLength(0); // 等待列表中的请求已发出
   });
   test("shouldn't continue run when throw error in refreshToken", async () => {
     let token = '';
     const refreshTokenFn = jest.fn();
     const redirectLoginFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken, waitingList } = createClientTokenAuthentication<
+    const { onAuthRequired, onResponseRefreshToken, waitingList } = createServerTokenAuthentication<
       typeof mockRequestAdapter
     >({
-      refreshToken: {
-        isExpired: () => !token,
-        handler: async method => {
-          expect(method).toBeInstanceOf(Method);
+      refreshTokenOnError: {
+        isExpired: error => {
+          return error.name === '401';
+        },
+        handler: async () => {
           const refreshMethod = alovaInst.Get<{ token: string }>('/refresh-token?error=1');
           refreshMethod.meta = {
             authRole: 'refreshToken'
@@ -309,14 +428,13 @@ describe('createClientTokenAuthentication', () => {
     let token = '';
     const expireFn = jest.fn();
     const refreshTokenFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
-      refreshToken: {
-        isExpired: () => {
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+      refreshTokenOnError: {
+        isExpired: error => {
           expireFn();
-          return !token;
+          return error.status === '401';
         },
-        handler: async method => {
-          expect(method).toBeInstanceOf(Method);
+        handler: async () => {
           const refreshMethod = alovaInst.Get<{ token: string }>('/refresh-token');
           refreshMethod.meta = {
             authRole: 'refreshToken'
@@ -347,16 +465,16 @@ describe('createClientTokenAuthentication', () => {
     expect(refreshTokenFn).not.toHaveBeenCalled(); // authRole=null会直接放行
     expect(expireFn).not.toHaveBeenCalled();
 
-    // 自定义忽略method规则
+    // 自定义忽略method规则;
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createClientTokenAuthentication<typeof mockRequestAdapter>({
+      createServerTokenAuthentication<typeof mockRequestAdapter>({
         ignoreMetas: {
           loginRequired: false
         },
-        refreshToken: {
-          isExpired: () => {
+        refreshTokenOnError: {
+          isExpired: error => {
             expireFn();
-            return !token;
+            return error.status === '401';
           },
           handler: async method => {
             expect(method).toBeInstanceOf(Method);

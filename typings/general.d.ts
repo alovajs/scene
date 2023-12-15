@@ -641,7 +641,7 @@ type AccessAction = (
   onMatch: (matchedSubscriber: Record<string, any>, index: number) => void
 ) => void;
 
-type MetaMatches = Record<string, null | string | number | RegExp>;
+type MetaMatches = Record<string, any>;
 type ResponseInterceptHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RESULT = Promise<void>> = (
   response: ReturnType<ReturnType<RA>['response']> extends Promise<infer RE> ? RE : never,
   method: Parameters<RA>[1]
@@ -682,7 +682,6 @@ interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, a
    * 在请求前的拦截器中判断token是否过期，并刷新token
    */
   refreshToken?: {
-    metaMatches?: MetaMatches;
     /**
      * 判断token是否过期
      */
@@ -691,6 +690,10 @@ interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, a
      * 刷新token
      */
     handler: RequestHandler<RA>;
+    /**
+     * 自定义匹配刷新token的method meta
+     */
+    metaMatches?: MetaMatches;
   };
 }
 interface ServerTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>>
@@ -716,6 +719,10 @@ interface ServerTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, a
      * 刷新token
      */
     handler: ResponseInterceptHandler<RA>;
+    /**
+     * 自定义匹配刷新token的method meta
+     */
+    metaMatches?: MetaMatches;
   };
 
   /**
@@ -730,6 +737,10 @@ interface ServerTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, a
      * 刷新token
      */
     handler: ResponseErrorInterceptHandler<RA>;
+    /**
+     * 自定义匹配刷新token的method meta
+     */
+    metaMatches?: MetaMatches;
   };
 }
 
@@ -748,6 +759,10 @@ type AlovaResponded<RA extends AlovaRequestAdapter<any, any, any, any, any>> = N
 interface TokenAuthenticationResult<RA extends AlovaRequestAdapter<any, any, any, any, any>> {
   onAuthRequired(originalBeforeRequest?: AlovaBeforeRequest<RA>): AlovaBeforeRequest<RA>;
   onResponseRefreshToken(originalResponded?: AlovaResponded<RA>): AlovaResponded<RA>;
+  waitingList: {
+    method: Parameters<RA>[1];
+    resolve: () => void;
+  }[];
 }
 
 /**

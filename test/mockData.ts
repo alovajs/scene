@@ -149,16 +149,22 @@ const mocks = defineMock({
       data
     };
   },
-  '/list-auth': ({ headers }) => {
+  '/list-auth': ({ headers, query }) => {
     if (headers.Authorization !== '123') {
       return {
         status: 401,
-        statusText: 'unauthorized'
+        statusText: 'unauthorized' + (query.notError ? '-notError' : '')
       };
     }
     return [0, 1, 2, 3, 4, 5];
   },
-  '/refresh-token': () => {
+  '/refresh-token': ({ query }) => {
+    if (query.error) {
+      return {
+        status: 401,
+        statusText: 'refresh token unauthorized'
+      };
+    }
     return {
       token: '123'
     };
@@ -169,10 +175,18 @@ const mocks = defineMock({
 export const mockRequestAdapter = createAlovaMockAdapter([mocks], {
   delay: 50,
   onMockResponse: ({ status, statusText, body }) => {
+    // 当status为错误码时，如果包含notError则以body的形式返回错误信息
     if (status >= 300) {
-      const err = new Error(statusText);
-      err.name = status.toString();
-      throw err;
+      if (!/notError/.test(statusText)) {
+        const err = new Error(statusText);
+        err.name = status.toString();
+        throw err;
+      } else {
+        body = {
+          status,
+          statusText
+        };
+      }
     }
     return {
       response: body,
