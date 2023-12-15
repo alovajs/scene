@@ -182,7 +182,8 @@ export const isObject = <T = any>(arg: any): arg is T => arg !== nullValue && ty
  * @param arg 任意参数
  * @returns 该参数是否为纯对象或自定义类的对象
  */
-export const isPlainOrCustomObject = (arg: any) => ObjectCls.prototype.toString.call(arg) === '[object Object]';
+export const isPlainOrCustomObject = <T = any>(arg: any): arg is T =>
+  ObjectCls.prototype.toString.call(arg) === '[object Object]';
 
 /**
  * 深层遍历目标对象
