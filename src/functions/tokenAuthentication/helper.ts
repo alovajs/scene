@@ -14,7 +14,7 @@ export type WaitingRequestList = {
   resolve: () => void;
 }[];
 
-export const defaultIgnoreMeta = {
+export const defaultVisitorMeta = {
     authRole: null
   },
   defaultLoginMeta = {

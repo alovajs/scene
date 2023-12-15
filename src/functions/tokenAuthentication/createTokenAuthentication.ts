@@ -9,10 +9,10 @@ import {
 import {
   callHandlerIfMatchesMeta,
   checkMethodRole,
-  defaultIgnoreMeta,
   defaultLoginMeta,
   defaultLogoutMeta,
   defaultRefreshTokenMeta,
+  defaultVisitorMeta,
   onResponded2Record,
   PosibbleAuthMap,
   refreshTokenIfExpired,
@@ -26,20 +26,23 @@ import {
  * @returns token认证拦截器函数
  */
 export const createClientTokenAuthentication = ({
-  ignoreMetas,
+  visitorMeta,
   login,
   logout,
-  refreshToken
+  refreshToken,
+  assignToken = noop
 }: ClientTokenAuthenticationOptions<AlovaRequestAdapter<any, any, any, any, any>>) => {
   let tokenRefreshing = falseValue,
     waitingList: WaitingRequestList = [];
   return {
     waitingList,
     onAuthRequired: onBeforeRequest => async method => {
+      const isVisitorRole = checkMethodRole(method, visitorMeta || defaultVisitorMeta),
+        isLoginRole = checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta);
       // 被忽略的、登录、刷新token的请求不进行token认证
       if (
-        !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
-        !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
+        !isVisitorRole &&
+        !isLoginRole &&
         !checkMethodRole(method, (refreshToken as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
       ) {
         // 如果正在刷新token，则等待刷新完成后再发请求
@@ -53,6 +56,11 @@ export const createClientTokenAuthentication = ({
           [method],
           refreshToken
         );
+      }
+
+      // 非访客和登录角色的请求会进入赋值token函数
+      if (!isVisitorRole && !isLoginRole) {
+        assignToken(method);
       }
       onBeforeRequest?.(method);
     },
@@ -76,21 +84,24 @@ export const createClientTokenAuthentication = ({
  * @returns token认证拦截器函数
  */
 export const createServerTokenAuthentication = ({
-  ignoreMetas,
+  visitorMeta,
   login,
   logout,
   refreshTokenOnSuccess,
-  refreshTokenOnError
+  refreshTokenOnError,
+  assignToken = noop
 }: ServerTokenAuthenticationOptions<AlovaRequestAdapter<any, any, any, any, any>>) => {
   let tokenRefreshing = falseValue,
     waitingList: WaitingRequestList = [];
   return {
     waitingList,
     onAuthRequired: onBeforeRequest => async method => {
+      const isVisitorRole = checkMethodRole(method, visitorMeta || defaultVisitorMeta),
+        isLoginRole = checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta);
       // 被忽略的、登录、刷新token的请求不进行token认证
       if (
-        !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
-        !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
+        !isVisitorRole &&
+        !isLoginRole &&
         !checkMethodRole(method, (refreshTokenOnSuccess as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta) &&
         !checkMethodRole(method, (refreshTokenOnError as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
       ) {
@@ -98,6 +109,9 @@ export const createServerTokenAuthentication = ({
         if (tokenRefreshing) {
           await waitForTokenRefreshed(method, waitingList);
         }
+      }
+      if (!isVisitorRole && !isLoginRole) {
+        assignToken(method);
       }
       onBeforeRequest?.(method);
     },
@@ -107,7 +121,7 @@ export const createServerTokenAuthentication = ({
         ...respondedRecord,
         onSuccess: async (response, method) => {
           if (
-            !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
+            !checkMethodRole(method, visitorMeta || defaultVisitorMeta) &&
             !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
             !checkMethodRole(method, (refreshTokenOnSuccess as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
           ) {
@@ -130,7 +144,7 @@ export const createServerTokenAuthentication = ({
         },
         onError: async (error, method) => {
           if (
-            !checkMethodRole(method, ignoreMetas || defaultIgnoreMeta) &&
+            !checkMethodRole(method, visitorMeta || defaultVisitorMeta) &&
             !checkMethodRole(method, (login as PosibbleAuthMap)?.metaMatches || defaultLoginMeta) &&
             !checkMethodRole(method, (refreshTokenOnError as PosibbleAuthMap)?.metaMatches || defaultRefreshTokenMeta)
           ) {
