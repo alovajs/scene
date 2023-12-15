@@ -661,14 +661,11 @@ type RequestHandler<RA extends AlovaRequestAdapter<any, any, any, any, any>, RES
   method: Parameters<RA>[1]
 ) => RESULT;
 
-interface TokenAuthenticationOptions {
+interface TokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>> {
   /**
    * 忽略拦截的method
    */
-  ignoreMetas?: MetaMatches;
-}
-interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>>
-  extends TokenAuthenticationOptions {
+  visitorMeta?: MetaMatches;
   /**
    * 登录请求拦截器
    */
@@ -678,6 +675,14 @@ interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, a
    * 登出请求拦截器
    */
   logout?: ResponseAuthorizationInterceptor<RA>;
+  /**
+   * 赋值token回调函数，登录标识和访客标识的请求不会触发此函数
+   * @param method method实例
+   */
+  assignToken?: (method: Parameters<RA>[1]) => void;
+}
+interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>>
+  extends TokenAuthenticationOptions<RA> {
   /**
    * 在请求前的拦截器中判断token是否过期，并刷新token
    */
@@ -697,16 +702,7 @@ interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, a
   };
 }
 interface ServerTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>>
-  extends TokenAuthenticationOptions {
-  /**
-   * 登录请求拦截器
-   */
-  login?: ResponseAuthorizationInterceptor<RA>;
-
-  /**
-   * 登出请求拦截器
-   */
-  logout?: ResponseAuthorizationInterceptor<RA>;
+  extends TokenAuthenticationOptions<RA> {
   /**
    * 在请求成功拦截器中判断token是否过期，并刷新token
    */

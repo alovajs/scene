@@ -195,16 +195,17 @@ describe('createClientTokenAuthentication', () => {
           token = (await refreshMethod).token;
           refreshTokenFn();
         }
+      },
+      assignToken: method => {
+        expect(method).toBeInstanceOf(Method);
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        beforeRequestFn();
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(beforeRequestFn),
       responded: onResponseRefreshToken()
     });
     const list = await alovaInst.Get<number[]>('/list-auth');
@@ -234,16 +235,17 @@ describe('createClientTokenAuthentication', () => {
         metaMatches: {
           refreshToken: true
         }
+      },
+      assignToken: method => {
+        expect(method).toBeInstanceOf(Method);
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        beforeRequestFn();
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(beforeRequestFn),
       responded: onResponseRefreshToken((response, method) => {
         if (!method.meta?.refreshToken) {
           expect(method.config.headers.Authorization).toBe('123');
@@ -285,15 +287,17 @@ describe('createClientTokenAuthentication', () => {
             throw error;
           }
         }
+      },
+      assignToken: method => {
+        expect(method).toBeInstanceOf(Method);
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(),
       responded: onResponseRefreshToken((response, method) => {
         expect(method.config.headers.Authorization).toBe('');
         return response;
@@ -324,17 +328,18 @@ describe('createClientTokenAuthentication', () => {
           token = (await refreshMethod).token;
           refreshTokenFn();
         }
+      },
+      assignToken: method => {
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(),
       responded: onResponseRefreshToken((response, method) => {
-        expect(method.config.headers.Authorization).toBe(''); // 绕过了token验证阶段，因此发送请求时不会带token
+        expect(method.config.headers.Authorization).toBeUndefined(); // 绕过了token验证阶段，因此发送请求时不会带token
         return response;
       })
     });
@@ -350,7 +355,7 @@ describe('createClientTokenAuthentication', () => {
     // 自定义忽略method规则
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
       createClientTokenAuthentication<typeof mockRequestAdapter>({
-        ignoreMetas: {
+        visitorMeta: {
           loginRequired: false
         },
         refreshToken: {
@@ -367,17 +372,18 @@ describe('createClientTokenAuthentication', () => {
             token = (await refreshMethod).token;
             refreshTokenFn();
           }
+        },
+        assignToken: method => {
+          method.config.headers.Authorization = token;
         }
       });
     const alovaInst2 = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired2(({ config }) => {
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired2(),
       responded: onResponseRefreshToken2((response, method) => {
-        expect(method.config.headers.Authorization).toBe(''); // 绕过了token验证阶段，因此发送请求时不会带token
+        expect(method.config.headers.Authorization).toBeUndefined(); // 绕过了token验证阶段，因此发送请求时不会带token
         return response;
       })
     });

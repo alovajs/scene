@@ -8,7 +8,6 @@ interface ListResponse {
   total: number;
   list: number[];
 }
-jest.setTimeout(1000000);
 describe('createServerTokenAuthentication', () => {
   test('should emit custom request and response interceptors', async () => {
     const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({});
@@ -203,16 +202,16 @@ describe('createServerTokenAuthentication', () => {
           token = (await refreshMethod).token;
           refreshTokenFn();
         }
+      },
+      assignToken: method => {
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        beforeRequestFn();
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(beforeRequestFn),
       responded: onResponseRefreshToken(response => {
         responseFn();
         return response;
@@ -248,16 +247,16 @@ describe('createServerTokenAuthentication', () => {
           token = (await refreshMethod).token;
           refreshTokenFn();
         }
+      },
+      assignToken: method => {
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        beforeRequestFn();
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(beforeRequestFn),
       responded: onResponseRefreshToken(response => {
         responseFn();
         return response;
@@ -303,16 +302,16 @@ describe('createServerTokenAuthentication', () => {
         metaMatches: {
           refreshToken: true
         }
+      },
+      assignToken: method => {
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        beforeRequestFn();
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(beforeRequestFn),
       responded: onResponseRefreshToken((response, method) => {
         if (!method.meta?.refreshToken) {
           expect(method.config.headers.Authorization).toBe('123');
@@ -351,16 +350,16 @@ describe('createServerTokenAuthentication', () => {
           console.log(error, method);
           refreshTokenFn();
         }
+      },
+      assignToken: method => {
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        beforeRequestFn();
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(beforeRequestFn),
       responded: onResponseRefreshToken((response, method) => {
         if (method.meta?.authRole !== 'refreshToken') {
           expect(method.config.headers.Authorization).toBe('123');
@@ -404,17 +403,18 @@ describe('createServerTokenAuthentication', () => {
             throw error;
           }
         }
+      },
+      assignToken: method => {
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(),
       responded: onResponseRefreshToken((response, method) => {
-        expect(method.config.headers.Authorization).toBe('');
+        expect(method.config.headers.Authorization).toBeUndefined();
         return response;
       })
     });
@@ -442,17 +442,18 @@ describe('createServerTokenAuthentication', () => {
           token = (await refreshMethod).token;
           refreshTokenFn();
         }
+      },
+      assignToken: method => {
+        method.config.headers.Authorization = token;
       }
     });
     const alovaInst = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired(({ config }) => {
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired(),
       responded: onResponseRefreshToken((response, method) => {
-        expect(method.config.headers.Authorization).toBe(''); // 绕过了token验证阶段，因此发送请求时不会带token
+        expect(method.config.headers.Authorization).toBeUndefined(); // 绕过了token验证阶段，因此发送请求时不会带token
         return response;
       })
     });
@@ -468,7 +469,7 @@ describe('createServerTokenAuthentication', () => {
     // 自定义忽略method规则;
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
       createServerTokenAuthentication<typeof mockRequestAdapter>({
-        ignoreMetas: {
+        visitorMeta: {
           loginRequired: false
         },
         refreshTokenOnError: {
@@ -485,17 +486,18 @@ describe('createServerTokenAuthentication', () => {
             token = (await refreshMethod).token;
             refreshTokenFn();
           }
+        },
+        assignToken: method => {
+          method.config.headers.Authorization = token;
         }
       });
     const alovaInst2 = createAlova({
       statesHook: VueHook,
       requestAdapter: mockRequestAdapter,
       localCache: null,
-      beforeRequest: onAuthRequired2(({ config }) => {
-        config.headers.Authorization = token;
-      }),
+      beforeRequest: onAuthRequired2(),
       responded: onResponseRefreshToken2((response, method) => {
-        expect(method.config.headers.Authorization).toBe(''); // 绕过了token验证阶段，因此发送请求时不会带token
+        expect(method.config.headers.Authorization).toBeUndefined(); // 绕过了token验证阶段，因此发送请求时不会带token
         return response;
       })
     });
