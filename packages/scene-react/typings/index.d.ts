@@ -1,5 +1,6 @@
 import {
   AlovaMethodHandler,
+  AlovaRequestAdapter,
   CompleteHandler,
   ErrorHandler,
   FrontRequestState,
@@ -11,13 +12,16 @@ import {
   UseHookReturnType,
   WatcherHookConfig
 } from 'alova';
+import GlobalFetch from 'alova/GlobalFetch';
 import { DependencyList, Dispatch, SetStateAction } from 'react';
 import {
   AccessAction,
   ActionDelegationMiddleware,
+  AlovaRequestAdapterUnified,
   BeforeSilentSubmitHandler,
   CaptchaHookConfig,
   CaptchaReturnType,
+  ClientTokenAuthenticationOptions,
   FormHookConfig,
   FormHookHandler,
   FormReturnType,
@@ -34,7 +38,8 @@ import {
   SilentSubmitFailHandler,
   SilentSubmitSuccessHandler,
   SQHookReturnType,
-  SQRequestHookConfig
+  SQRequestHookConfig,
+  TokenAuthenticationResult
 } from './general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
@@ -475,3 +480,65 @@ declare const actionDelegationMiddleware: ActionDelegationMiddleware;
  * @param onMatch 匹配的订阅者
  */
 declare const accessAction: AccessAction;
+
+/**
+ * 创建客户端的token认证拦截器
+ * @example
+ * ```js
+ * const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication(\/* ... *\/);
+ * const alova = createAlova({
+ *   // ...
+ *   beforeRequest: onAuthRequired(method => {
+ *     // ...
+ *   }),
+ *   responded: onResponseRefreshToken({
+ *     onSuccess(response, method) {
+ *       // ...
+ *     },
+ *     onError(error, method) {
+ *       // ...
+ *     },
+ *   })
+ * });
+ * ```
+ * @param options 配置参数
+ * @returns token认证拦截器函数
+ */
+export function createClientTokenAuthentication<
+  RA extends
+    | AlovaRequestAdapter<any, any, any, any, any>
+    | ((...args: any[]) => AlovaRequestAdapter<any, any, any, any, any>) = typeof GlobalFetch
+>(
+  options: ClientTokenAuthenticationOptions<AlovaRequestAdapterUnified<RA>>
+): TokenAuthenticationResult<AlovaRequestAdapterUnified<RA>>;
+
+/**
+ * 创建服务端的token认证拦截器
+ * @example
+ * ```js
+ * const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication(\/* ... *\/);
+ * const alova = createAlova({
+ *   // ...
+ *   beforeRequest: onAuthRequired(method => {
+ *     // ...
+ *   }),
+ *   responded: onResponseRefreshToken({
+ *     onSuccess(response, method) {
+ *       // ...
+ *     },
+ *     onError(error, method) {
+ *       // ...
+ *     },
+ *   })
+ * });
+ * ```
+ * @param options 配置参数
+ * @returns token认证拦截器函数
+ */
+export function createServerTokenAuthentication<
+  RA extends
+    | AlovaRequestAdapter<any, any, any, any, any>
+    | ((...args: any[]) => AlovaRequestAdapter<any, any, any, any, any>) = typeof GlobalFetch
+>(
+  options: ServerTokenAuthenticationOptions<AlovaRequestAdapterUnified<RA>>
+): TokenAuthenticationResult<AlovaRequestAdapterUnified<RA>>;

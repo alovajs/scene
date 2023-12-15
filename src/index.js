@@ -37,6 +37,10 @@ export const usePagination = (handler, config = {}) =>
 // 已通过 hooks/silent/useSQRequest 导入测试
 /* c8 ignore start */
 export const useSQRequest = (handler, config = {}) => useSQRequest_unified(handler, config);
+export {
+  createClientTokenAuthentication,
+  createServerTokenAuthentication
+} from '@/functions/tokenAuthentication/createTokenAuthentication';
 export { default as useSerialRequest } from '@/hooks/serial/useSerialRequest';
 export { default as useSerialWatcher } from '@/hooks/serial/useSerialWatcher';
 export {
