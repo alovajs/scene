@@ -2701,4 +2701,41 @@ describe('react => usePagination', () => {
     fireEvent.click(screen.getByRole('clearData'));
     expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([]));
   });
+
+  test('should set initial data to data and total', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number) =>
+      alovaInst.Get<ListResponse>('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    function Page() {
+      const { data, total } = usePagination(getter, {
+        total: res => res.total,
+        data: res => res.list,
+        initialData: {
+          list: [1, 2, 3],
+          total: 3
+        },
+        immediate: false,
+        initialPage: 2,
+        initialPageSize: 4
+      });
+
+      return (
+        <div>
+          <span role="total">{total}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+        </div>
+      );
+    }
+    render((<Page />) as ReactElement<any, any>);
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([1, 2, 3]));
+      expect(screen.getByRole('total')).toHaveTextContent('3');
+    });
+  });
 });

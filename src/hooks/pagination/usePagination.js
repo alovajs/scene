@@ -61,7 +61,7 @@ export default function (
   const requestCountInReseting = useFlag$(0);
   const page = $(initialPage, trueValue);
   const pageSize = $(initialPageSize, trueValue);
-  const data = $([], trueValue);
+  const data = $(initialData ? dataGetter(initialData) || [] : [], trueValue);
   const handerRef = useFlag$();
   handerRef.current = handler;
 
@@ -141,7 +141,7 @@ export default function (
   });
   const { send } = states,
     // 计算data、total、isLastPage参数
-    total = $(undefinedValue, trueValue),
+    total = $(initialData ? totalGetter(initialData) : undefinedValue, trueValue),
     pageCount = $$(
       () => {
         const totalVal = _$(total);

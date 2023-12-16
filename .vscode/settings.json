@@ -10,5 +10,6 @@
     "source.organizeImports": true,
     "source.fixAll.eslint": true // 修复所有代码
   },
+  "jest.autoRun": "off",
   "typescript.tsdk": "node_modules\\typescript\\lib"
 }
