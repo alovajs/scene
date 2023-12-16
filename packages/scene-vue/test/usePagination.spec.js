@@ -1218,4 +1218,30 @@ describe('vue => usePagination', () => {
     });
     expect(data.value).toStrictEqual([]);
   });
+
+  test('should set initial data to data and total', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+    const { data, total } = usePagination(getter, {
+      total: res => res.total,
+      data: res => res.list,
+      initialData: {
+        list: [1, 2, 3],
+        total: 3
+      },
+      immediate: false,
+      initialPage: 2,
+      initialPageSize: 4
+    });
+
+    expect(data.value).toStrictEqual([1, 2, 3]);
+    expect(total.value).toBe(3);
+  });
 });

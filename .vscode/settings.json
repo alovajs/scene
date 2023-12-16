@@ -10,5 +10,6 @@
     "source.organizeImports": "explicit",
     "source.fixAll.eslint": "explicit"
   },
+  "jest.autoRun": "off",
   "typescript.tsdk": "node_modules\\typescript\\lib"
 }
