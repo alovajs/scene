@@ -168,6 +168,11 @@ const mocks = defineMock({
     return {
       token: '123'
     };
+  },
+  '/return-query': ({ query }) => {
+    return {
+      query
+    };
   }
 });
 

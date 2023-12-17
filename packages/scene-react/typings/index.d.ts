@@ -18,6 +18,7 @@ import {
   AccessAction,
   ActionDelegationMiddleware,
   AlovaRequestAdapterUnified,
+  AutoRequestHookConfig,
   BeforeSilentSubmitHandler,
   CaptchaHookConfig,
   CaptchaReturnType,
@@ -26,6 +27,7 @@ import {
   FormHookHandler,
   FormReturnType,
   IsUnknown,
+  NotifyHandler,
   OffEventCallback,
   PaginationHookConfig,
   RetriableHookConfig,
@@ -39,7 +41,8 @@ import {
   SilentSubmitSuccessHandler,
   SQHookReturnType,
   SQRequestHookConfig,
-  TokenAuthenticationResult
+  TokenAuthenticationResult,
+  UnbindHandler
 } from './general';
 
 type ReactState<S> = [S, Dispatch<SetStateAction<S>>];
@@ -542,3 +545,37 @@ export function createServerTokenAuthentication<
 >(
   options: ServerTokenAuthenticationOptions<AlovaRequestAdapterUnified<RA>>
 ): TokenAuthenticationResult<AlovaRequestAdapterUnified<RA>>;
+
+/**
+ * 在一定条件下可以自动重新拉取数据，从而刷新页面，使用场景有：
+ * 1. 浏览器 tab 切换时拉取最新数据
+ * 2. 浏览器聚焦时拉取最新数据
+ * 3. 网络重连时拉取最新数据
+ * 4. 轮询请求
+ * 可同时配置以上的一个或多个触发条件，也可以配置节流时间来防止短时间内触发多次请求，例如 1 秒内只允许触发一次。
+ * @param handler method实例或获取函数
+ * @param config 配置参数
+ * @return useAutoRequest相关数据和操作函数
+ */
+declare function useAutoRequest<S, E, R, T, RC, RE, RH>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  config?: AutoRequestHookConfig<S, E, R, T, RC, RE, RH>
+): UseHookReturnType<S, E, R, T, RC, RE, RH>;
+declare namespace useAutoRequest {
+  function onNetwork(
+    notify: NotifyHandler,
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+  ): UnbindHandler;
+  function onPolling(
+    notify: NotifyHandler,
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+  ): UnbindHandler;
+  function onVisibility(
+    notify: NotifyHandler,
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+  ): UnbindHandler;
+  function onFocus(
+    notify: NotifyHandler,
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+  ): UnbindHandler;
+}

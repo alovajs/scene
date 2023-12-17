@@ -1,6 +1,6 @@
 import { CacheExpire, LocalCacheConfig, Method } from 'alova';
 import { BackoffPolicy } from '~/typings/general';
-import { falseValue, nullValue, ObjectCls, PromiseCls, StringCls, trueValue, undefinedValue } from './variables';
+import { ObjectCls, PromiseCls, StringCls, falseValue, nullValue, trueValue, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   promiseReject = <T>(value: T) => PromiseCls.reject(value),
@@ -130,8 +130,8 @@ export const valueObject = <T>(value: T, writable = falseValue) => ({
  * @param o 对象
  * @param attrs 值对象
  */
-export const defineProperty = (o: object, key: string | symbol, value: any, writable = falseValue) => {
-  ObjectCls.defineProperty(o, key, valueObject(value, writable));
+export const defineProperty = (o: object, key: string | symbol, value: any, isDescriptor = falseValue) => {
+  ObjectCls.defineProperty(o, key, isDescriptor ? value : valueObject(value, falseValue));
 };
 
 export type GeneralFn = (...args: any[]) => any;

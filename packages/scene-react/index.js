@@ -1,18 +1,22 @@
 import {
   $,
   $$,
+  _$,
+  _exp$,
+  _expBatch$,
   onMounted$,
+  onUnmounted$,
   upd$,
   useFlag$,
   useMemorizedCallback$,
   useRequestRefState$,
-  watch$,
-  _$,
-  _exp$,
-  _expBatch$
+  watch$
 } from '@/framework/react';
+import { defineProperty, forEach, objectKeys } from '@/helper';
+import { trueValue } from '@/helper/variables';
 import usePagination_unified from '@/hooks/pagination/usePagination';
 import useSQRequest_unified from '@/hooks/silent/useSQRequest';
+import useAutoRequest_unified from '@/hooks/useAutoRequest';
 import useCaptcha_unified from '@/hooks/useCaptcha';
 import useForm_unified from '@/hooks/useForm';
 import useRetriableRequest_unified from '@/hooks/useRetriableRequest';
@@ -74,3 +78,20 @@ export const useForm = (handler, config = {}) =>
 // 导出useRetriableRequest
 export const useRetriableRequest = (handler, config = {}) =>
   useRetriableRequest_unified(handler, config, useFlag$, useMemorizedCallback$);
+
+// 导出useAutoRequest
+export const useAutoRequest = (handler, config = {}) =>
+  useAutoRequest_unified(handler, config, onMounted$, onUnmounted$);
+forEach(objectKeys(useAutoRequest_unified), key => {
+  defineProperty(
+    useAutoRequest,
+    key,
+    {
+      get: () => useAutoRequest_unified[key],
+      set: value => {
+        return (useAutoRequest_unified[key] = value);
+      }
+    },
+    trueValue
+  );
+});
