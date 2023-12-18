@@ -1,6 +1,6 @@
-import { isFn, map, __self } from '@/helper';
+import { __self, isFn, map } from '@/helper';
 import { trueValue } from '@/helper/variables';
-import { computed, onMounted as vueOnMounted, ref, watch as vueWatch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 /**
  * 创建状态
@@ -50,7 +50,7 @@ export const upd$ = (state, newData) => (state.value = isFn(newData) ? newData(s
  * @param {Function} cb 回调函数
  */
 export const watch$ = (states, cb) => {
-  vueWatch(states, cb, {
+  watch(states, cb, {
     deep: trueValue
   });
 };
@@ -60,7 +60,15 @@ export const watch$ = (states, cb) => {
  * @param {Function} cb 回调函数
  */
 export const onMounted$ = cb => {
-  vueOnMounted(cb);
+  onMounted(cb);
+};
+
+/**
+ * 组件卸载执行
+ * @param {Function} cb 回调函数
+ */
+export const onUnmounted$ = cb => {
+  onUnmounted(cb);
 };
 
 /**

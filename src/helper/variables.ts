@@ -16,4 +16,6 @@ export const PromiseCls = Promise as typeof Promise<any>,
   DEFAUT_QUEUE_NAME = 'default',
   BEHAVIOR_SILENT = 'silent',
   BEHAVIOR_QUEUE = 'queue',
-  BEHAVIOR_STATIC = 'static';
+  BEHAVIOR_STATIC = 'static',
+  // 是否为服务端渲染，为了兼容浏览器以及非web客户端环境（如小程序），需要再判断一下process
+  isSSR = typeof window === 'undefined' && typeof process !== 'undefined';

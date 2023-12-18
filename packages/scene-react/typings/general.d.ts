@@ -769,3 +769,36 @@ type AlovaRequestAdapterUnified<
     | AlovaRequestAdapter<any, any, any, any, any>
     | ((...args: any[]) => AlovaRequestAdapter<any, any, any, any, any>) = AlovaRequestAdapter<any, any, any, any, any>
 > = RA extends AlovaRequestAdapter<any, any, any, any, any> ? RA : ReturnType<RA>;
+
+/**
+ * useAutoRequest配置
+ */
+type AutoRequestHookConfig<S, E, R, T, RC, RE, RH> = {
+  /**
+   * 轮询事件，单位ms，0表示不开启
+   * @default 0
+   */
+  pollingTime?: number;
+  /**
+   * 浏览器显示隐藏或tab切换
+   * @default true
+   */
+  enableVisibility?: boolean;
+  /**
+   * 浏览器聚焦
+   * @default true
+   */
+  enableFocus?: boolean;
+  /**
+   * 开启网络重连
+   * @default true
+   */
+  enableNetwork?: boolean;
+  /**
+   * 节流时间，单位ms，表示在节流时间内多次触发只会发送1次请求
+   * @default 1000
+   */
+  throttle?: number;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+type NotifyHandler = () => void;
+type UnbindHandler = () => void;

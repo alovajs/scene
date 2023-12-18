@@ -104,6 +104,14 @@ export const watch$ = (states, cb) => {
 export const onMounted$ = cb => useEffect(cb, []);
 
 /**
+ * 组件卸载执行
+ * @param {Function} cb 回调函数
+ */
+export const onUnmounted$ = cb => {
+  useEffect(() => cb, []);
+};
+
+/**
  * 使用标识，一般作为标识
  * 在react中每次渲染都会调用hook，如果使用基础数据每次将会获得初始值
  * 为解决这个问题，在react中需使用useRef作为标识

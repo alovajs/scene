@@ -68,6 +68,11 @@ export type Twatch$ = (states: FrameworkState<any>[], cb: () => void) => void;
 export type TonMounted$ = (cb: () => void) => void;
 
 /**
+ * @param {Function} cb 回调函数
+ */
+export type TonUnmounted$ = (cb: () => void) => void;
+
+/**
  * 使用标识，一般作为标识
  * 在react中每次渲染都会调用hook，如果使用基础数据每次将会获得初始值
  * 兼容react

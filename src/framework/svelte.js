@@ -1,6 +1,6 @@
-import { createSyncOnceRunner, isFn, map, __self } from '@/helper';
+import { __self, createSyncOnceRunner, isFn, map } from '@/helper';
 import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
-import { onMount } from 'svelte';
+import { onDestroy, onMount } from 'svelte';
 import { derived, writable } from 'svelte/store';
 
 /**
@@ -79,6 +79,14 @@ export const watch$ = (states, handler) => {
  */
 export const onMounted$ = cb => {
   onMount(cb);
+};
+
+/**
+ * 组件卸载执行
+ * @param {Function} cb 回调函数
+ */
+export const onUnmounted$ = cb => {
+  onDestroy(cb);
 };
 
 /**
