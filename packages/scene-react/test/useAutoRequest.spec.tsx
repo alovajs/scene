@@ -74,7 +74,7 @@ describe('react => useAutoRequest', () => {
       expect(screen.getByRole('data')).toHaveTextContent(JSON.stringify({ tag }));
       expect(networkFn).toHaveBeenCalledTimes(1);
       expect(focusFn).toHaveBeenCalledTimes(1);
-      expect(visibilityFn).not.toHaveBeenCalled();
+      expect(visibilityFn).toHaveBeenCalledTimes(1);
       expect(pollingFn).not.toHaveBeenCalled();
     });
 
@@ -90,11 +90,60 @@ describe('react => useAutoRequest', () => {
       expect(screen.getByRole('data')).toHaveTextContent(JSON.stringify({ tag }));
     });
 
-    // visiblitychange默认不开启
     tag = 'visibilitychange';
     mockGlobalEventEmit('visibilitychange');
     await waitFor(() => {
-      expect(screen.getByRole('data')).toHaveTextContent(JSON.stringify({ tag: 'focus' }));
+      expect(screen.getByRole('data')).toHaveTextContent(JSON.stringify({ tag }));
+    });
+  });
+
+  test("window event emitted shouldn't request when switch is closed", async () => {
+    const networkFn = jest.fn();
+    const visibilityFn = jest.fn();
+    const focusFn = jest.fn();
+    const pollingFn = jest.fn();
+    useAutoRequest.onNetwork = (...args: any) => {
+      networkFn();
+      return (originalOnNetwork as any)(...args);
+    };
+    useAutoRequest.onVisibility = (...args: any[]) => {
+      visibilityFn();
+      return (originalOnVisibility as any)(...args);
+    };
+    useAutoRequest.onFocus = (...args: any[]) => {
+      focusFn();
+      return (originalOnFocus as any)(...args);
+    };
+    useAutoRequest.onPolling = (...args: any[]) => {
+      pollingFn();
+      return (originalOnPolling as any)(...args);
+    };
+
+    let tag = 'init';
+    const Page = () => {
+      const { data } = useAutoRequest(
+        () => {
+          return alovaInst.Get('/return-query', {
+            params: { tag },
+            transformData: ({ query }: any) => query
+          });
+        },
+        {
+          enableNetwork: false,
+          enableFocus: false,
+          enableVisibility: false,
+          throttle: 0
+        }
+      );
+      return <span role="data">{JSON.stringify(data)}</span>;
+    };
+    render((<Page />) as ReactElement<any, any>);
+    await waitFor(() => {
+      expect(screen.getByRole('data')).toHaveTextContent(JSON.stringify({ tag }));
+      expect(networkFn).not.toHaveBeenCalled();
+      expect(focusFn).not.toHaveBeenCalled();
+      expect(visibilityFn).not.toHaveBeenCalled();
+      expect(pollingFn).not.toHaveBeenCalled();
     });
   });
 
@@ -203,7 +252,6 @@ describe('react => useAutoRequest', () => {
           });
         },
         {
-          enableVisibility: true,
           pollingTime: 100
         }
       );
@@ -226,17 +274,12 @@ describe('react => useAutoRequest', () => {
   test('should request once when emit multiple events within one second defaultly', async () => {
     let tag = 'init';
     const Page = () => {
-      const { data } = useAutoRequest(
-        () => {
-          return alovaInst.Get('/return-query', {
-            params: { tag },
-            transformData: ({ query }: any) => query
-          });
-        },
-        {
-          enableVisibility: true
-        }
-      );
+      const { data } = useAutoRequest(() => {
+        return alovaInst.Get('/return-query', {
+          params: { tag },
+          transformData: ({ query }: any) => query
+        });
+      });
       return <span role="data">{JSON.stringify(data)}</span>;
     };
     render((<Page />) as ReactElement<any, any>);

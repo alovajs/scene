@@ -780,7 +780,8 @@ type AutoRequestHookConfig<S, E, R, T, RC, RE, RH> = {
    */
   pollingTime?: number;
   /**
-   * 浏览器显示隐藏
+   * 浏览器显示隐藏或tab切换
+   * @default true
    */
   enableVisibility?: boolean;
   /**

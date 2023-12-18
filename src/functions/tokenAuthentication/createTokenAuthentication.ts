@@ -60,7 +60,7 @@ export const createClientTokenAuthentication = ({
 
       // 非访客和登录角色的请求会进入赋值token函数
       if (!isVisitorRole && !isLoginRole) {
-        assignToken(method);
+        await assignToken(method);
       }
       onBeforeRequest?.(method);
     },
@@ -111,7 +111,7 @@ export const createServerTokenAuthentication = ({
         }
       }
       if (!isVisitorRole && !isLoginRole) {
-        assignToken(method);
+        await assignToken(method);
       }
       onBeforeRequest?.(method);
     },

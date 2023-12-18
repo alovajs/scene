@@ -31,7 +31,7 @@ const useAutoRequest: AutoRequestHook<any, any, any, any, any, any, any> = (
   let notifiable = trueValue;
   const {
       enableFocus = trueValue,
-      enableVisibility,
+      enableVisibility = trueValue,
       enableNetwork = trueValue,
       pollingTime = 0,
       throttle = 1000
@@ -68,19 +68,15 @@ const useAutoRequest: AutoRequestHook<any, any, any, any, any, any, any> = (
   return states;
 };
 
-const windowThis = window;
-useAutoRequest.onNetwork = notify => {
-  windowThis.addEventListener('online', notify);
-  return () => windowThis.removeEventListener('online', notify);
+const on = (type: string, handler: NotifyHandler) => {
+  window.addEventListener(type, handler);
+  return () => window.removeEventListener(type, handler);
 };
-useAutoRequest.onFocus = notify => {
-  windowThis.addEventListener('focus', notify);
-  return () => windowThis.removeEventListener('focus', notify);
-};
+useAutoRequest.onNetwork = notify => on('online', notify);
+useAutoRequest.onFocus = notify => on('focus', notify);
 useAutoRequest.onVisibility = notify => {
-  const handle = () => windowThis.document.visibilityState === 'visible' && notify();
-  windowThis.addEventListener('visibilitychange', handle);
-  return () => windowThis.removeEventListener('visibilitychange', handle);
+  const handle = () => document.visibilityState === 'visible' && notify();
+  return on('visibilitychange', handle);
 };
 useAutoRequest.onPolling = (notify, config) => {
   const timer = setInterval(notify, config.pollingTime);

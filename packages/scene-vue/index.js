@@ -1,16 +1,16 @@
 import {
   $,
   $$,
-  _$,
-  _exp$,
-  _expBatch$,
   onMounted$,
   onUnmounted$,
   upd$,
   useFlag$,
   useMemorizedCallback$,
   useRequestRefState$,
-  watch$
+  watch$,
+  _$,
+  _exp$,
+  _expBatch$
 } from '@/framework/vue';
 import { defineProperty, forEach, objectKeys } from '@/helper';
 import { trueValue } from '@/helper/variables';
@@ -88,9 +88,7 @@ forEach(objectKeys(useAutoRequest_unified), key => {
     key,
     {
       get: () => useAutoRequest_unified[key],
-      set: value => {
-        return (useAutoRequest_unified[key] = value);
-      }
+      set: value => (useAutoRequest_unified[key] = value)
     },
     trueValue
   );
