@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene-svelte",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "scenario svelte hooks with alova.js",
   "main": "dist/alova-scene.esm.js",
   "module": "dist/alova-scene.esm.js",
