@@ -83,9 +83,9 @@ export default function (
     return handlerMethod;
   };
 
-  // 监听状态变化时，重置page为1
+  // 监听状态变化时，重置page为${initialPage}
   watch$(watchingStates, () => {
-    upd$(page, 1);
+    upd$(page, initialPage);
     isReset.current = trueValue;
   });
 
@@ -162,7 +162,7 @@ export default function (
 
     const pageCountVal = _$(pageCount);
     const exceedPageCount = pageCountVal
-      ? preloadPage > pageCountVal
+      ? preloadPage - initialPage + 1 > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
       ? len(listDataGetter(rawData)) < _$(pageSize)
       : falseValue;
@@ -196,7 +196,8 @@ export default function (
       const pageVal = _$(page);
       const pageCountVal = _$(pageCount);
       const dataLen = isArray(statesDataVal) ? len(statesDataVal) : 0;
-      return pageCountVal ? pageVal >= pageCountVal : dataLen < _$(pageSize);
+      //Calculate length：currentIndex - startIndex + 1
+      return pageCountVal ? pageVal - initialPage + 1 >= pageCountVal : dataLen < _$(pageSize);
     },
     _expBatch$(page, pageCount, states.data, pageSize),
     trueValue
