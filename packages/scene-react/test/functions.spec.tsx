@@ -1,4 +1,4 @@
-import { $, $$, _$, _exp$, _expBatch$, upd$, watch$ } from '@/framework/react';
+import { $, $$, upd$, watch$, _$, _exp$, _expBatch$ } from '@/framework/react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React, { ReactElement } from 'react';
@@ -97,14 +97,14 @@ describe('react framework functions', () => {
     await screen.findByText('flag');
     fireEvent.click(screen.getByRole('btnState1'));
     await screen.findByText('1');
-    expect(mockFn).toBeCalledTimes(1);
+    expect(mockFn).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('btnState2'));
     await screen.findByText('b');
-    expect(mockFn).toBeCalledTimes(2);
+    expect(mockFn).toHaveBeenCalledTimes(2);
 
     fireEvent.click(screen.getByRole('btnAllStates'));
     await screen.findByText('c');
-    expect(mockFn).toBeCalledTimes(3);
+    expect(mockFn).toHaveBeenCalledTimes(3);
   });
 });

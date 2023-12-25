@@ -30,15 +30,15 @@ describe('svelte framework functions', () => {
 
     upd$(state1, 1);
     await untilCbCalled(setTimeout, 5);
-    expect(mockFn).toBeCalledTimes(1);
+    expect(mockFn).toHaveBeenCalledTimes(1);
 
     upd$(state2, 'b');
     await untilCbCalled(setTimeout, 5);
-    expect(mockFn).toBeCalledTimes(2);
+    expect(mockFn).toHaveBeenCalledTimes(2);
 
     upd$(state1, 2);
     upd$(state2, 'c');
     await untilCbCalled(setTimeout, 5);
-    expect(mockFn).toBeCalledTimes(3);
+    expect(mockFn).toHaveBeenCalledTimes(3);
   });
 });

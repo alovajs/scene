@@ -49,7 +49,7 @@ describe('vue => usePagination', () => {
     // 检查预加载缓存
     await untilCbCalled(setTimeout, 100);
     let cache = queryCache(getter(page.value + 1, pageSize.value));
-    expect(cache.list).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    expect(cache.list).toStrictEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     cache = setCache(getter(page.value - 1, pageSize.value));
     expect(cache).toBeUndefined();
 
@@ -141,7 +141,7 @@ describe('vue => usePagination', () => {
 
     page.value++;
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    expect(data.value).toStrictEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
   });
 
   test('paginated data with conditions search', async () => {
@@ -162,20 +162,20 @@ describe('vue => usePagination', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(data.value[0]).toEqual({ id: 0, word: 'aaa' });
-    expect(data.value[data.value.length - 1]).toEqual({ id: 9, word: 'aaa' });
+    expect(data.value[0]).toStrictEqual({ id: 0, word: 'aaa' });
+    expect(data.value[data.value.length - 1]).toStrictEqual({ id: 9, word: 'aaa' });
     expect(total.value).toBe(300);
 
     page.value++;
     await untilCbCalled(onSuccess);
-    expect(data.value[0]).toEqual({ id: 10, word: 'bbb' });
-    expect(data.value[data.value.length - 1]).toEqual({ id: 19, word: 'bbb' });
+    expect(data.value[0]).toStrictEqual({ id: 10, word: 'bbb' });
+    expect(data.value[data.value.length - 1]).toStrictEqual({ id: 19, word: 'bbb' });
     expect(total.value).toBe(300);
 
     keyword.value = 'bbb';
     await untilCbCalled(onSuccess);
     data.value.forEach(({ word }) => expect(word).toBe('bbb'));
-    expect(data.value[0]).toEqual({ id: 1, word: 'bbb' });
+    expect(data.value[0]).toStrictEqual({ id: 1, word: 'bbb' });
     expect(total.value).toBe(100);
   });
 
@@ -205,7 +205,7 @@ describe('vue => usePagination', () => {
 
     refresh(); // 未传入参数时将默认刷新当前页，当前页为3
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([200, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
+    expect(data.value).toStrictEqual([200, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
 
     setMockListData(data => {
       data.splice(0, 1, 100);
@@ -214,7 +214,7 @@ describe('vue => usePagination', () => {
     refresh(1); // 在翻页模式下，不是当前页会使用fetch，因此只能使用setTimeout
     await untilCbCalled(setTimeout, 100);
     setCache(getter(1, pageSize.value), cache => {
-      expect(cache.list).toEqual([100, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      expect(cache.list).toStrictEqual([100, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
   });
 
@@ -243,7 +243,7 @@ describe('vue => usePagination', () => {
 
     let totalPrev = total.value;
     insert(300, 0);
-    expect(data.value).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    expect(data.value).toStrictEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
     expect(total.value).toBe((totalPrev = totalPrev + 1));
     setMockListData(data => {
       data.splice(10, 0, 300);
@@ -251,35 +251,42 @@ describe('vue => usePagination', () => {
     });
     // 检查当前页缓存
     cache = queryCache(getter(page.value, pageSize.value));
-    expect(cache.list).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    expect(cache.list).toStrictEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
     // 检查是否重新fetch了前后一页的数据
     cache = queryCache(getter(page.value - 1, pageSize.value));
-    expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(cache.list).toStrictEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     cache = queryCache(getter(page.value + 1, pageSize.value));
     // insert时会将缓存末尾去掉，因此还是剩下10项
-    expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
+    expect(cache.list).toStrictEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
     await untilCbCalled(setTimeout, 150);
 
     // 检查是否重新fetch了前后一页的数据
     cache = queryCache(getter(page.value - 1, pageSize.value));
-    expect(cache.list).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(cache.list).toStrictEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     cache = queryCache(getter(page.value + 1, pageSize.value));
     // 重新fetch后还是保持pageSize项数据
-    expect(cache.list).toEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
+    expect(cache.list).toStrictEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
 
     insert(400);
     insert(500, 2);
     insert(600, pageSize.value - 1);
     expect(total.value).toBe((totalPrev = totalPrev + 3));
-    expect(data.value).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
+    expect(data.value).toStrictEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
     // 当前页缓存要保持一致
     cache = queryCache(getter(page.value, pageSize.value));
-    expect(cache.list).toEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
+    expect(cache.list).toStrictEqual([400, 300, 500, 10, 11, 12, 13, 14, 15, 600]);
 
     const mockFn2 = jest.fn();
     onFetchSuccess(mockFn2);
     await untilCbCalled(setTimeout, 100);
-    expect(mockFn2).toBeCalledTimes(1); // 只会重新预加载下一页数据
+    expect(mockFn2).toHaveBeenCalledTimes(1); // 只会重新预加载下一页数据
+
+    // 翻到最后一页后，再插入数据不会再去除一条数据
+    page.value = 31;
+    await untilCbCalled(setTimeout, 150);
+    expect(data.value).toStrictEqual([299]);
+    insert(2000);
+    expect(data.value).toStrictEqual([2000, 299]);
   });
 
   // 当操作了数据重新fetch但还未响应时，翻页到了fetch的页，此时也需要更新界面
@@ -349,17 +356,17 @@ describe('vue => usePagination', () => {
     }).toThrowError();
 
     replace(300, 0);
-    expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(data.value).toStrictEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     // 检查当前页缓存
     let cache = queryCache(getter(page.value, pageSize.value));
-    expect(cache.list).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(cache.list).toStrictEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
     // 正向顺序替换
     replace(400, 8);
-    expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 6, 7, 400, 9]);
+    expect(data.value).toStrictEqual([300, 1, 2, 3, 4, 5, 6, 7, 400, 9]);
     // 逆向顺序替换
     replace(500, -4);
-    expect(data.value).toEqual([300, 1, 2, 3, 4, 5, 500, 7, 400, 9]);
+    expect(data.value).toStrictEqual([300, 1, 2, 3, 4, 5, 500, 7, 400, 9]);
   });
 
   test('paginated data replace item by another item', async () => {
@@ -428,7 +435,7 @@ describe('vue => usePagination', () => {
       return data;
     });
     insert(300);
-    expect(data.value).toEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    expect(data.value).toStrictEqual([300, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
 
     // 预加载设置为false了，因此不会fetch前后一页的数据
     await untilCbCalled(setTimeout, 100);
@@ -508,11 +515,11 @@ describe('vue => usePagination', () => {
       return data;
     });
 
-    expect(data.value).toEqual([4, 7, 8, 9]);
+    expect(data.value).toStrictEqual([4, 7, 8, 9]);
     expect(total.value).toBe((totalPrev = totalPrev - 2));
     // 当前页缓存要保持一致
     cache = queryCache(getter(page.value, pageSize.value));
-    expect(cache.list).toEqual([4, 7, 8, 9]);
+    expect(cache.list).toStrictEqual([4, 7, 8, 9]);
 
     const mockFn = jest.fn();
     onFetchSuccess(mockFn);
@@ -524,21 +531,21 @@ describe('vue => usePagination', () => {
       data.splice(6, 1);
       return data;
     });
-    expect(data.value).toEqual([4, 7, 9, 10]);
+    expect(data.value).toStrictEqual([4, 7, 9, 10]);
     expect(total.value).toBe((totalPrev = totalPrev - 1));
     // 检查下一页缓存
     cache = queryCache(getter(page.value + 1, pageSize.value));
-    expect(cache.list).toEqual([11]); // 已经被使用了3项了
+    expect(cache.list).toStrictEqual([11]); // 已经被使用了3项了
 
     await untilCbCalled(setTimeout, 200); // 等待重新fetch
-    expect(data.value).toEqual([4, 7, 9, 10]);
-    expect(mockFn).toBeCalledTimes(1); // 有一次下页的fetch被取消，因此只有一次
+    expect(data.value).toStrictEqual([4, 7, 9, 10]);
+    expect(mockFn).toHaveBeenCalledTimes(1); // 有一次下页的fetch被取消，因此只有一次
     // 检查是否重新fetch了前后一页的数据
     await untilCbCalled(setTimeout, 100);
     cache = queryCache(getter(page.value - 1, pageSize.value));
-    expect(cache.list).toEqual([0, 1, 2, 3]);
+    expect(cache.list).toStrictEqual([0, 1, 2, 3]);
     cache = queryCache(getter(page.value + 1, pageSize.value));
-    expect(cache.list).toEqual([11, 12, 13, 14]);
+    expect(cache.list).toStrictEqual([11, 12, 13, 14]);
 
     // 同步操作的项数超过pageSize时，移除的数据将被恢复，并重新请求当前页数据
     remove(0);
@@ -546,7 +553,7 @@ describe('vue => usePagination', () => {
     remove(0);
     remove(0);
     remove(0);
-    expect(data.value).toEqual([4, 7, 9, 10]); // 数据被恢复
+    expect(data.value).toStrictEqual([4, 7, 9, 10]); // 数据被恢复
     setMockListData(data => {
       // 模拟数据中同步删除
       data.splice(4, 5);
@@ -556,13 +563,13 @@ describe('vue => usePagination', () => {
     onFetchSuccess(mockFn2);
 
     await untilCbCalled(setTimeout, 100);
-    expect(data.value).toEqual([12, 13, 14, 15]);
+    expect(data.value).toStrictEqual([12, 13, 14, 15]);
     expect(total.value).toBe((totalPrev = totalPrev - 5));
-    expect(mockFn2).toBeCalledTimes(1); // 只有下页的预加载触发
+    expect(mockFn2).toHaveBeenCalledTimes(1); // 只有下页的预加载触发
     cache = queryCache(getter(page.value - 1, pageSize.value));
-    expect(cache.list).toEqual([0, 1, 2, 3]);
+    expect(cache.list).toStrictEqual([0, 1, 2, 3]);
     cache = queryCache(getter(page.value + 1, pageSize.value));
-    expect(cache.list).toEqual([16, 17, 18, 19]);
+    expect(cache.list).toStrictEqual([16, 17, 18, 19]);
   });
 
   test('paginated data remove item by another item', async () => {
@@ -639,16 +646,16 @@ describe('vue => usePagination', () => {
     page.value++;
 
     await untilCbCalled(setTimeout, 5);
-    expect(data.value).toEqual([10, 11]); // 有两项用于填补前一页数据了
+    expect(data.value).toStrictEqual([10, 11]); // 有两项用于填补前一页数据了
     expect(total.value).toBe(298);
 
     await untilCbCalled(setTimeout, 200); // 等待fetch响应
-    expect(data.value).toEqual([10, 11, 12, 13]);
+    expect(data.value).toStrictEqual([10, 11, 12, 13]);
 
     // 再次返回前一页，移除的数据不应该存在
     page.value--;
     await untilCbCalled(setTimeout, 5);
-    expect(data.value).toEqual([4, 7, 8, 9]);
+    expect(data.value).toStrictEqual([4, 7, 8, 9]);
   });
 
   test('should use new total data when remove items and go to adjacent page', async () => {
@@ -740,11 +747,11 @@ describe('vue => usePagination', () => {
       data.splice(9, 1);
       return data;
     });
-    expect(data.value).toEqual([8]);
+    expect(data.value).toStrictEqual([8]);
     expect(total.value).toBe((totalPrev = totalPrev - 1));
     // 当前页缓存要保持一致
     setCache(getter(page.value, pageSize.value), cache => {
-      expect(cache.list).toEqual([8]);
+      expect(cache.list).toStrictEqual([8]);
     });
 
     remove(0);
@@ -754,7 +761,7 @@ describe('vue => usePagination', () => {
     });
     await untilCbCalled(onSuccess); // 最后一页没有数据项了，自动设置为前一页
     expect(page.value).toBe(2);
-    expect(data.value).toEqual([4, 5, 6, 7]);
+    expect(data.value).toStrictEqual([4, 5, 6, 7]);
     expect(total.value).toBe(totalPrev - 1);
   });
 
@@ -789,7 +796,7 @@ describe('vue => usePagination', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([4, 6, 7, 8]);
+    expect(data.value).toStrictEqual([4, 6, 7, 8]);
     // 当前页缓存要保持一致
     let cache = queryCache(getter(page.value, pageSize.value));
     expect(cache).toBeUndefined();
@@ -800,7 +807,7 @@ describe('vue => usePagination', () => {
       data.splice(4, 0, 100);
       return data;
     });
-    expect(data.value).toEqual([100, 4, 6, 7]);
+    expect(data.value).toStrictEqual([100, 4, 6, 7]);
 
     // 替换数据
     replace(200, 1);
@@ -808,7 +815,7 @@ describe('vue => usePagination', () => {
       data.splice(5, 1, 200);
       return data;
     });
-    expect(data.value).toEqual([100, 200, 6, 7]);
+    expect(data.value).toStrictEqual([100, 200, 6, 7]);
     // method没有设置缓存时，不会触发数据拉取
     expect(mockFn).not.toBeCalled();
   });
@@ -885,19 +892,19 @@ describe('vue => usePagination', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(data.value[0]).toEqual({ id: 0, word: 'aaa' });
-    expect(data.value[data.value.length - 1]).toEqual({ id: 9, word: 'aaa' });
+    expect(data.value[0]).toStrictEqual({ id: 0, word: 'aaa' });
+    expect(data.value[data.value.length - 1]).toStrictEqual({ id: 9, word: 'aaa' });
 
     page.value++;
     await untilCbCalled(onSuccess);
     expect(data.value.length).toBe(20);
-    expect(data.value[0]).toEqual({ id: 0, word: 'aaa' });
-    expect(data.value[data.value.length - 1]).toEqual({ id: 19, word: 'bbb' });
+    expect(data.value[0]).toStrictEqual({ id: 0, word: 'aaa' });
+    expect(data.value[data.value.length - 1]).toStrictEqual({ id: 19, word: 'bbb' });
 
     keyword.value = 'bbb';
     await untilCbCalled(onSuccess);
     data.value.forEach(({ word }) => expect(word).toBe('bbb'));
-    expect(data.value[0]).toEqual({ id: 1, word: 'bbb' });
+    expect(data.value[0]).toStrictEqual({ id: 1, word: 'bbb' });
     expect(data.value.length).toBe(10);
   });
 
@@ -1027,7 +1034,7 @@ describe('vue => usePagination', () => {
       data.splice(6, 1, 200);
       return data;
     });
-    expect(data.value).toEqual([100, 4, 200, 8]);
+    expect(data.value).toStrictEqual([100, 4, 200, 8]);
     expect(total.value).toBeUndefined();
     expect(pageCount.value).toBeUndefined();
 
@@ -1054,7 +1061,7 @@ describe('vue => usePagination', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([0, 1, 2, 3]);
+    expect(data.value).toStrictEqual([0, 1, 2, 3]);
 
     // 下一页没有缓存的情况下，将会重新请求刷新列表
     remove(0);
@@ -1065,12 +1072,12 @@ describe('vue => usePagination', () => {
       return data;
     });
 
-    expect(data.value).toEqual([0, 1, 2, 3]);
+    expect(data.value).toStrictEqual([0, 1, 2, 3]);
     const mockFn = jest.fn();
     onFetchSuccess(mockFn);
 
     await untilCbCalled(setTimeout, 100);
-    expect(data.value).toEqual([2, 3, 4, 5]);
+    expect(data.value).toStrictEqual([2, 3, 4, 5]);
     expect(mockFn.mock.calls.length).toBe(0);
     setCache(getter(page.value - 1, pageSize.value), cache => {
       expect(!!cache).toBeFalsy();
@@ -1098,22 +1105,22 @@ describe('vue => usePagination', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([0, 1, 2, 3]);
+    expect(data.value).toStrictEqual([0, 1, 2, 3]);
     setMockListData(data => {
       data.splice(0, 1, 100);
       return data;
     });
     reload();
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([100, 1, 2, 3]);
+    expect(data.value).toStrictEqual([100, 1, 2, 3]);
 
     page.value++;
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([100, 1, 2, 3, 4, 5, 6, 7]);
+    expect(data.value).toStrictEqual([100, 1, 2, 3, 4, 5, 6, 7]);
 
     reload();
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([100, 1, 2, 3]);
+    expect(data.value).toStrictEqual([100, 1, 2, 3]);
   });
 
   test("load more mode paginated data don't need to preload when go to last page", async () => {
@@ -1135,11 +1142,11 @@ describe('vue => usePagination', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([4, 5, 6, 7]);
+    expect(data.value).toStrictEqual([4, 5, 6, 7]);
 
     page.value++;
     await untilCbCalled(onSuccess);
-    expect(data.value).toEqual([4, 5, 6, 7, 8, 9]);
+    expect(data.value).toStrictEqual([4, 5, 6, 7, 8, 9]);
 
     // 已经到最后一页了，不需要再预加载下一页数据了
     await untilCbCalled(setTimeout, 100);
@@ -1171,7 +1178,7 @@ describe('vue => usePagination', () => {
     const successFn = jest.fn();
     onSuccess(successFn);
     await untilCbCalled(onSuccess);
-    expect(successFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
 
     accessAction('test_page', handlers => {
       expect(handlers.send).toBeInstanceOf(Function);
@@ -1185,7 +1192,7 @@ describe('vue => usePagination', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(successFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
   });
 
   test('should update list data when call update function that returns in hook', async () => {

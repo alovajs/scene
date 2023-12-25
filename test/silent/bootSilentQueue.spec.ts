@@ -266,13 +266,13 @@ describe('boot silent queue', () => {
     await untilCbCalled(setTimeout, 200);
 
     // 局部调用情况
-    expect(methodResolveFn).toBeCalledTimes(2);
-    expect(methodRejectFn).toBeCalledTimes(0);
-    expect(methodFallbackFn).toBeCalledTimes(0);
-    expect(beforeMockFn).toBeCalledTimes(2);
+    expect(methodResolveFn).toHaveBeenCalledTimes(2);
+    expect(methodRejectFn).toHaveBeenCalledTimes(0);
+    expect(methodFallbackFn).toHaveBeenCalledTimes(0);
+    expect(beforeMockFn).toHaveBeenCalledTimes(2);
 
     // 全局回调调用情况
-    expect(successMockFn).toBeCalledTimes(2); // 两个silentMethod分别触发一次
+    expect(successMockFn).toHaveBeenCalledTimes(2); // 两个silentMethod分别触发一次
   });
 
   test('execute queue that the first is undefined response', async () => {

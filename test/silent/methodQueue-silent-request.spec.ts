@@ -79,9 +79,9 @@ describe('silent method request in queue with silent behavior', () => {
 
     await pms;
     // 成功了，onFallback和onRetry都不会触发
-    expect(fallbackMockFn).toBeCalledTimes(0);
-    expect(retryMockFn).toBeCalledTimes(0);
-    expect(successMockFn).toBeCalledTimes(1);
+    expect(fallbackMockFn).toHaveBeenCalledTimes(0);
+    expect(retryMockFn).toHaveBeenCalledTimes(0);
+    expect(successMockFn).toHaveBeenCalledTimes(1);
   });
 
   test('should emit success and not emit fallback after retry one times and success', async () => {
@@ -144,9 +144,9 @@ describe('silent method request in queue with silent behavior', () => {
 
     await pms;
     // 成功了，onFallback和onRetry都不会触发
-    expect(fallbackMockFn).toBeCalledTimes(0);
-    expect(retryMockFn).toBeCalledTimes(1);
-    expect(successMockFn).toBeCalledTimes(1);
+    expect(fallbackMockFn).toHaveBeenCalledTimes(0);
+    expect(retryMockFn).toHaveBeenCalledTimes(1);
+    expect(successMockFn).toHaveBeenCalledTimes(1);
   });
 
   test('should emit fallback event when retry times are reached', async () => {
@@ -236,10 +236,10 @@ describe('silent method request in queue with silent behavior', () => {
 
     await pms;
     // 有fallback回调时，不会触发nextRound
-    expect(fallbackMockFn).toBeCalledTimes(1);
-    expect(retryMockFn).toBeCalledTimes(2);
-    expect(errorMockFn).toBeCalledTimes(3); // 每次请求错误都会调用
-    expect(failMockFn).toBeCalledTimes(1);
+    expect(fallbackMockFn).toHaveBeenCalledTimes(1);
+    expect(retryMockFn).toHaveBeenCalledTimes(2);
+    expect(errorMockFn).toHaveBeenCalledTimes(3); // 每次请求错误都会调用
+    expect(failMockFn).toHaveBeenCalledTimes(1);
     expect(executeOrder).toEqual(['retried_1', 'retried_2', 'fallback']);
     // 卸载全局事件避免污染其他用例
     offError();
@@ -287,9 +287,9 @@ describe('silent method request in queue with silent behavior', () => {
     });
 
     await pms;
-    expect(fallbackMockFn).toBeCalledTimes(1);
+    expect(fallbackMockFn).toHaveBeenCalledTimes(1);
     // 失败错误未匹配retryError，因此不会重试，直接调用fallback
-    expect(retryMockFn).toBeCalledTimes(0);
+    expect(retryMockFn).toHaveBeenCalledTimes(0);
   });
 
   test('should catch the error that throws in responded interception', async () => {
@@ -347,8 +347,8 @@ describe('silent method request in queue with silent behavior', () => {
     });
 
     await pms;
-    expect(fallbackMockFn).toBeCalledTimes(1);
-    expect(retryMockFn).toBeCalledTimes(2);
+    expect(fallbackMockFn).toHaveBeenCalledTimes(1);
+    expect(retryMockFn).toHaveBeenCalledTimes(2);
   });
 
   test('should multiple times delay request with multiplier set', async () => {
@@ -403,8 +403,8 @@ describe('silent method request in queue with silent behavior', () => {
     });
 
     await pms;
-    expect(fallbackMockFn).toBeCalledTimes(1);
-    expect(retryMockFn).toBeCalledTimes(2);
+    expect(fallbackMockFn).toHaveBeenCalledTimes(1);
+    expect(retryMockFn).toHaveBeenCalledTimes(2);
   });
 
   test('should add 0 to endQuiver random delay when only set endQuiver', async () => {
