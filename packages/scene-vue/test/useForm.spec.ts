@@ -312,7 +312,7 @@ describe('vue => useForm', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
   });
 });

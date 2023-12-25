@@ -30,8 +30,8 @@ describe('vue => subscriber middleware', () => {
     await untilCbCalled(onSuccess);
     expect(loading.value).toBeFalsy();
     expect(data.value).toStrictEqual({ id: 10 });
-    expect(successFn).toBeCalledTimes(1);
-    expect(completeFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
 
     await new Promise<void>(resolve => {
       accessAction('abc', async ({ send, update, abort }) => {
@@ -41,8 +41,8 @@ describe('vue => subscriber middleware', () => {
       });
     });
     expect(data.value).toStrictEqual({ id: 10, name: 'aa' });
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
   });
 
   test('should send by notification with keyword symbol', async () => {
@@ -64,8 +64,8 @@ describe('vue => subscriber middleware', () => {
     await untilCbCalled(onSuccess);
     expect(loading.value).toBeFalsy();
     expect(data.value).toStrictEqual({ id: 10 });
-    expect(successFn).toBeCalledTimes(1);
-    expect(completeFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
 
     await new Promise<void>(resolve => {
       accessAction(sym, async ({ send }) => {
@@ -73,8 +73,8 @@ describe('vue => subscriber middleware', () => {
       });
     });
     expect(data.value).toStrictEqual({ id: 10, name: 'aa' });
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
   });
 
   test('should send by notification with keyword number', async () => {
@@ -96,8 +96,8 @@ describe('vue => subscriber middleware', () => {
     await untilCbCalled(onSuccess);
     expect(loading.value).toBeFalsy();
     expect(data.value).toStrictEqual({ id: 10 });
-    expect(successFn).toBeCalledTimes(1);
-    expect(completeFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
 
     await new Promise<void>(resolve => {
       accessAction(num, async ({ send }) => {
@@ -105,8 +105,8 @@ describe('vue => subscriber middleware', () => {
       });
     });
     expect(data.value).toStrictEqual({ id: 10, name: 'aa' });
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
   });
 
   test('should send multiple request by notification', async () => {
@@ -130,8 +130,8 @@ describe('vue => subscriber middleware', () => {
     state2.onComplete(completeFn);
 
     await Promise.all([untilCbCalled(state1.onSuccess), untilCbCalled(state2.onSuccess)]);
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
 
     const senders = [] as Promise<any>[];
     accessAction(str, async ({ send }, index) => {
@@ -140,8 +140,8 @@ describe('vue => subscriber middleware', () => {
     await Promise.all(senders);
     expect(state1.data.value).toStrictEqual({ id: 10, name: 'aa0' });
     expect(state2.data.value).toStrictEqual({ id: 10, name: 'aa1' });
-    expect(successFn).toBeCalledTimes(4);
-    expect(completeFn).toBeCalledTimes(4);
+    expect(successFn).toHaveBeenCalledTimes(4);
+    expect(completeFn).toHaveBeenCalledTimes(4);
   });
 
   test('should send multiple request by notification', async () => {
@@ -164,8 +164,8 @@ describe('vue => subscriber middleware', () => {
     state2.onComplete(completeFn);
 
     await Promise.all([untilCbCalled(state1.onSuccess), untilCbCalled(state2.onSuccess)]);
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
 
     const senders = [] as Promise<any>[];
     accessAction(/^aaa/, async ({ send }, index) => {
@@ -174,8 +174,8 @@ describe('vue => subscriber middleware', () => {
     await Promise.all(senders);
     expect(state1.data.value).toStrictEqual({ id: 10, name: 'aa0' });
     expect(state2.data.value).toStrictEqual({ id: 10, name: 'aa1' });
-    expect(successFn).toBeCalledTimes(4);
-    expect(completeFn).toBeCalledTimes(4);
+    expect(successFn).toHaveBeenCalledTimes(4);
+    expect(completeFn).toHaveBeenCalledTimes(4);
   });
 
   test('should throws a error when not match any handler', () => {
@@ -219,8 +219,8 @@ describe('vue => subscriber middleware', () => {
     await untilCbCalled(onSuccess);
     expect(loading.value).toBeFalsy();
     expect(data.value).toStrictEqual({ id: 10 });
-    expect(successFn).toBeCalledTimes(1);
-    expect(completeFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
 
     await new Promise<void>(resolve => {
       accessAction('watcher-aaa', async ({ send }) => {
@@ -228,8 +228,8 @@ describe('vue => subscriber middleware', () => {
       });
     });
     expect(data.value).toStrictEqual({ id: 10, name: 'watcher-aaa' });
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
   });
 
   test('should fetch data by notification when use useFetcher', async () => {
@@ -249,15 +249,15 @@ describe('vue => subscriber middleware', () => {
     fetch(methodInstance({ fetch: 1 }));
 
     await untilCbCalled(onSuccess);
-    expect(successFn).toBeCalledTimes(1);
-    expect(completeFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
 
     accessAction('fetcher-aaa', async ({ fetch }) => {
       fetch({ fetch: 'fetcher-aaa' });
     });
 
     await untilCbCalled(onSuccess);
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
   });
 });

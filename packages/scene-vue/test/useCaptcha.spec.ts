@@ -97,8 +97,8 @@ describe('vue => useCaptcha', () => {
     jest.runOnlyPendingTimers();
     await promise;
 
-    expect(successFn).toBeCalledTimes(1);
-    expect(completeFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
 
     jest.advanceTimersByTime(6000); // 让倒计时完成
     accessAction('test_page', handlers => {
@@ -110,8 +110,8 @@ describe('vue => useCaptcha', () => {
     await untilCbCalled(setTimeoutFn, 10);
     jest.runOnlyPendingTimers();
     await promise;
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
 
     jest.useRealTimers();
   });

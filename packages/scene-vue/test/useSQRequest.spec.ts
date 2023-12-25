@@ -297,7 +297,7 @@ describe('vue => useSQRequest', () => {
     await untilCbCalled(setTimeout, 0);
     expect(silentQueueMap[queue]?.[0]?.active).toBeTruthy();
     await untilCbCalled(setTimeout, 500);
-    expect(successMockFn).toBeCalledTimes(1);
+    expect(successMockFn).toHaveBeenCalledTimes(1);
   });
 
   test('should be the same as useRequest when behavior is static', async () => {
@@ -328,7 +328,7 @@ describe('vue => useSQRequest', () => {
       any,
       any
     >;
-    expect(pushMockFn).toBeCalledTimes(0);
+    expect(pushMockFn).toHaveBeenCalledTimes(0);
     expect(loading.value).toBeFalsy();
     expect(data.value).toStrictEqual({
       total: 300,
@@ -728,8 +728,8 @@ describe('vue => useSQRequest', () => {
     onComplete(completeFn);
 
     await untilCbCalled(onSuccess);
-    expect(successFn).toBeCalledTimes(1);
-    expect(completeFn).toBeCalledTimes(1);
+    expect(successFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
 
     accessAction('test_page', handlers => {
       expect(handlers.send).toBeInstanceOf(Function);
@@ -738,7 +738,7 @@ describe('vue => useSQRequest', () => {
     });
 
     await untilCbCalled(onSuccess);
-    expect(successFn).toBeCalledTimes(2);
-    expect(completeFn).toBeCalledTimes(2);
+    expect(successFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
   });
 });

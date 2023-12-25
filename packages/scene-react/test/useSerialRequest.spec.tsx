@@ -90,9 +90,9 @@ describe('react => useSerialRequest', () => {
     render((<Page />) as ReactElement<any, any>);
     await waitFor(() => {
       expect(mockErrorFn).not.toBeCalled();
-      expect(mockCompleteFn).toBeCalledTimes(1);
-      expect(mockSuccessFn).toBeCalledTimes(1);
-      expect(methodHandlerMockFn).toBeCalledTimes(2);
+      expect(mockCompleteFn).toHaveBeenCalledTimes(1);
+      expect(mockSuccessFn).toHaveBeenCalledTimes(1);
+      expect(methodHandlerMockFn).toHaveBeenCalledTimes(2);
       expect(screen.getByRole('status')).toHaveTextContent('loaded');
       expect(screen.getByRole('error')).toHaveTextContent('');
       expect(screen.getByRole('data')).toHaveTextContent(
@@ -181,9 +181,9 @@ describe('react => useSerialRequest', () => {
     fireEvent.click(screen.getByRole('button'));
     await waitFor(() => {
       expect(mockErrorFn).not.toBeCalled();
-      expect(mockCompleteFn).toBeCalledTimes(1);
-      expect(mockSuccessFn).toBeCalledTimes(1);
-      expect(methodHandlerMockFn).toBeCalledTimes(3);
+      expect(mockCompleteFn).toHaveBeenCalledTimes(1);
+      expect(mockSuccessFn).toHaveBeenCalledTimes(1);
+      expect(methodHandlerMockFn).toHaveBeenCalledTimes(3);
       expect(screen.getByRole('status')).toHaveTextContent('loaded');
       expect(screen.getByRole('error')).toHaveTextContent('');
       expect(screen.getByRole('data')).toHaveTextContent(
@@ -240,10 +240,10 @@ describe('react => useSerialRequest', () => {
 
     render((<Page />) as ReactElement<any, any>);
     await waitFor(() => {
-      expect(mockErrorFn).toBeCalledTimes(1);
-      expect(mockCompleteFn).toBeCalledTimes(1);
+      expect(mockErrorFn).toHaveBeenCalledTimes(1);
+      expect(mockCompleteFn).toHaveBeenCalledTimes(1);
       expect(mockSuccessFn).not.toBeCalled();
-      expect(methodHandlerMockFn).toBeCalledTimes(1); // 错误了就不会再继续往下执行了
+      expect(methodHandlerMockFn).toHaveBeenCalledTimes(1); // 错误了就不会再继续往下执行了
       expect(screen.getByRole('error')).toHaveTextContent('server error');
       expect(screen.getByRole('data')).toHaveTextContent('');
     });

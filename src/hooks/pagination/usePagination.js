@@ -204,9 +204,9 @@ export default function (
 
   // 更新当前页缓存
   const updateCurrentPageCache = () => {
-    const snapShotItem = getSnapshotMethods(_$(page));
-    snapShotItem &&
-      setCache(snapShotItem.entity, rawData => {
+    const snapshotItem = getSnapshotMethods(_$(page));
+    snapshotItem &&
+      setCache(snapshotItem.entity, rawData => {
         // 当关闭缓存时，rawData为undefined
         if (rawData) {
           const cachedListData = listDataGetter(rawData) || [];
@@ -224,8 +224,8 @@ export default function (
   const fetchingRef = useRequestRefState$(fetching);
   onFetchSuccess(({ method, data: rawData }) => {
     // 处理当fetch还没响应时就翻页到fetch对应的页码时，需要手动更新列表数据
-    const snapShotItem = getSnapshotMethods(_$(page));
-    if (snapShotItem && getMethodKey(snapShotItem.entity) === getMethodKey(method)) {
+    const snapshotItem = getSnapshotMethods(_$(page));
+    if (snapshotItem && getMethodKey(snapshotItem.entity) === getMethodKey(method)) {
       // 如果追加数据，才更新data
       const listData = listDataGetter(rawData); // 更新data参数
       if (append) {
@@ -379,11 +379,12 @@ export default function (
    */
   const insert = useMemorizedCallback$((item, position = 0) => {
     const index = isNumber(position) ? position : getItemIndex(position) + 1;
-    const pageVal = _$(page);
     let popItem = undefinedValue;
     upd$(data, rawd => {
-      // 先从末尾去掉一项数据，保证操作页的数量为pageSize
-      popItem = rawd.pop();
+      // 当前展示的项数量刚好是pageSize的倍数时，才需要去掉一项数据，保证操作页的数量为pageSize
+      if (len(_$(data)) % _$(pageSize) === 0) {
+        popItem = rawd.pop();
+      }
       // 插入位置为空默认插到最前面
       splice(rawd, index, 0, item);
       return rawd;
@@ -393,19 +394,20 @@ export default function (
     // 当前页的缓存同步更新
     updateCurrentPageCache();
 
-    // 将pop的项放到下一页缓存的头部，与remove的操作保持一致
+    // 如果有pop项，将它放到下一页缓存的头部，与remove的操作保持一致
     // 这样在同步调用insert和remove时表现才一致
-    const nextPage = pageVal + 1;
-    const snapShotItem = getSnapshotMethods(nextPage);
-    snapShotItem &&
-      setCache(snapShotItem.entity, rawData => {
-        if (rawData) {
-          const cachedListData = listDataGetter(rawData) || [];
-          cachedListData.unshift(popItem);
-          cachedListData.pop();
-          return rawData;
-        }
-      });
+    if (popItem) {
+      const snapshotItem = getSnapshotMethods(_$(page) + 1);
+      snapshotItem &&
+        setCache(snapshotItem.entity, rawData => {
+          if (rawData) {
+            const cachedListData = listDataGetter(rawData) || [];
+            cachedListData.unshift(popItem);
+            cachedListData.pop();
+            return rawData;
+          }
+        });
+    }
 
     // 插入项后也需要让缓存失效，以免不同条件下缓存未更新
     resetCache();
@@ -422,10 +424,10 @@ export default function (
     indexAssert(index, _$(data));
     const pageVal = _$(page);
     const nextPage = pageVal + 1;
-    const snapShotItem = getSnapshotMethods(nextPage);
+    const snapshotItem = getSnapshotMethods(nextPage);
     let fillingItem = undefinedValue; // 补位数据项
-    snapShotItem &&
-      setCache(snapShotItem.entity, rawData => {
+    snapshotItem &&
+      setCache(snapshotItem.entity, rawData => {
         if (rawData) {
           const cachedListData = listDataGetter(rawData);
           // 从下一页列表的头部开始取补位数据

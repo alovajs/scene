@@ -94,12 +94,12 @@ describe('react => useRetriableRequest', () => {
 
     await waitFor(
       () => {
-        expect(mockErrorFn).toBeCalledTimes(4);
-        expect(mockRetryFn).toBeCalledTimes(3);
-        expect(mockCompleteFn).toBeCalledTimes(4);
+        expect(mockErrorFn).toHaveBeenCalledTimes(4);
+        expect(mockRetryFn).toHaveBeenCalledTimes(3);
+        expect(mockCompleteFn).toHaveBeenCalledTimes(4);
         expect(mockSuccessFn).not.toBeCalled();
-        expect(mockFailFn).toBeCalledTimes(1);
-        expect(mockLoadingChangeFn).toBeCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
+        expect(mockFailFn).toHaveBeenCalledTimes(1);
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
       },
       {
         timeout: 4000
@@ -137,10 +137,10 @@ describe('react => useRetriableRequest', () => {
     render((<Page />) as ReactElement<any, any>);
     await waitFor(
       () => {
-        expect(mockRetryFn).toBeCalledTimes(1);
-        expect(mockErrorFn).toBeCalledTimes(1);
-        expect(mockCompleteFn).toBeCalledTimes(2);
-        expect(mockSuccessFn).toBeCalledTimes(1);
+        expect(mockRetryFn).toHaveBeenCalledTimes(1);
+        expect(mockErrorFn).toHaveBeenCalledTimes(1);
+        expect(mockCompleteFn).toHaveBeenCalledTimes(2);
+        expect(mockSuccessFn).toHaveBeenCalledTimes(1);
         expect(mockFailFn).not.toBeCalled();
       },
       {
@@ -187,11 +187,11 @@ describe('react => useRetriableRequest', () => {
     render((<Page />) as ReactElement<any, any>);
     await waitFor(
       () => {
-        expect(mockRetryFn).toBeCalledTimes(2);
-        expect(mockErrorFn).toBeCalledTimes(3);
-        expect(mockCompleteFn).toBeCalledTimes(3);
+        expect(mockRetryFn).toHaveBeenCalledTimes(2);
+        expect(mockErrorFn).toHaveBeenCalledTimes(3);
+        expect(mockCompleteFn).toHaveBeenCalledTimes(3);
         expect(mockSuccessFn).not.toBeCalled();
-        expect(mockFailFn).toBeCalledTimes(1);
+        expect(mockFailFn).toHaveBeenCalledTimes(1);
       },
       {
         timeout: 4000
@@ -242,11 +242,11 @@ describe('react => useRetriableRequest', () => {
     render((<Page />) as ReactElement<any, any>);
     await waitFor(
       () => {
-        expect(mockRetryFn).toBeCalledTimes(2);
-        expect(mockErrorFn).toBeCalledTimes(3);
-        expect(mockCompleteFn).toBeCalledTimes(3);
+        expect(mockRetryFn).toHaveBeenCalledTimes(2);
+        expect(mockErrorFn).toHaveBeenCalledTimes(3);
+        expect(mockCompleteFn).toHaveBeenCalledTimes(3);
         expect(mockSuccessFn).not.toBeCalled();
-        expect(mockFailFn).toBeCalledTimes(1);
+        expect(mockFailFn).toHaveBeenCalledTimes(1);
       },
       {
         timeout: 4000
@@ -288,7 +288,7 @@ describe('react => useRetriableRequest', () => {
 
     render((<Page />) as ReactElement<any, any>);
     await waitFor(() => {
-      expect(mockRetryFn).toBeCalledTimes(2);
+      expect(mockRetryFn).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -340,11 +340,11 @@ describe('react => useRetriableRequest', () => {
     fireEvent.click(screen.getByRole('btn'));
     await waitFor(
       () => {
-        expect(mockRetryFn).toBeCalledTimes(2);
-        expect(mockErrorFn).toBeCalledTimes(3);
-        expect(mockCompleteFn).toBeCalledTimes(3);
+        expect(mockRetryFn).toHaveBeenCalledTimes(2);
+        expect(mockErrorFn).toHaveBeenCalledTimes(3);
+        expect(mockCompleteFn).toHaveBeenCalledTimes(3);
         expect(mockSuccessFn).not.toBeCalled();
-        expect(mockFailFn).toBeCalledTimes(1);
+        expect(mockFailFn).toHaveBeenCalledTimes(1);
       },
       {
         timeout: 4000
@@ -387,10 +387,10 @@ describe('react => useRetriableRequest', () => {
     render((<Page />) as ReactElement<any, any>);
     await waitFor(() => {
       expect(mockRetryFn).not.toBeCalled(); // 第一次重试前停止了重试
-      expect(mockErrorFn).toBeCalledTimes(1); // 请求失败一次
-      expect(mockCompleteFn).toBeCalledTimes(1); // 请求失败一次
+      expect(mockErrorFn).toHaveBeenCalledTimes(1); // 请求失败一次
+      expect(mockCompleteFn).toHaveBeenCalledTimes(1); // 请求失败一次
       expect(mockSuccessFn).not.toBeCalled();
-      expect(mockFailFn).toBeCalledTimes(1); // 手动停止重试也将会立即触发fail事件
+      expect(mockFailFn).toHaveBeenCalledTimes(1); // 手动停止重试也将会立即触发fail事件
     });
   });
 
@@ -474,9 +474,9 @@ describe('react => useRetriableRequest', () => {
     await waitFor(
       () => {
         expect(screen.getByRole('error')).toHaveTextContent('[alova/useRetriableRequest]stop retry manually');
-        expect(mockRetryFn).toBeCalledTimes(2);
-        expect(mockFailFn).toBeCalledTimes(1);
-        expect(mockLoadingChangeFn).toBeCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
+        expect(mockRetryFn).toHaveBeenCalledTimes(2);
+        expect(mockFailFn).toHaveBeenCalledTimes(1);
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
       },
       {
         timeout: 4000
@@ -487,9 +487,9 @@ describe('react => useRetriableRequest', () => {
     await waitFor(
       () => {
         expect(screen.getByRole('error')).toHaveTextContent('[alova/useRetriableRequest]stop retry manually');
-        expect(mockRetryFn).toBeCalledTimes(4);
-        expect(mockFailFn).toBeCalledTimes(2);
-        expect(mockLoadingChangeFn).toBeCalledTimes(4); // 设置为true、设置回false两次被调用
+        expect(mockRetryFn).toHaveBeenCalledTimes(4);
+        expect(mockFailFn).toHaveBeenCalledTimes(2);
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(4); // 设置为true、设置回false两次被调用
       },
       {
         timeout: 4000
@@ -545,12 +545,12 @@ describe('react => useRetriableRequest', () => {
     render((<Page />) as ReactElement<any, any>);
     await waitFor(
       () => {
-        expect(mockErrorFn).toBeCalledTimes(4);
-        expect(mockRetryFn).toBeCalledTimes(3);
-        expect(mockCompleteFn).toBeCalledTimes(4);
+        expect(mockErrorFn).toHaveBeenCalledTimes(4);
+        expect(mockRetryFn).toHaveBeenCalledTimes(3);
+        expect(mockCompleteFn).toHaveBeenCalledTimes(4);
         expect(mockSuccessFn).not.toBeCalled();
-        expect(mockFailFn).toBeCalledTimes(1);
-        expect(mockLoadingChangeFn).toBeCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
+        expect(mockFailFn).toHaveBeenCalledTimes(1);
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
       },
       {
         timeout: 4000
@@ -560,12 +560,12 @@ describe('react => useRetriableRequest', () => {
     fireEvent.click(screen.getByRole('btn'));
     await waitFor(
       () => {
-        expect(mockErrorFn).toBeCalledTimes(8);
-        expect(mockRetryFn).toBeCalledTimes(6);
-        expect(mockCompleteFn).toBeCalledTimes(8);
+        expect(mockErrorFn).toHaveBeenCalledTimes(8);
+        expect(mockRetryFn).toHaveBeenCalledTimes(6);
+        expect(mockCompleteFn).toHaveBeenCalledTimes(8);
         expect(mockSuccessFn).not.toBeCalled();
-        expect(mockFailFn).toBeCalledTimes(2);
-        expect(mockLoadingChangeFn).toBeCalledTimes(4); // 设置为true、恢复为false两次被调用
+        expect(mockFailFn).toHaveBeenCalledTimes(2);
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(4); // 设置为true、恢复为false两次被调用
       },
       {
         timeout: 4000
@@ -609,12 +609,12 @@ describe('react => useRetriableRequest', () => {
 
     render((<Page />) as ReactElement<any, any>);
     await screen.findByText(/loaded/);
-    expect(mockSuccessFn).toBeCalledTimes(1);
-    expect(mockCompleteFn).toBeCalledTimes(1);
+    expect(mockSuccessFn).toHaveBeenCalledTimes(1);
+    expect(mockCompleteFn).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('btn'));
     await screen.findByText(/loaded/);
-    expect(mockSuccessFn).toBeCalledTimes(2);
-    expect(mockCompleteFn).toBeCalledTimes(2);
+    expect(mockSuccessFn).toHaveBeenCalledTimes(2);
+    expect(mockCompleteFn).toHaveBeenCalledTimes(2);
   });
 });

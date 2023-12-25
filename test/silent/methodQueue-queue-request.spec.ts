@@ -110,8 +110,8 @@ describe('silent method request in queue with queue behavior', () => {
     expect(silentQueueMap[queueName]).toHaveLength(0); // queue行为下，即使失败也将被移除
 
     // queue行为下，onFallback和onRetry，以及全局的silentSubmit事件都不会触发
-    expect(fallbackMockFn).toBeCalledTimes(0);
-    expect(retryMockFn).toBeCalledTimes(0);
-    expect(errorMockFn).toBeCalledTimes(0);
+    expect(fallbackMockFn).toHaveBeenCalledTimes(0);
+    expect(retryMockFn).toHaveBeenCalledTimes(0);
+    expect(errorMockFn).toHaveBeenCalledTimes(0);
   });
 });
