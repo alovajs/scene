@@ -35,14 +35,15 @@ export default function (
     preloadNextPage = trueValue,
     total: totalGetter = res => res.total,
     data: dataGetter = res => res.data,
-    initialData,
     append = falseValue,
     initialPage = 1,
     initialPageSize = 10,
-    debounce,
     watchingStates = [],
+    initialData,
     immediate = trueValue,
-    middleware = noop
+    middleware = noop,
+    force = noop,
+    ...others
   },
   $,
   $$,
@@ -55,91 +56,87 @@ export default function (
   useRequestRefState$,
   useMemorizedCallback$
 ) {
-  const isReset = useFlag$(falseValue); // 用于控制是否重置
-
-  // 重置期间请求的次数，为了防止重置时重复请求，使用此参数限制请求
-  const requestCountInReseting = useFlag$(0);
-  const page = $(initialPage, trueValue);
-  const pageSize = $(initialPageSize, trueValue);
-  const data = $(initialData ? dataGetter(initialData) || [] : [], trueValue);
   const handerRef = useFlag$();
   handerRef.current = handler;
+  const isReset = useFlag$(falseValue), // 用于控制是否重置
+    // 重置期间请求的次数，为了防止重置时重复请求，使用此参数限制请求
+    requestCountInReseting = useFlag$(0),
+    page = $(initialPage, trueValue),
+    pageSize = $(initialPageSize, trueValue),
+    data = $(initialData ? dataGetter(initialData) || [] : [], trueValue),
+    // 保存当前hook所使用到的所有method实例快照
+    {
+      snapshots: methodSnapshots,
+      get: getSnapshotMethods,
+      save: saveSnapshot,
+      remove: removeSnapshot
+    } = useFlag$(createSnapshotMethodsManager(page => handerRef.current(page, _$(pageSize)))).current,
+    listDataGetter = rawData => dataGetter(rawData) || rawData,
+    getHandlerMethod = (refreshPage = _$(page)) => {
+      const pageSizeVal = _$(pageSize);
+      const handlerMethod = handler(refreshPage, pageSizeVal);
 
-  // 保存当前hook所使用到的所有method实例快照
-  const {
-    snapshots: methodSnapshots,
-    get: getSnapshotMethods,
-    save: saveSnapshot,
-    remove: removeSnapshot
-  } = useFlag$(createSnapshotMethodsManager(page => handerRef.current(page, _$(pageSize)))).current;
-
-  const listDataGetter = rawData => dataGetter(rawData) || rawData;
-  const getHandlerMethod = (refreshPage = _$(page)) => {
-    const pageSizeVal = _$(pageSize);
-    const handlerMethod = handler(refreshPage, pageSizeVal);
-
-    // 定义统一的额外名称，方便管理
-    saveSnapshot(handlerMethod);
-    return handlerMethod;
-  };
-
+      // 定义统一的额外名称，方便管理
+      saveSnapshot(handlerMethod);
+      return handlerMethod;
+    };
   // 监听状态变化时，重置page为1
   watch$(watchingStates, () => {
-    upd$(page, 1);
+    upd$(page, initialPage);
     isReset.current = trueValue;
   });
 
   // 兼容react，将需要代理的函数存放在此
   // 这样可以在代理函数中调用到最新的操作函数，避免react闭包陷阱
-  const delegationActions = useFlag$({});
-  const createDelegationAction =
-    actionName =>
-    (...args) =>
-      delegationActions.current[actionName](...args);
-  const states = useWatcher(getHandlerMethod, [...watchingStates, _exp$(page), _exp$(pageSize)], {
-    immediate,
-    initialData,
-    debounce,
-    abortLast: falseValue,
-    middleware(ctx, next) {
-      middleware(
-        {
-          ...ctx,
-          delegatingActions: {
-            refresh: createDelegationAction('refresh'),
-            insert: createDelegationAction('insert'),
-            remove: createDelegationAction('remove'),
-            replace: createDelegationAction('replace'),
-            reload: createDelegationAction('reload'),
-            getState: stateKey => {
-              const states = {
-                page,
-                pageSize,
-                data,
-                pageCount,
-                total,
-                isLastPage
-              };
-              return _$(states[stateKey]);
+  const delegationActions = useFlag$({}),
+    createDelegationAction =
+      actionName =>
+      (...args) =>
+        delegationActions.current[actionName](...args),
+    states = useWatcher(getHandlerMethod, [...watchingStates, _exp$(page), _exp$(pageSize)], {
+      immediate,
+      initialData,
+      middleware(ctx, next) {
+        middleware(
+          {
+            ...ctx,
+            delegatingActions: {
+              refresh: createDelegationAction('refresh'),
+              insert: createDelegationAction('insert'),
+              remove: createDelegationAction('remove'),
+              replace: createDelegationAction('replace'),
+              reload: createDelegationAction('reload'),
+              getState: stateKey => {
+                const states = {
+                  page,
+                  pageSize,
+                  data,
+                  pageCount,
+                  total,
+                  isLastPage
+                };
+                return _$(states[stateKey]);
+              }
             }
-          }
-        },
-        () => promiseResolve()
-      );
+          },
+          promiseResolve
+        );
 
-      // 监听值改变时将会重置为第一页，此时会触发两次请求，在这边过滤掉一次请求
-      let requestPromise = promiseResolve();
-      if (!isReset.current) {
-        requestPromise = next();
-      } else if (requestCountInReseting.current === 0) {
-        requestCountInReseting.current++;
-        requestPromise = next();
-      }
-      return requestPromise;
-    },
-    force: (_, isRefresh) => isRefresh
-  });
-  const { send } = states,
+        // 监听值改变时将会重置为第一页，此时会触发两次请求，在这边过滤掉一次请求
+        let requestPromise = promiseResolve();
+        if (!isReset.current) {
+          requestPromise = next();
+        } else if (requestCountInReseting.current === 0) {
+          requestCountInReseting.current++;
+          requestPromise = next();
+        }
+        return requestPromise;
+      },
+      force: (...args) => args[1] || force(...args),
+      abortLast: false,
+      ...others
+    }),
+    { send } = states,
     // 计算data、total、isLastPage参数
     total = $(initialData ? totalGetter(initialData) : undefinedValue, trueValue),
     pageCount = $$(

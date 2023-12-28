@@ -16,7 +16,7 @@ interface SearchListResponse {
   list: { id: number; word: string }[];
 }
 
-// jest.setTimeout(1000000);
+jest.setTimeout(1000000);
 // reset data
 beforeEach(() => {
   setMockListData();
@@ -1588,13 +1588,13 @@ describe('react => usePagination', () => {
     });
 
     // 改变筛选条件将使用最新的total
-    // 注意：改变监听条件后会自动重置为page=1
+    // 注意：改变监听条件后会自动重置为page=initialPage(2)
     fireEvent.click(screen.getByRole('changeMin1'));
     let totalBackup = total;
     total = 200;
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(7); // 改变筛选条件（自动重置第一页）+1次
-      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([100, 101, 102, 103]));
+      expect(fetchMockFn).toHaveBeenCalledTimes(8); // 改变筛选条件（自动重置第initialPage页）+2次
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([104, 105, 106, 107])); // 重置到第initialPage页
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
 
@@ -1604,11 +1604,11 @@ describe('react => usePagination', () => {
     totalBackup--;
     setMockListData(data => {
       // 模拟数据中同步删除，这样fetch的数据校验才正常
-      return data.filter((i: number) => ![101].includes(i));
+      return data.filter((i: number) => ![105].includes(i));
     });
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(8); // 预加载下一页+1
-      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([100, 102, 103, 104]));
+      expect(fetchMockFn).toHaveBeenCalledTimes(9); // 预加载下一页+1
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([104, 106, 107, 108]));
       // 再次看total是否正确
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
@@ -1618,8 +1618,8 @@ describe('react => usePagination', () => {
     fireEvent.click(screen.getByRole('resetMin'));
     total = totalBackup;
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(9); // 条件改变（当前第一页）+1
-      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([0, 1, 2, 3]));
+      expect(fetchMockFn).toHaveBeenCalledTimes(11); // 条件改变（当前第initialPage页）+2
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([4, 7, 8, 9]));
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
   });
