@@ -116,7 +116,7 @@ type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = UseHook
  */
 declare function usePagination<S, E, R, T, RC, RE, RH, LD extends any[], WS extends DependencyList>(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
-  config?: PaginationHookConfig<R, LD, WS>
+  config?: PaginationHookConfig<S, E, R, T, RC, RE, RH, LD, WS>
 ): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;
 
 /**

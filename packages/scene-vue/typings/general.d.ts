@@ -4,7 +4,6 @@ import {
   AlovaErrorEvent,
   AlovaEvent,
   AlovaFetcherMiddlewareContext,
-  AlovaFrontMiddleware,
   AlovaFrontMiddlewareContext,
   AlovaGuardNext,
   AlovaOptions,
@@ -25,19 +24,47 @@ type IsUnknown<T, P, N> = 1 extends 1 & T ? P : N;
 
 /** @description usePagination相关 */
 type ArgGetter<R, LD> = (data: R) => LD | undefined;
-interface PaginationHookConfig<R, LD, WS> {
+interface PaginationHookConfig<S, E, R, T, RC, RE, RH, LD, WS> extends WatcherHookConfig<S, E, R, T, RC, RE, RH> {
+  /**
+   * 是否预加载上一页
+   * @default true
+   */
   preloadPreviousPage?: boolean;
+  /**
+   * 是否预加载下一页
+   * @default true
+   */
   preloadNextPage?: boolean;
+  /**
+   * 指定数据总数量值
+   * @default response => response.total
+   */
   total?: ArgGetter<R, number>;
+  /**
+   * 指定分页的数组数据
+   * @default response => response.data
+   */
   data?: ArgGetter<R, LD>;
-  initialData?: WatcherHookConfig<any, any, any, any, any, any, any>['initialData'];
+  /**
+   * 是否开启追加模式
+   * @default false
+   */
   append?: boolean;
+  /**
+   * 初始页码
+   * @default 1
+   */
   initialPage?: number;
+  /**
+   * 初始每页数据条数
+   * @default 10
+   */
   initialPageSize?: number;
-  debounce?: WatcherHookConfig<any, any, any, any, any, any, any>['debounce'];
+  /**
+   * 状态监听触发请求，使用 useWatcher 实现
+   * @default [page, pageSize]
+   */
   watchingStates?: WS;
-  immediate?: boolean;
-  middleware?: AlovaFrontMiddleware<any, any, R, any, any, any, any>;
 }
 
 // =========================
