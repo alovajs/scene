@@ -706,7 +706,7 @@ interface TokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, an
    * 赋值token回调函数，登录标识和访客标识的请求不会触发此函数
    * @param method method实例
    */
-  assignToken?: (method: Parameters<RA>[1]) => void;
+  assignToken?: (method: Parameters<RA>[1]) => void | Promise<void>;
 }
 interface ClientTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, any, any, any, any>>
   extends TokenAuthenticationOptions<RA> {
