@@ -46,12 +46,15 @@ import {
   UnbindHandler
 } from './general';
 
-type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends unknown[]> = Omit<
+  UseHookReturnType<S, E, R, T, RC, RE, RH>,
+  'data' | 'update'
+> & {
   page: Writable<number>;
   pageSize: Writable<number>;
   data: Writable<
     IsUnknown<
-      LD,
+      LD[number],
       R extends {
         data: any;
       }

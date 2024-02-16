@@ -46,12 +46,15 @@ import {
   UnbindHandler
 } from './general';
 
-type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends any[]> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends unknown[]> = Omit<
+  UseHookReturnType<S, E, R, T, RC, RE, RH>,
+  'data' | 'update'
+> & {
   page: Ref<number>;
   pageSize: Ref<number>;
   data: Ref<
     IsUnknown<
-      LD,
+      LD[number],
       R extends {
         data: any;
       }
@@ -123,11 +126,11 @@ declare function usePagination<
   RC,
   RE,
   RH,
-  LD extends any[],
+  LD extends unknown[],
   WS extends (WatchSource | object)[]
 >(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
-  config?: PaginationHookConfig<R, LD, WS>
+  config?: PaginationHookConfig<S, E, R, T, RC, RE, RH, LD, WS>
 ): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;
 
 /**
