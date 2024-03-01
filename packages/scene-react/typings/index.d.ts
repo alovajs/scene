@@ -59,7 +59,7 @@ type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends unknown[]> = Omi
       data: any;
     }
       ? R['data']
-      : R,
+      : LD,
     LD
   >;
   pageCount: number | undefined;
@@ -117,7 +117,7 @@ type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends unknown[]> = Omi
  * @param config pagination hook配置
  * @returns {UsePaginationReturnType}
  */
-declare function usePagination<S, E, R, T, RC, RE, RH, LD extends any[], WS extends DependencyList>(
+declare function usePagination<S, E, R, T, RC, RE, RH, LD extends unknown[], WS extends DependencyList>(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
   config?: PaginationHookConfig<S, E, R, T, RC, RE, RH, LD, WS>
 ): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;

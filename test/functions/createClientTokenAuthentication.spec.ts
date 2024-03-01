@@ -10,7 +10,10 @@ interface ListResponse {
 }
 describe('createClientTokenAuthentication', () => {
   test('should emit custom request and response interceptors', async () => {
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({});
+    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({});
     const beforeRequestFn = jest.fn();
     const responseFn = jest.fn();
     const alovaInst = createAlova({
@@ -77,7 +80,10 @@ describe('createClientTokenAuthentication', () => {
 
   test('should emit login interceptor when set authRole to `login`', async () => {
     const loginInterceptorFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       login(response, method) {
         expect(response.total).toBe(300);
         expect(method).toBeInstanceOf(Method);
@@ -100,7 +106,7 @@ describe('createClientTokenAuthentication', () => {
     expect(loginInterceptorFn).toHaveBeenCalledTimes(1);
 
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createClientTokenAuthentication<typeof mockRequestAdapter>({
+      createClientTokenAuthentication<typeof VueHook, typeof mockRequestAdapter>({
         login: {
           metaMatches: {
             login: true
@@ -129,7 +135,10 @@ describe('createClientTokenAuthentication', () => {
   });
   test('should emit logout interceptor when set authRole to `logout`', async () => {
     const logoutInterceptorFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       logout(response, method) {
         expect(response.total).toBe(300);
         expect(method).toBeInstanceOf(Method);
@@ -152,7 +161,7 @@ describe('createClientTokenAuthentication', () => {
     expect(logoutInterceptorFn).toHaveBeenCalledTimes(1);
 
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createClientTokenAuthentication<typeof mockRequestAdapter>({
+      createClientTokenAuthentication<typeof VueHook, typeof mockRequestAdapter>({
         logout: {
           metaMatches: {
             logout: true
@@ -183,7 +192,10 @@ describe('createClientTokenAuthentication', () => {
     let token = '';
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       refreshToken: {
         isExpired: () => !token,
         handler: async method => {
@@ -218,6 +230,7 @@ describe('createClientTokenAuthentication', () => {
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
     const { onAuthRequired, onResponseRefreshToken, waitingList } = createClientTokenAuthentication<
+      typeof VueHook,
       typeof mockRequestAdapter
     >({
       refreshToken: {
@@ -268,6 +281,7 @@ describe('createClientTokenAuthentication', () => {
     const refreshTokenFn = jest.fn();
     const redirectLoginFn = jest.fn();
     const { onAuthRequired, onResponseRefreshToken, waitingList } = createClientTokenAuthentication<
+      typeof VueHook,
       typeof mockRequestAdapter
     >({
       refreshToken: {
@@ -313,7 +327,10 @@ describe('createClientTokenAuthentication', () => {
     let token = '';
     const expireFn = jest.fn();
     const refreshTokenFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       refreshToken: {
         isExpired: () => {
           expireFn();
@@ -354,7 +371,7 @@ describe('createClientTokenAuthentication', () => {
 
     // 自定义忽略method规则
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createClientTokenAuthentication<typeof mockRequestAdapter>({
+      createClientTokenAuthentication<typeof VueHook, typeof mockRequestAdapter>({
         visitorMeta: {
           loginRequired: false
         },

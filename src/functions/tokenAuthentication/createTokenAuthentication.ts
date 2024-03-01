@@ -1,6 +1,6 @@
 import { noop, __self } from '@/helper';
 import { falseValue } from '@/helper/variables';
-import { AlovaRequestAdapter } from 'alova';
+import { AlovaRequestAdapter, StatesHook } from 'alova';
 import {
   ClientTokenAuthenticationOptions,
   ServerTokenAuthenticationOptions,
@@ -75,7 +75,7 @@ export const createClientTokenAuthentication = ({
         }
       };
     }
-  } as TokenAuthenticationResult<AlovaRequestAdapter<any, any, any, any, any>>;
+  } as TokenAuthenticationResult<StatesHook<any, any>, AlovaRequestAdapter<any, any, any, any, any>>;
 };
 
 /**
@@ -164,5 +164,5 @@ export const createServerTokenAuthentication = ({
         }
       };
     }
-  } as TokenAuthenticationResult<AlovaRequestAdapter<any, any, any, any, any>>;
+  } as TokenAuthenticationResult<StatesHook<any, any>, AlovaRequestAdapter<any, any, any, any, any>>;
 };

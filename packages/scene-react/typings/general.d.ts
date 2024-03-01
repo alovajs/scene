@@ -12,6 +12,7 @@ import {
   Method,
   MethodMatcher,
   RequestHookConfig,
+  StatesHook,
   UseHookReturnType,
   WatcherHookConfig
 } from 'alova';
@@ -20,7 +21,7 @@ import {
 type IsAny<T, P, N> = 0 extends 1 & T ? P : N;
 
 /** 判断是否为unknown */
-type IsUnknown<T, P, N> = 1 extends 1 & T ? P : N;
+type IsUnknown<T, P, N> = IsAny<T, P, N> extends P ? N : unknown extends T ? P : N;
 
 /** @description usePagination相关 */
 type ArgGetter<R, LD> = (data: R) => LD | undefined;
@@ -767,21 +768,29 @@ interface ServerTokenAuthenticationOptions<RA extends AlovaRequestAdapter<any, a
   };
 }
 
-type AlovaBeforeRequest<RA extends AlovaRequestAdapter<any, any, any, any, any>> = (
-  method: Parameters<RA>[1]
+type AlovaBeforeRequest<SH extends StatesHook<any, any>, RA extends AlovaRequestAdapter<any, any, any, any, any>> = (
+  method: Parameters<RA>[1] extends Method<any, any, any, any, infer RC, infer RT, infer RH>
+    ? Method<ReturnType<SH['create']>, ReturnType<SH['export']>, any, any, RC, RT, RH>
+    : never
 ) => void | Promise<void>;
-type AlovaResponded<RA extends AlovaRequestAdapter<any, any, any, any, any>> = NonNullable<
+type AlovaResponded<
+  SH extends StatesHook<any, any>,
+  RA extends AlovaRequestAdapter<any, any, any, any, any>
+> = NonNullable<
   AlovaOptions<
-    any,
-    any,
+    ReturnType<SH['create']>,
+    ReturnType<SH['export']>,
     Parameters<RA>[1] extends Method<any, any, any, any, infer RC> ? RC : never,
     Parameters<RA>[1] extends Method<any, any, any, any, any, infer RE> ? RE : never,
     Parameters<RA>[1] extends Method<any, any, any, any, any, any, infer RH> ? RH : never
   >['responded']
 >;
-interface TokenAuthenticationResult<RA extends AlovaRequestAdapter<any, any, any, any, any>> {
-  onAuthRequired(originalBeforeRequest?: AlovaBeforeRequest<RA>): AlovaBeforeRequest<RA>;
-  onResponseRefreshToken(originalResponded?: AlovaResponded<RA>): AlovaResponded<RA>;
+interface TokenAuthenticationResult<
+  SH extends StatesHook<any, any>,
+  RA extends AlovaRequestAdapter<any, any, any, any, any>
+> {
+  onAuthRequired(originalBeforeRequest?: AlovaBeforeRequest<SH, RA>): AlovaBeforeRequest<SH, RA>;
+  onResponseRefreshToken(originalResponded?: AlovaResponded<SH, RA>): AlovaResponded<SH, RA>;
   waitingList: {
     method: Parameters<RA>[1];
     resolve: () => void;
