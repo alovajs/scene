@@ -271,6 +271,10 @@ export default function (
     } else {
       upd$(data, listData);
     }
+  });
+
+  // 请求成功与否，都要重置它们
+  states.onComplete(() => {
     isReset.current = falseValue;
     requestCountInReseting.current = 0;
   });
@@ -297,11 +301,16 @@ export default function (
       }
       paginationAssert(refreshPage <= _$(page), "refresh page can't greater than page");
       // 更新当前页数据
-      send(refreshPage, trueValue);
+      promiseCatch(send(refreshPage, trueValue), noop);
     } else {
       paginationAssert(isNumber(refreshPage), 'unable to calculate refresh page by item in pagination mode');
       // 页数相等，则刷新当前页，否则fetch数据
-      refreshPage === _$(page) ? send(undefinedValue, trueValue) : fetch(handler(refreshPage, _$(pageSize)), trueValue);
+      promiseCatch(
+        refreshPage === _$(page)
+          ? send(undefinedValue, trueValue)
+          : fetch(handler(refreshPage, _$(pageSize)), trueValue),
+        noop
+      );
     }
   });
 
@@ -494,7 +503,7 @@ export default function (
   const reload = useMemorizedCallback$(() => {
     invalidatePaginationCache(trueValue);
     isReset.current = trueValue;
-    _$(page) === initialPage ? send() : upd$(page, initialPage);
+    _$(page) === initialPage ? promiseCatch(send(), noop) : upd$(page, initialPage);
   });
 
   // 兼容react，每次缓存最新的操作函数，避免闭包陷阱

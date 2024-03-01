@@ -2753,4 +2753,56 @@ describe('react => usePagination', () => {
       expect(screen.getByRole('total')).toHaveTextContent('3');
     });
   });
+
+  test('can resend request when encounter with an error', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number) =>
+      alovaInst.Get<ListResponse>('/list', {
+        params: {
+          page,
+          pageSize
+        },
+        transformData: () => {
+          throw new Error('mock error');
+        }
+      });
+
+    const errorFn = jest.fn();
+    const completeFn = jest.fn();
+    function Page() {
+      const { data, total, reload, onError, onComplete } = usePagination(getter, {
+        total: res => res.total,
+        data: res => res.list
+      });
+      onError(errorFn);
+      onComplete(completeFn);
+      return (
+        <div>
+          <span role="total">{total}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+          <button
+            role="reload"
+            onClick={reload}></button>
+        </div>
+      );
+    }
+
+    render((<Page />) as ReactElement<any, any>);
+    await waitFor(() => {
+      expect(errorFn).toHaveBeenCalledTimes(1);
+      expect(completeFn).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.click(screen.getByRole('reload'));
+    await waitFor(() => {
+      expect(errorFn).toHaveBeenCalledTimes(2);
+      expect(completeFn).toHaveBeenCalledTimes(2);
+    });
+
+    fireEvent.click(screen.getByRole('reload'));
+    await waitFor(() => {
+      expect(errorFn).toHaveBeenCalledTimes(3);
+      expect(completeFn).toHaveBeenCalledTimes(3);
+    });
+  });
 });
