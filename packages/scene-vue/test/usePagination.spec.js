@@ -350,10 +350,10 @@ describe('vue => usePagination', () => {
 
     expect(() => {
       replace(100);
-    }).toThrowError();
+    }).toThrow();
     expect(() => {
       replace(100, 1000);
-    }).toThrowError();
+    }).toThrow();
 
     replace(300, 0);
     expect(data.value).toStrictEqual([300, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -942,7 +942,7 @@ describe('vue => usePagination', () => {
 
     expect(() => {
       refresh(100);
-    }).toThrowError();
+    }).toThrow();
 
     refresh(1);
     await untilCbCalled(onSuccess); // append模式下将使用send函数重新请求数据
@@ -1250,5 +1250,42 @@ describe('vue => usePagination', () => {
 
     expect(data.value).toStrictEqual([1, 2, 3]);
     expect(total.value).toBe(3);
+  });
+
+  test('can resend request when encounter with an error', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize) =>
+      alovaInst.Get('/list', {
+        params: {
+          page,
+          pageSize
+        },
+        transformData: () => {
+          throw new Error('mock error');
+        }
+      });
+
+    const { onError, onComplete, reload } = usePagination(getter, {
+      total: res => res.total,
+      data: res => res.list
+    });
+    const errorFn = jest.fn();
+    const completeFn = jest.fn();
+    onError(errorFn);
+    onComplete(completeFn);
+
+    await untilCbCalled(setTimeout, 200);
+    expect(errorFn).toHaveBeenCalledTimes(1);
+    expect(completeFn).toHaveBeenCalledTimes(1);
+
+    reload();
+    await untilCbCalled(setTimeout, 200);
+    expect(errorFn).toHaveBeenCalledTimes(2);
+    expect(completeFn).toHaveBeenCalledTimes(2);
+
+    reload();
+    await untilCbCalled(setTimeout, 200);
+    expect(errorFn).toHaveBeenCalledTimes(3);
+    expect(completeFn).toHaveBeenCalledTimes(3);
   });
 });

@@ -59,7 +59,7 @@ type UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD extends unknown[]> = Omi
         data: any;
       }
         ? R['data']
-        : R,
+        : LD,
       LD
     >
   >;
@@ -127,11 +127,11 @@ declare function usePagination<
   RC,
   RE,
   RH,
-  LD extends any[],
+  LD extends unknown[],
   WS extends Readable<any>[]
 >(
   handler: (page: number, pageSize: number) => Method<S, E, R, T, RC, RE, RH>,
-  config?: PaginationHookConfig<R, LD, WS>
+  config?: PaginationHookConfig<S, E, R, T, RC, RE, RH, LD, WS>
 ): UsePaginationReturnType<S, E, R, T, RC, RE, RH, LD>;
 
 /**

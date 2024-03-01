@@ -1,6 +1,13 @@
 import { forEach, instanceOf, isFn, isPlainOrCustomObject, len, newInstance, noop, pushItem, splice } from '@/helper';
 import { falseValue, PromiseCls, trueValue, undefinedValue } from '@/helper/variables';
-import { AlovaRequestAdapter, Method, ResponseCompleteHandler, ResponsedHandler, ResponseErrorHandler } from 'alova';
+import {
+  AlovaRequestAdapter,
+  Method,
+  ResponseCompleteHandler,
+  ResponsedHandler,
+  ResponseErrorHandler,
+  StatesHook
+} from 'alova';
 import { AlovaResponded, MetaMatches, ResponseAuthorizationInterceptor } from '~/typings/general';
 
 export type PosibbleAuthMap =
@@ -113,7 +120,9 @@ export const defaultVisitorMeta = {
       }
     }
   },
-  onResponded2Record = (onRespondedHandlers?: AlovaResponded<AlovaRequestAdapter<any, any, any, any, any>>) => {
+  onResponded2Record = (
+    onRespondedHandlers?: AlovaResponded<StatesHook<any, any>, AlovaRequestAdapter<any, any, any, any, any>>
+  ) => {
     let successHandler: ResponsedHandler<any, any, any, any, any> | undefined = undefinedValue,
       errorHandler: ResponseErrorHandler<any, any, any, any, any> | undefined = undefinedValue,
       onCompleteHandler: ResponseCompleteHandler<any, any, any, any, any> | undefined = undefinedValue;

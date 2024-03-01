@@ -10,7 +10,10 @@ interface ListResponse {
 }
 describe('createServerTokenAuthentication', () => {
   test('should emit custom request and response interceptors', async () => {
-    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({});
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({});
     const beforeRequestFn = jest.fn();
     const responseFn = jest.fn();
     const alovaInst = createAlova({
@@ -77,7 +80,10 @@ describe('createServerTokenAuthentication', () => {
 
   test('should emit login interceptor when set authRole to `login`', async () => {
     const loginInterceptorFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       login(response, method) {
         expect(response.total).toBe(300);
         expect(method).toBeInstanceOf(Method);
@@ -100,7 +106,7 @@ describe('createServerTokenAuthentication', () => {
     expect(loginInterceptorFn).toHaveBeenCalledTimes(1);
 
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createServerTokenAuthentication<typeof mockRequestAdapter>({
+      createServerTokenAuthentication<typeof VueHook, typeof mockRequestAdapter>({
         login: {
           metaMatches: {
             login: true
@@ -129,7 +135,10 @@ describe('createServerTokenAuthentication', () => {
   });
   test('should emit logout interceptor when set authRole to `logout`', async () => {
     const logoutInterceptorFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       logout(response, method) {
         expect(response.total).toBe(300);
         expect(method).toBeInstanceOf(Method);
@@ -152,7 +161,7 @@ describe('createServerTokenAuthentication', () => {
     expect(logoutInterceptorFn).toHaveBeenCalledTimes(1);
 
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createServerTokenAuthentication<typeof mockRequestAdapter>({
+      createServerTokenAuthentication<typeof VueHook, typeof mockRequestAdapter>({
         logout: {
           metaMatches: {
             logout: true
@@ -185,7 +194,10 @@ describe('createServerTokenAuthentication', () => {
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
     const responseFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       refreshTokenOnError: {
         isExpired: (error, method) => {
           expect(method).toBeInstanceOf(Method);
@@ -230,7 +242,10 @@ describe('createServerTokenAuthentication', () => {
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
     const responseFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       refreshTokenOnSuccess: {
         isExpired: (response, method) => {
           expect(method).toBeInstanceOf(Method);
@@ -279,6 +294,7 @@ describe('createServerTokenAuthentication', () => {
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
     const { onAuthRequired, onResponseRefreshToken, waitingList } = createServerTokenAuthentication<
+      typeof VueHook,
       typeof mockRequestAdapter
     >({
       refreshTokenOnError: {
@@ -335,6 +351,7 @@ describe('createServerTokenAuthentication', () => {
     const refreshTokenFn = jest.fn();
     const beforeRequestFn = jest.fn();
     const { onAuthRequired, onResponseRefreshToken, waitingList } = createServerTokenAuthentication<
+      typeof VueHook,
       typeof mockRequestAdapter
     >({
       refreshTokenOnError: {
@@ -371,6 +388,7 @@ describe('createServerTokenAuthentication', () => {
       alovaInst.Get('/list-auth?a=' + a, {
         transformData: (data: number[]) => data.map(i => i + 5)
       });
+
     const [list, list2] = await Promise.all([method('1'), method('2')]);
     expect(list).toStrictEqual(generateContinuousNumbers(10, 5));
     expect(list2).toStrictEqual(generateContinuousNumbers(10, 5));
@@ -383,6 +401,7 @@ describe('createServerTokenAuthentication', () => {
     const refreshTokenFn = jest.fn();
     const redirectLoginFn = jest.fn();
     const { onAuthRequired, onResponseRefreshToken, waitingList } = createServerTokenAuthentication<
+      typeof VueHook,
       typeof mockRequestAdapter
     >({
       refreshTokenOnError: {
@@ -428,7 +447,10 @@ describe('createServerTokenAuthentication', () => {
     let token = '';
     const expireFn = jest.fn();
     const refreshTokenFn = jest.fn();
-    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<typeof mockRequestAdapter>({
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
       refreshTokenOnError: {
         isExpired: error => {
           expireFn();
@@ -468,7 +490,7 @@ describe('createServerTokenAuthentication', () => {
 
     // 自定义忽略method规则;
     const { onAuthRequired: onAuthRequired2, onResponseRefreshToken: onResponseRefreshToken2 } =
-      createServerTokenAuthentication<typeof mockRequestAdapter>({
+      createServerTokenAuthentication<typeof VueHook, typeof mockRequestAdapter>({
         visitorMeta: {
           loginRequired: false
         },
