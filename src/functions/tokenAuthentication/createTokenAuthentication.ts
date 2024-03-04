@@ -68,9 +68,9 @@ export const createClientTokenAuthentication = ({
       const respondedRecord = onResponded2Record(onRespondedHandlers);
       return {
         ...respondedRecord,
-        onSuccess: (response, method) => {
-          callHandlerIfMatchesMeta(method, login, defaultLoginMeta, response);
-          callHandlerIfMatchesMeta(method, logout, defaultLogoutMeta, response);
+        onSuccess: async (response, method) => {
+          await callHandlerIfMatchesMeta(method, login, defaultLoginMeta, response);
+          await callHandlerIfMatchesMeta(method, logout, defaultLogoutMeta, response);
           return (respondedRecord.onSuccess || __self)(response, method);
         }
       };
@@ -138,8 +138,8 @@ export const createServerTokenAuthentication = ({
             }
           }
 
-          callHandlerIfMatchesMeta(method, login, defaultLoginMeta, response);
-          callHandlerIfMatchesMeta(method, logout, defaultLogoutMeta, response);
+          await callHandlerIfMatchesMeta(method, login, defaultLoginMeta, response);
+          await callHandlerIfMatchesMeta(method, logout, defaultLogoutMeta, response);
           return (respondedRecord.onSuccess || __self)(response, method);
         },
         onError: async (error, method) => {
