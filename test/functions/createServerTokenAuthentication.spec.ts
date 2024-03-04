@@ -1,8 +1,8 @@
-import { createAlova, Method } from 'alova';
+import { createAlova, Method, useRequest } from 'alova';
 import VueHook from 'alova/vue';
 import { createServerTokenAuthentication } from '../../packages/scene-vue';
 import { mockRequestAdapter } from '../mockData';
-import { generateContinuousNumbers } from '../utils';
+import { generateContinuousNumbers, untilCbCalled } from '../utils';
 
 interface ListResponse {
   total: number;
@@ -188,6 +188,59 @@ describe('createServerTokenAuthentication', () => {
     expect(res2.list).toStrictEqual(generateContinuousNumbers(9));
     expect(logoutInterceptorFn).toHaveBeenCalledTimes(2);
   });
+
+  test('The async functions runing order should be `login -> logout -> global.onSuccess -> useHook.onSuccess`', async () => {
+    let orderAry = [] as string[];
+    const { onAuthRequired, onResponseRefreshToken } = createServerTokenAuthentication<
+      typeof VueHook,
+      typeof mockRequestAdapter
+    >({
+      async login() {
+        await untilCbCalled(setTimeout, 100);
+        orderAry.push('login');
+      },
+      async logout() {
+        await untilCbCalled(setTimeout, 100);
+        orderAry.push('logout');
+      }
+    });
+    const alovaInst = createAlova({
+      statesHook: VueHook,
+      requestAdapter: mockRequestAdapter,
+      localCache: null,
+      beforeRequest: onAuthRequired(),
+      responded: onResponseRefreshToken(response => {
+        orderAry.push('global.onSuccess');
+        return response;
+      })
+    });
+    const loginMethod = alovaInst.Get<ListResponse>('/list');
+    loginMethod.meta = {
+      authRole: 'login'
+    };
+    const { onSuccess } = useRequest(loginMethod);
+    onSuccess(() => {
+      orderAry.push('useHook.onSuccess');
+    });
+
+    await untilCbCalled(onSuccess);
+    expect(orderAry).toStrictEqual(['login', 'global.onSuccess', 'useHook.onSuccess']);
+
+    // 测试logout
+    orderAry = [];
+    const logoutMethod = alovaInst.Get<ListResponse>('/list');
+    logoutMethod.meta = {
+      authRole: 'logout'
+    };
+    const { onSuccess: onLogoutSuccess } = useRequest(logoutMethod);
+    onLogoutSuccess(() => {
+      orderAry.push('useHook.onSuccess');
+    });
+
+    await untilCbCalled(onLogoutSuccess);
+    expect(orderAry).toStrictEqual(['logout', 'global.onSuccess', 'useHook.onSuccess']);
+  });
+
   test('should refresh token first on error event when it is expired', async () => {
     let token = '';
     const expireFn = jest.fn();

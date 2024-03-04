@@ -66,7 +66,7 @@ export const defaultVisitorMeta = {
           isFn(authorizationInterceptor.handler)
         ? authorizationInterceptor.handler
         : noop;
-      handler(response, method);
+      return handler(response, method);
     }
   },
   refreshTokenIfExpired = async (
