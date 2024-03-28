@@ -258,14 +258,6 @@ describe('vue => usePagination', () => {
     cache = queryCache(getter(page.value + 1, pageSize.value));
     // insert时会将缓存末尾去掉，因此还是剩下10项
     expect(cache.list).toStrictEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
-    await untilCbCalled(setTimeout, 150);
-
-    // 检查是否重新fetch了前后一页的数据
-    cache = queryCache(getter(page.value - 1, pageSize.value));
-    expect(cache.list).toStrictEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    cache = queryCache(getter(page.value + 1, pageSize.value));
-    // 重新fetch后还是保持pageSize项数据
-    expect(cache.list).toStrictEqual([19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
 
     insert(400);
     insert(500, 2);
@@ -279,7 +271,7 @@ describe('vue => usePagination', () => {
     const mockFn2 = jest.fn();
     onFetchSuccess(mockFn2);
     await untilCbCalled(setTimeout, 100);
-    expect(mockFn2).toHaveBeenCalledTimes(1); // 只会重新预加载下一页数据
+    expect(mockFn2).not.toHaveBeenCalled(); // 插入时不需要重新加载下一页数据
 
     // 翻到最后一页后，再插入数据不会再去除一条数据
     page.value = 31;
@@ -1287,5 +1279,43 @@ describe('vue => usePagination', () => {
     await untilCbCalled(setTimeout, 200);
     expect(errorFn).toHaveBeenCalledTimes(3);
     expect(completeFn).toHaveBeenCalledTimes(3);
+  });
+
+  test('should use the data of last request when set `abortLast` to true', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page, pageSize, keyword) =>
+      alovaInst.Get('/list-with-search', {
+        params: {
+          page,
+          pageSize,
+          keyword
+        }
+      });
+    const keyword = ref('');
+    const { data, onSuccess, total } = usePagination((p, ps) => getter(p, ps, keyword.value), {
+      watchingStates: [keyword],
+      abortLast: true,
+      data: res => res.list
+    });
+    const successFn = jest.fn();
+    onSuccess(successFn);
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    await untilCbCalled(onSuccess);
+    expect(data.value).toStrictEqual(currentList);
+    expect(total.value).toBe(300);
+
+    keyword.value = 'bbb';
+    await new Promise(resolve => setTimeout(resolve, 40));
+    keyword.value = '';
+    await untilCbCalled(onSuccess);
+    expect(data.value).toStrictEqual(currentList);
+    expect(total.value).toBe(300);
+    expect(successFn).toHaveBeenCalledTimes(2);
   });
 });
