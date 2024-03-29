@@ -92,8 +92,8 @@ export default function (
   const delegationActions = useFlag$({}),
     createDelegationAction =
       actionName =>
-        (...args) =>
-          delegationActions.current[actionName](...args),
+      (...args) =>
+        delegationActions.current[actionName](...args),
     states = useWatcher(getHandlerMethod, [...watchingStates, _exp$(page), _exp$(pageSize)], {
       immediate,
       initialData,
@@ -175,8 +175,8 @@ export default function (
     const exceedPageCount = pageCountVal
       ? preloadPage > pageCountVal
       : isNextPage // 如果是判断预加载下一页数据且没有pageCount的情况下，通过最后一页数据量是否达到pageSize来判断
-        ? len(listDataGetter(rawData)) < _$(pageSize)
-        : falseValue;
+      ? len(listDataGetter(rawData)) < _$(pageSize)
+      : falseValue;
     return preloadPage > 0 && !exceedPageCount;
   };
 
