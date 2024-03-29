@@ -526,8 +526,8 @@ describe('react => usePagination', () => {
       let cache = queryCache(getter(page, pageSize));
       expect(cache?.list).toStrictEqual([300, ...generateContinuousNumbers(18, 10)]);
 
-      // 检查是否重新fetch了后一页的数据
-      expect(fetchMockFn).toHaveBeenCalledTimes(3);
+      // insert时不会重新fetch后一页的数据
+      expect(fetchMockFn).toHaveBeenCalledTimes(2);
       cache = queryCache(getter(page + 1, pageSize));
       // insert时会将缓存末尾去掉，因此还是剩下10项
       expect(cache?.list).toEqual(generateContinuousNumbers(28, 19));
@@ -544,7 +544,7 @@ describe('react => usePagination', () => {
       const cache = queryCache(getter(page, pageSize));
       expect(cache?.list).toStrictEqual(curData);
 
-      expect(fetchMockFn).toHaveBeenCalledTimes(4);
+      expect(fetchMockFn).toHaveBeenCalledTimes(2); // insert不会触发下一页预加载
     });
 
     // 翻到最后一页后，再插入数据不会再去除一条数据
@@ -647,8 +647,8 @@ describe('react => usePagination', () => {
     await waitFor(() => {
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(generateContinuousNumbers(9, 6))); // 有两项被挤到后面一页了
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
-      // 5次来源分别是：初始化时2次、插入数据时1次（fetch下一页）、翻页时2次
-      expect(fetchMockFn).toHaveBeenCalledTimes(5);
+      // 5次来源分别是：初始化时2次、翻页时1次（翻页后上一页数据已有不再fetch）
+      expect(fetchMockFn).toHaveBeenCalledTimes(3);
     });
 
     // 再次返回前一页，移除的数据不应该存在
@@ -1440,14 +1440,14 @@ describe('react => usePagination', () => {
 
     // fetch响应后
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(5); // 初始化2次 + 删除fetch1次 + 翻页后fetch2次
+      expect(fetchMockFn).toHaveBeenCalledTimes(4); // 初始化2次 + 删除fetch重新fetch1次 + 翻页后fetch下一页1次
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([10, 11, 12, 13]));
     });
 
     // 再次返回前一页，移除的数据不应该存在
     fireEvent.click(screen.getByRole('subtractPage'));
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(7); // 翻页再fetch2次
+      expect(fetchMockFn).toHaveBeenCalledTimes(4); // 前后一页都有缓存，不fetch
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([4, 7, 8, 9]));
     });
   });
@@ -1574,7 +1574,7 @@ describe('react => usePagination', () => {
     fireEvent.click(screen.getByRole('subtractPage'));
     // 等待fetch完成后检查total是否正确
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(4); // 初始化2次、删除后1次、翻到第1页1次（第1页不触发上一页预加载）
+      expect(fetchMockFn).toHaveBeenCalledTimes(3); // 初始化2次、删除后1次、翻到第1页无fetch（第1页不触发上一页预加载，且下一页有缓存）
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([0, 1, 2, 3]));
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
@@ -1582,7 +1582,7 @@ describe('react => usePagination', () => {
     fireEvent.click(screen.getByRole('addPage2'));
     // 等待fetch完成后检查total是否正确
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(6); // 再次翻页+2次
+      expect(fetchMockFn).toHaveBeenCalledTimes(4); // 再次翻页+1次下一页fetch
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([10, 11, 12, 13]));
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
@@ -1593,7 +1593,7 @@ describe('react => usePagination', () => {
     let totalBackup = total;
     total = 200;
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(8); // 改变筛选条件（自动重置第initialPage页）+2次
+      expect(fetchMockFn).toHaveBeenCalledTimes(6); // 改变筛选条件（自动重置第initialPage页）+2次
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([104, 105, 106, 107])); // 重置到第initialPage页
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
@@ -1607,7 +1607,7 @@ describe('react => usePagination', () => {
       return data.filter((i: number) => ![105].includes(i));
     });
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(9); // 预加载下一页+1
+      expect(fetchMockFn).toHaveBeenCalledTimes(7); // 预加载下一页+1
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([104, 106, 107, 108]));
       // 再次看total是否正确
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
@@ -1618,7 +1618,7 @@ describe('react => usePagination', () => {
     fireEvent.click(screen.getByRole('resetMin'));
     total = totalBackup;
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(11); // 条件改变（当前第initialPage页）+2
+      expect(fetchMockFn).toHaveBeenCalledTimes(8); // 条件重置了，预加载了前一页数（当前第initialPage页）+1
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([4, 7, 8, 9]));
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
@@ -1877,7 +1877,7 @@ describe('react => usePagination', () => {
       expect(screen.getByRole('total')).toHaveTextContent(total.toString());
     });
     // method没有设置缓存时，不会触发数据拉取
-    expect(fetchMockFn).not.toBeCalled();
+    expect(fetchMockFn).not.toHaveBeenCalled();
   });
 
   // // 下拉加载更多相关
@@ -2383,7 +2383,7 @@ describe('react => usePagination', () => {
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([9, 10, 11, 12]));
       expect(screen.getByRole('total')).toHaveTextContent('');
       expect(screen.getByRole('pageCount')).toHaveTextContent('');
-      expect(fetchMockFn).toHaveBeenCalledTimes(5);
+      expect(fetchMockFn).toHaveBeenCalledTimes(4); // 翻页只预加载下一页
     });
   });
 
@@ -2560,13 +2560,13 @@ describe('react => usePagination', () => {
 
     fireEvent.click(screen.getByRole('addPage'));
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(4);
+      expect(fetchMockFn).toHaveBeenCalledTimes(3); // 上一页已有缓存不会再被预加载
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([100, 1, 2, 3, 4, 5, 6, 7]));
     });
 
     fireEvent.click(screen.getByRole('reload1'));
     await waitFor(() => {
-      expect(fetchMockFn).toHaveBeenCalledTimes(5);
+      expect(fetchMockFn).toHaveBeenCalledTimes(4);
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify([100, 1, 2, 3]));
     });
   });
@@ -2640,8 +2640,8 @@ describe('react => usePagination', () => {
     fireEvent.click(screen.getByRole('addPage'));
     page++;
     await waitFor(() => {
-      // 已经到最后一页了，不需要再预加载下一页数据了
-      expect(fetchMockFn).toHaveBeenCalledTimes(3);
+      // 已经到最后一页了，不需要再预加载下一页数据了，同时上一页也有缓存不会触发预加载
+      expect(fetchMockFn).toHaveBeenCalledTimes(2);
       expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(generateContinuousNumbers(9, 4)));
       expect(queryCache(getter(page + 1, pageSize))).toBeUndefined();
     });
@@ -2803,6 +2803,63 @@ describe('react => usePagination', () => {
     await waitFor(() => {
       expect(errorFn).toHaveBeenCalledTimes(3);
       expect(completeFn).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  test('should use the data of last request when set `abortLast` to true', async () => {
+    const alovaInst = createMockAlova();
+    const getter = (page: number, pageSize: number, keyword: string) =>
+      alovaInst.Get<SearchListResponse>('/list-with-search', {
+        params: {
+          page,
+          pageSize,
+          keyword
+        }
+      });
+
+    const successFn = jest.fn();
+    function Page() {
+      const [keyword, setKeyword] = useState('');
+      const { data, onSuccess, total } = usePagination((p, ps) => getter(p, ps, keyword), {
+        watchingStates: [keyword],
+        abortLast: true,
+        data: res => res.list
+      });
+      onSuccess(successFn);
+      return (
+        <div>
+          <span role="total">{total}</span>
+          <span role="response">{JSON.stringify(data)}</span>
+          <button
+            role="setKeyword-bbb"
+            onClick={() => setKeyword('bbb')}></button>
+          <button
+            role="resetKeyword"
+            onClick={() => setKeyword('')}></button>
+        </div>
+      );
+    }
+
+    render((<Page />) as ReactElement<any, any>);
+    let currentList = generateContinuousNumbers(9, 0, i => {
+      let n = i % 3;
+      return {
+        id: i,
+        word: ['aaa', 'bbb', 'ccc'][n]
+      };
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+      expect(screen.getByRole('total')).toHaveTextContent('300');
+    });
+
+    fireEvent.click(screen.getByRole('setKeyword-bbb'));
+    await untilCbCalled(setTimeout, 10);
+    fireEvent.click(screen.getByRole('resetKeyword'));
+    await waitFor(() => {
+      expect(screen.getByRole('response')).toHaveTextContent(JSON.stringify(currentList));
+      expect(screen.getByRole('total')).toHaveTextContent('300');
+      expect(successFn).toHaveBeenCalledTimes(2);
     });
   });
 });
