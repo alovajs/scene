@@ -21,7 +21,7 @@ import {
   splice
 } from '@/helper';
 import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
-import { getMethodKey, invalidateCache, setCache, useFetcher, useWatcher } from 'alova';
+import { getMethodKey, invalidateCache, queryCache, setCache, useFetcher, useWatcher } from 'alova';
 import createSnapshotMethodsManager from './createSnapshotMethodsManager';
 
 const paginationAssert = createAssert('usePagination');
@@ -83,6 +83,7 @@ export default function (
   // 监听状态变化时，重置page为1
   watch$(watchingStates, () => {
     upd$(page, initialPage);
+    requestCountInReseting.current = 0;
     isReset.current = trueValue;
   });
 
@@ -150,11 +151,24 @@ export default function (
     requestDataRef = useRequestRefState$(states.data);
 
   // 判断是否可预加载数据
-  const canPreload = (rawData = _$(requestDataRef), preloadPage, fetchMethod, isNextPage = falseValue) => {
+  const canPreload = (
+    rawData = _$(requestDataRef),
+    preloadPage,
+    fetchMethod,
+    isNextPage = falseValue,
+    forceRequest
+  ) => {
     const { e: expireMilliseconds } = getLocalCacheConfigParam(fetchMethod);
     // 如果缓存时间小于等于当前时间，表示没有设置缓存，此时不再预拉取数据
+    // 或者已经有缓存了也不预拉取
     if (expireMilliseconds <= getTime()) {
-      return;
+      return falseValue;
+    }
+    if (forceRequest) {
+      return trueValue;
+    }
+    if (queryCache(fetchMethod)) {
+      return falseValue;
     }
 
     const pageCountVal = _$(pageCount);
@@ -170,7 +184,7 @@ export default function (
   const fetchNextPage = (rawData, force = falseValue) => {
     const nextPage = _$(page) + 1;
     const fetchMethod = getHandlerMethod(nextPage);
-    if (preloadNextPage && canPreload(rawData, nextPage, fetchMethod, trueValue)) {
+    if (preloadNextPage && canPreload(rawData, nextPage, fetchMethod, trueValue, force)) {
       promiseCatch(fetch(fetchMethod, force), noop);
     }
   };
@@ -351,12 +365,14 @@ export default function (
       _$(fetchingRef) && abortFetch();
       // 缓存失效
       invalidatePaginationCache();
-      // 重新预加载前后一页的数据，需要在refresh被调用前执行，因为refresh时isRefresh为true，此时无法fetch数据
-      // fetchPreviousPage();
 
-      // 强制请求下一页，因为有请求共享，需要在中断请求后异步执行拉取操作
+      // 当下一页的数据量不超过pageSize时，强制请求下一页，因为有请求共享，需要在中断请求后异步执行拉取操作
       setTimeoutFn(() => {
-        fetchNextPage(undefinedValue, trueValue);
+        const snapshotItem = getSnapshotMethods(_$(page) + 1);
+        if (snapshotItem) {
+          const cachedListData = listDataGetter(queryCache(snapshotItem.entity) || {}) || [];
+          fetchNextPage(undefinedValue, len(cachedListData) < _$(pageSize));
+        }
       });
     });
 

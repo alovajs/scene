@@ -411,13 +411,12 @@ describe('createServerTokenAuthentication', () => {
         isExpired: error => {
           return error.name === '401';
         },
-        handler: async (error, method) => {
+        handler: async () => {
           const refreshMethod = alovaInst.Get<{ token: string }>('/refresh-token');
           refreshMethod.meta = {
             authRole: 'refreshToken'
           };
           token = (await refreshMethod).token;
-          console.log(error, method);
           refreshTokenFn();
         }
       },
