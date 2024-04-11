@@ -1,7 +1,7 @@
 import { defineProperty, forEach, objectKeys } from '@/helper';
 import { symbolToStringTag, undefinedValue } from '@/helper/variables';
 import { AlovaCompleteEvent, Method } from 'alova';
-import { SilentMethod, SQHookBehavior } from '~/typings/general';
+import { SQHookBehavior, SilentMethod } from '~/typings/general';
 
 /**
  * 创建统一的事件对象，它将承载以下事件
@@ -24,8 +24,23 @@ import { SilentMethod, SQHookBehavior } from '~/typings/general';
  * [RetriableRetryEvent]重试：method实例、sendArgs、retryTimes、retryDelay
  * [RetriableFailEvent]重试：method实例、sendArgs、错误对象、retryTimes
  */
+
+export const enum AlovaHookEventType {
+  GlobalSQEvent = 0,
+  GlobalSQSuccessEvent = 1,
+  GlobalSQErrorEvent = 2,
+  GlobalSQFailEvent = 3,
+  ScopedSQEvent = 4,
+  ScopedSQSuccessEvent = 5,
+  ScopedSQErrorEvent = 6,
+  ScopedSQCompleteEvent = 7,
+  ScopedSQRetryEvent = 8,
+  RetriableRetryEvent = 9,
+  RetriableFailEvent = 10
+}
+
 export default <S, E, R, T, RC, RE, RH>(
-  eventType: number,
+  eventType: AlovaHookEventType,
   method: Method<S, E, R, T, RC, RE, RH>,
   behavior?: SQHookBehavior,
   silentMethod?: SilentMethod<S, E, R, T, RC, RE, RH>,
