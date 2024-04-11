@@ -836,5 +836,52 @@ type AutoRequestHookConfig<S, E, R, T, RC, RE, RH> = {
    */
   throttle?: number;
 } & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+
+/**
+ * SSERequest配置
+ */
+type SSEHookConfig = {
+  /** 会传给new EventSource */
+  withCredentials?: boolean;
+
+  /** 是否经过alova实例的responded拦截，默认为true */
+  interceptByGlobalResponded?: boolean;
+
+  /** 初始数据 */
+  initialData?: any;
+};
+
+type SSEReturnType<S> = {
+  readyState: ExportedType<boolean, S>;
+  data: R;
+  eventSource: EventSource;
+
+  onOpen(callback: (event: AlovaSSEEvent) => void): void;
+  onMessage<T>(callback: (event: AlovaSSEMessageEvent<T>) => void): void;
+  onError(callback: (event: AlovaSSEErrorEvent) => void): void;
+  on(eventName: 'open' | 'message' | 'error', handler: (event: AlovaSSEEvent) => void): () => void;
+};
+
+const enum SSEHookReadyState {
+  CONNECTING = 0,
+  OPEN = 1,
+  CLOSED = 2
+}
+
+interface AlovaSSEEvent {
+  method: Method; // alova的method实例
+  eventSource: EventSource; // eventSource实例
+}
+interface AlovaSSEErrorEvent extends AlovaSSEEvent {
+  error: Error; // 错误对象
+}
+interface AlovaSSEMessageEvent<T> extends AlovaSSEEvent {
+  data: T; // 每次响应的，经过拦截器转换后的数据
+}
+type SSEOnOpenTrigger = (event: AlovaSSEEvent) => void;
+type SSEOnMessageTrigger<T> = (event: AlovaSSEMessageEvent<T>) => void;
+type SSEOnErrorTrigger = (event: AlovaSSEErrorEvent) => void;
+type SSEOn = (eventName: 'open' | 'message' | 'error', handler: (event: AlovaSSEEvent) => void) => () => void;
+
 type NotifyHandler = () => void;
 type UnbindHandler = () => void;

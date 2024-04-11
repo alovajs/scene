@@ -20,6 +20,7 @@ import useAutoRequest_unified from '@/hooks/useAutoRequest';
 import useCaptcha_unified from '@/hooks/useCaptcha';
 import useForm_unified from '@/hooks/useForm';
 import useRetriableRequest_unified from '@/hooks/useRetriableRequest';
+import useSSE_unified from '@/hooks/useSSE';
 import { actionDelegationMiddleware as actionDelegationMiddleware_unified } from '@/middlewares/actionDelegation';
 
 export const usePagination = (handler, config = {}) =>
@@ -93,3 +94,7 @@ forEach(objectKeys(useAutoRequest_unified), key => {
     trueValue
   );
 });
+
+// 导出useSSE
+export const useSSE = (handler, config = {}) =>
+  useSSE_unified(handler, config, $, $$, _$, _exp$, upd$, watch$, onMounted$, useFlag$, useMemorizedCallback$);

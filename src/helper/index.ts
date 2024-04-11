@@ -1,4 +1,4 @@
-import { CacheExpire, LocalCacheConfig, Method } from 'alova';
+import { AlovaMethodHandler, CacheExpire, LocalCacheConfig, Method } from 'alova';
 import { BackoffPolicy } from '~/typings/general';
 import { ObjectCls, PromiseCls, StringCls, falseValue, nullValue, trueValue, undefinedValue } from './variables';
 
@@ -320,3 +320,49 @@ export const delayWithBackoff = (backoff: BackoffPolicy, retryTimes: number) => 
   }
   return retryDelayFinally;
 };
+/**
+ * 获取请求方法对象
+ * @param methodHandler 请求方法句柄
+ * @param args 方法调用参数
+ * @returns 请求方法对象
+ */
+export const getHandlerMethod = <S, E, R, T, RC, RE, RH>(
+  methodHandler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  args: any[] = []
+) => {
+  const methodInstance = isFn(methodHandler) ? methodHandler(...args) : methodHandler;
+  createAssert('scene')(
+    instanceOf(methodInstance, Method),
+    'hook handler must be a method instance or a function that returns method instance'
+  );
+  return methodInstance;
+};
+
+type AnyFn = (...args: any[]) => any;
+export function useCallback<Fn extends AnyFn = AnyFn>(onCallbackChange?: (callbacks: Fn[]) => void) {
+  let callbacks: Fn[] = [];
+
+  const setCallback = (fn: Fn) => {
+    if (!callbacks.includes(fn)) {
+      callbacks.push(fn);
+      onCallbackChange && onCallbackChange(callbacks);
+    }
+    // 返回取消注册函数
+    return () => {
+      callbacks = filterItem(callbacks, e => e !== fn);
+      onCallbackChange && onCallbackChange(callbacks);
+    };
+  };
+
+  const triggerCallback = (...args: any[]) => {
+    if (callbacks) {
+      return forEach(callbacks, fn => fn(args));
+    }
+  };
+
+  const removeAllCallback = () => {
+    callbacks = [];
+  };
+
+  return [setCallback, triggerCallback as Fn, removeAllCallback] as const;
+}
