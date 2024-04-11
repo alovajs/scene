@@ -11,5 +11,6 @@
     "source.fixAll.eslint": "explicit"
   },
   "jest.autoRun": "off",
-  "typescript.tsdk": "node_modules\\typescript\\lib"
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "files.eol": "\n"
 }
