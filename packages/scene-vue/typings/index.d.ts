@@ -7,6 +7,7 @@ import {
   Method,
   Progress,
   RequestHookConfig,
+  StatesHook,
   SuccessHandler,
   updateState,
   UseHookReturnType,
