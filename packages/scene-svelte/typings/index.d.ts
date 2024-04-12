@@ -7,6 +7,7 @@ import {
   Method,
   Progress,
   RequestHookConfig,
+  StatesHook,
   SuccessHandler,
   updateState,
   UseHookReturnType,
@@ -523,12 +524,13 @@ declare const accessAction: AccessAction;
  * @returns token认证拦截器函数
  */
 export function createClientTokenAuthentication<
+  SH extends StatesHook<any, any>,
   RA extends
     | AlovaRequestAdapter<any, any, any, any, any>
     | ((...args: any[]) => AlovaRequestAdapter<any, any, any, any, any>) = typeof GlobalFetch
 >(
   options: ClientTokenAuthenticationOptions<AlovaRequestAdapterUnified<RA>>
-): TokenAuthenticationResult<AlovaRequestAdapterUnified<RA>>;
+): TokenAuthenticationResult<SH, AlovaRequestAdapterUnified<RA>>;
 
 /**
  * 创建服务端的token认证拦截器
@@ -554,12 +556,13 @@ export function createClientTokenAuthentication<
  * @returns token认证拦截器函数
  */
 export function createServerTokenAuthentication<
+  SH extends StatesHook<any, any>,
   RA extends
     | AlovaRequestAdapter<any, any, any, any, any>
     | ((...args: any[]) => AlovaRequestAdapter<any, any, any, any, any>) = typeof GlobalFetch
 >(
   options: ServerTokenAuthenticationOptions<AlovaRequestAdapterUnified<RA>>
-): TokenAuthenticationResult<AlovaRequestAdapterUnified<RA>>;
+): TokenAuthenticationResult<SH, AlovaRequestAdapterUnified<RA>>;
 
 /**
  * 在一定条件下可以自动重新拉取数据，从而刷新页面，使用场景有：
