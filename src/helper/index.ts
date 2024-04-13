@@ -1,5 +1,5 @@
-import { CacheExpire, LocalCacheConfig, Method } from 'alova';
-import { BackoffPolicy } from '~/typings/general';
+import { Alova, AlovaMethodHandler, CacheExpire, LocalCacheConfig, Method } from 'alova';
+import { AnyFn, BackoffPolicy, UsePromiseReturnType } from '~/typings/general';
 import { ObjectCls, PromiseCls, StringCls, falseValue, nullValue, trueValue, undefinedValue } from './variables';
 
 export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
@@ -10,6 +10,7 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
     onrejected?: ((reason: any) => T2 | PromiseLike<T2>) | undefined | null
   ): Promise<T | T2> => promise.then(onFulfilled, onrejected),
   promiseCatch = <T, O>(promise: Promise<T>, onrejected: (reason: any) => O) => promise.catch(onrejected),
+  promiseFinally = <T>(promise: Promise<T>, onfinally?: (() => void) | undefined | null) => promise.finally(onfinally),
   forEach = <T>(ary: T[], fn: (item: T, index: number, ary: T[]) => void) => ary.forEach(fn),
   pushItem = <T>(ary: T[], ...item: T[]) => ary.push(...item),
   filterItem = <T, R>(ary: T[], fn: (item: T, index: number, ary: T[]) => R) => ary.filter(fn),
@@ -19,8 +20,12 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   isArray = (target: any) => Array.isArray(target),
   shift = <T>(ary: T[]) => ary.shift(),
   splice = <T>(ary: T[], start: number, deleteCount = 0, ...items: T[]) => ary.splice(start, deleteCount, ...items),
+  getContextOptions = <S, E, RC, RE, RH>(alovaInstance: Alova<S, E, RC, RE, RH>) => alovaInstance.options,
   getConfig = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.config,
+  getOptions = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) =>
+    getContextOptions(getContext(methodInstance)),
   getContext = <S, E, R, T, RC, RE, RH>(methodInstance: Method<S, E, R, T, RC, RE, RH>) => methodInstance.context,
+  getMethodInternalKey = (methodInstance: Method) => methodInstance.__key__,
   JSONStringify = (
     value: any,
     replacer?: ((this: any, key: string, value: any) => any) | undefined,
@@ -31,6 +36,7 @@ export const promiseResolve = <T>(value?: T) => PromiseCls.resolve(value),
   objectKeys = (obj: any) => ObjectCls.keys(obj),
   objectValues = (obj: any) => ObjectCls.values(obj),
   setTimeoutFn = (fn: GeneralFn, delay = 0) => setTimeout(fn, delay),
+  _self = <T>(arg: T) => arg,
   clearTimeoutFn = (timeoutId?: string | number | NodeJS.Timeout) => clearTimeout(timeoutId),
   regexpTest = (reg: RegExp, str: string) => reg.test(str);
 
@@ -320,3 +326,62 @@ export const delayWithBackoff = (backoff: BackoffPolicy, retryTimes: number) => 
   }
   return retryDelayFinally;
 };
+/**
+ * 获取请求方法对象
+ * @param methodHandler 请求方法句柄
+ * @param args 方法调用参数
+ * @returns 请求方法对象
+ */
+export const getHandlerMethod = <S, E, R, T, RC, RE, RH>(
+  methodHandler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  args: any[] = []
+) => {
+  const methodInstance = isFn(methodHandler) ? methodHandler(...args) : methodHandler;
+  createAssert('scene')(
+    instanceOf(methodInstance, Method),
+    'hook handler must be a method instance or a function that returns method instance'
+  );
+  return methodInstance;
+};
+
+export function useCallback<Fn extends AnyFn = AnyFn>(onCallbackChange: (callbacks: Fn[]) => void = noop) {
+  let callbacks: Fn[] = [];
+
+  const setCallback = (fn: Fn) => {
+    if (!callbacks.includes(fn)) {
+      callbacks.push(fn);
+      onCallbackChange(callbacks);
+    }
+    // 返回取消注册函数
+    return () => {
+      callbacks = filterItem(callbacks, e => e !== fn);
+      onCallbackChange(callbacks);
+    };
+  };
+
+  const triggerCallback = (...args: any[]) => {
+    if (callbacks.length > 0) {
+      return forEach(callbacks, fn => fn(...args));
+    }
+  };
+
+  const removeAllCallback = () => {
+    callbacks = [];
+    onCallbackChange(callbacks);
+  };
+
+  return [setCallback, triggerCallback as Fn, removeAllCallback] as const;
+}
+
+export function usePromise<T = any>(): UsePromiseReturnType<T> {
+  let _resolve: UsePromiseReturnType<T>['resolve'];
+  let _reject: UsePromiseReturnType<T>['reject'];
+
+  const promise = new Promise<T>((resolve, reject) => {
+    _resolve = resolve;
+    _reject = reject;
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return { promise, resolve: _resolve!, reject: _reject! };
+}

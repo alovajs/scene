@@ -1,6 +1,9 @@
 import { act } from '@testing-library/react';
 
-export const untilCbCalled = <T>(setCb: (cb: (arg: T) => void, ...others: any[]) => void, ...args: any[]) =>
+export const untilCbCalled = <T>(
+  setCb: (cb: (arg: T, ...args: any[]) => any, ...others: any[]) => any,
+  ...args: any[]
+) =>
   new Promise<T>(resolve => {
     setCb(d => {
       resolve(d);
