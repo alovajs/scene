@@ -1,5 +1,5 @@
-import { undefinedValue } from '@/helper/variables';
 import '@testing-library/jest-dom';
+import { fireEvent, render, screen, waitFor } from '@testing-library/vue';
 import { Alova, createAlova } from 'alova';
 import GlobalFetch, { FetchRequestInit } from 'alova/GlobalFetch';
 import VueHook from 'alova/vue';
@@ -11,6 +11,7 @@ import { untilCbCalled } from '~/test/utils';
 import { AnyFn, SSEHookReadyState } from '~/typings/general';
 import { useSSE } from '..';
 import { AlovaSSEMessageEvent } from '../typings/general';
+import CompUseSSE from './components/use-sse.vue';
 
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
 
@@ -125,100 +126,96 @@ describe('vue => useSSE', () => {
 
   // ! 有初始数据，立即发送请求
   test('should get the initial data and send request immediately', async () => {
-    await prepareAlova();
-    const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
-    const initialData = {
-      id: 9527,
-      name: 'Tom',
-      age: 18
-    };
+    const { port } = server.listen().address() as AddressInfo;
+
+    const initialData = 'initial-data';
     const testDataA = 'test-data-1';
 
-    const { onOpen, onMessage, data, readyState } = useSSE(poster, { initialData });
-    let recv = undefinedValue;
-    const cb = jest.fn((event: AnyMessageType) => {
-      recv = event.data;
+    render(CompUseSSE, {
+      props: {
+        port,
+        path: `/${TriggerEventName}`,
+        initialData
+      }
     });
-    expect(readyState.value).toStrictEqual(SSEHookReadyState.CLOSED);
 
-    onMessage(cb);
-    expect(data.value).toStrictEqual(initialData);
+    expect(screen.getByRole('status')).toHaveTextContent('closed');
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
 
-    // 等待 SSE 连接
-    await untilCbCalled(onOpen);
-    expect(readyState.value).toStrictEqual(SSEHookReadyState.OPEN);
+    await screen.findByText(/opened/);
+
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('1');
 
     await serverSend(testDataA);
-    await untilCbCalled(setTimeout, 300);
 
-    expect(cb).toHaveBeenCalled();
-    expect(recv).toEqual(testDataA);
-    expect(data.value).toStrictEqual(testDataA);
+    await waitFor(
+      () => {
+        expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('1');
+        expect(screen.getByRole('data')).toHaveTextContent(testDataA);
+      },
+      { timeout: 4000 }
+    );
   });
 
   // ! 测试关闭后重新连接
   test('should not trigger handler after close', async () => {
-    await prepareAlova();
-    const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
-    const { onOpen, onMessage, data, readyState, send, close } = useSSE(poster);
-
-    expect(readyState.value).toStrictEqual(SSEHookReadyState.CLOSED);
-    await untilCbCalled(onOpen);
-    expect(readyState.value).toStrictEqual(SSEHookReadyState.OPEN);
-
-    let recv = undefinedValue;
-    const cb = jest.fn((event: AnyMessageType) => {
-      recv = event.data;
+    const { port } = server.listen().address() as AddressInfo;
+    render(CompUseSSE, {
+      props: {
+        port,
+        path: `/${TriggerEventName}`
+      }
     });
-    onMessage(cb);
 
     const testDataA = 'test-data-1';
     const testDataB = 'test-data-2';
 
-    expect(data.value).toBeUndefined();
+    await screen.findByText(/opened/);
+
+    expect(screen.getByRole('data')).toBeEmptyDOMElement();
 
     // 测试发送数据 A
     await serverSend(testDataA);
     await untilCbCalled(setTimeout, 300);
 
-    expect(cb).toHaveBeenCalledTimes(1);
-
-    expect(readyState.value).toStrictEqual(SSEHookReadyState.OPEN);
-    expect(recv).toStrictEqual(testDataA);
-    expect(data.value).toStrictEqual(testDataA);
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('status')).toHaveTextContent('opened');
+    expect(screen.getByRole('data')).toHaveTextContent(testDataA);
 
     // 关闭连接
-    close();
-    expect(readyState.value).toStrictEqual(SSEHookReadyState.CLOSED);
+    fireEvent.click(screen.getByRole('close'));
+    await untilCbCalled(setTimeout, 500);
+    expect(screen.getByRole('status')).toHaveTextContent('closed');
 
     // 测试发送数据 B
     await serverSend(testDataB);
 
     // 连接已经关闭，不应该触发事件，数据也应该不变
-    expect(cb).toHaveBeenCalledTimes(1);
-    expect(data.value).toStrictEqual(testDataA);
-    expect(recv).toStrictEqual(testDataA);
+    expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('data')).toHaveTextContent(testDataA);
 
     // 重新连接若干次。。。
-    const openCb = jest.fn();
-    onOpen(openCb);
-    await send();
-    await send();
-    await send();
-    await send();
-    await send();
+    fireEvent.click(screen.getByRole('send'));
+    await untilCbCalled(setTimeout, 100);
+    fireEvent.click(screen.getByRole('send'));
+    await untilCbCalled(setTimeout, 100);
+    fireEvent.click(screen.getByRole('send'));
+    await untilCbCalled(setTimeout, 100);
+    fireEvent.click(screen.getByRole('send'));
+    await untilCbCalled(setTimeout, 100);
+    fireEvent.click(screen.getByRole('send'));
+    await untilCbCalled(setTimeout, 100);
 
-    expect(openCb).toHaveBeenCalledTimes(5);
-    expect(readyState.value).toStrictEqual(SSEHookReadyState.OPEN);
-    expect(data.value).toStrictEqual(testDataA);
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('6');
+    expect(screen.getByRole('status')).toHaveTextContent('opened');
+    expect(screen.getByRole('data')).toHaveTextContent(testDataA);
 
     // 测试发送数据 B
     await serverSend(testDataB);
     await untilCbCalled(setTimeout, 300);
 
     // abortLast 为 true（默认）时，调用 send 会断开之前建立的连接
-    expect(cb).toHaveBeenCalledTimes(2);
-    expect(recv).toStrictEqual(testDataB);
-    expect(data.value).toStrictEqual(testDataB);
+    expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('2');
+    expect(screen.getByRole('data')).toHaveTextContent(testDataB);
   });
 });

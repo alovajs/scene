@@ -98,7 +98,7 @@ describe('react => useSSE', () => {
   });
 
   // ! 有初始数据，不立即发送请求
-  test('should default not request immediately', async () => {
+  test('should get the initial data and NOT send request immediately', async () => {
     await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
     const initialData = 'initial-data';

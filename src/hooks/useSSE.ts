@@ -24,6 +24,7 @@ import {
   promiseCatch,
   promiseFinally,
   promiseThen,
+  setTimeoutFn,
   useCallback,
   usePromise
 } from '@/helper';
@@ -360,14 +361,12 @@ export default <Data, S, E, R, T, RC, RE, RH>(
 
   // * MARK: 初始化动作
   onMounted$(() => {
-    if (immediate) {
-      setTimeout(() => connect(), 0);
-    }
+    setTimeoutFn(() => {
+      if (immediate) {
+        connect();
+      }
+    });
   });
-
-  // if (immediate) {
-  //   setTimeout(() => connect(), 0);
-  // }
 
   return {
     readyState: _exp$(readyState),

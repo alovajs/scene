@@ -1,0 +1,56 @@
+<template>
+  <div>
+    <span role="status"> {{ getStatusText }} </span>
+    <span role="data">{{ data }}</span>
+    <span role="onopen">{{ onOpenCounter }}</span>
+    <span role="onmessage">{{ onMessageCounter }}</span>
+    <button role="send" @click="send">send request</button>
+    <button role="close" @click="close">close request</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { createAlova } from 'alova';
+import GlobalFetch from 'alova/GlobalFetch';
+import VueHook from 'alova/vue';
+import { computed, ref } from 'vue';
+import { useSSE } from '../..';
+
+const props = defineProps<{
+  initialData: any
+  port: number
+  path: string
+}>()
+
+const alovaInst = createAlova({
+  baseURL: `http://127.0.0.1:${props.port}`,
+  statesHook: VueHook,
+  requestAdapter: GlobalFetch(),
+  cacheLogger: false
+});
+
+const onOpenCounter = ref(0);
+const onMessageCounter = ref(0);
+
+const poster = (data: any) => alovaInst.Get(props.path, data);
+const { onMessage, onOpen, data, readyState, send, close } = useSSE(poster, { initialData: props.initialData });
+
+onMessage(() => {
+  onMessageCounter.value += 1;
+});
+
+onOpen(() => {
+  onOpenCounter.value += 1;
+});
+
+
+const getStatusText = computed(() => {
+  if (readyState.value === 1 /** SSEHookReadyState.OPEN */) {
+    return 'opened';
+  } else if (readyState.value === 2 /** SSEHookReadyState.CLOSED */) {
+    return 'closed';
+  } else {
+    return 'connecting';
+  }
+})
+</script>
