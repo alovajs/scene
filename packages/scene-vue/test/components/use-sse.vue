@@ -17,6 +17,7 @@ import { computed, ref } from 'vue';
 import { useSSE } from '../..';
 
 const props = defineProps<{
+  immediate: boolean
   initialData: any
   port: number
   path: string
@@ -33,7 +34,7 @@ const onOpenCounter = ref(0);
 const onMessageCounter = ref(0);
 
 const poster = (data: any) => alovaInst.Get(props.path, data);
-const { onMessage, onOpen, data, readyState, send, close } = useSSE(poster, { initialData: props.initialData });
+const { onMessage, onOpen, data, readyState, send, close } = useSSE(poster, { initialData: props.initialData, immediate:props.immediate });
 
 onMessage(() => {
   onMessageCounter.value += 1;

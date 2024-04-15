@@ -36,7 +36,10 @@ export const enum AlovaHookEventType {
   ScopedSQCompleteEvent = 7,
   ScopedSQRetryEvent = 8,
   RetriableRetryEvent = 9,
-  RetriableFailEvent = 10
+  RetriableFailEvent = 10,
+  SSEOpenEvent = 11,
+  SSEMessageEvent = 12,
+  SSEErrorEvent = 13
 }
 
 export default <S, E, R, T, RC, RE, RH>(
@@ -106,7 +109,10 @@ export default <S, E, R, T, RC, RE, RH>(
     'ScopedSQCompleteEvent', // 7
     'ScopedSQRetryEvent', // 8
     'RetriableRetryEvent', // 9
-    'RetriableFailEvent' // 10
+    'RetriableFailEvent', // 10
+    'SSEOpenEvent', // 11
+    'SSEMessageEvent', // 12
+    'SSEErrorEvent' // 13
   ][eventType];
   typeName && defineProperty(sqEvent, symbolToStringTag, typeName);
   return sqEvent;

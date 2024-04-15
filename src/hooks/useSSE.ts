@@ -13,6 +13,7 @@ import {
 import { buildCompletedURL } from '@/functions/sendRequest';
 import {
   __self,
+  createAssert,
   getConfig,
   getHandlerMethod,
   getMethodInternalKey,
@@ -24,12 +25,11 @@ import {
   promiseCatch,
   promiseFinally,
   promiseThen,
-  setTimeoutFn,
   useCallback,
   usePromise
 } from '@/helper';
 import createHookEvent, { AlovaHookEventType } from '@/helper/createHookEvent';
-import { trueValue, undefinedValue } from '@/helper/variables';
+import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import {
   AlovaMethodHandler,
   Method,
@@ -38,8 +38,7 @@ import {
   ResponsedHandler,
   ResponsedHandlerRecord,
   invalidateCache,
-  matchSnapshotMethod,
-  updateState
+  matchSnapshotMethod
 } from 'alova';
 import {
   AlovaSSEEvent,
@@ -51,6 +50,13 @@ import {
   SSEOnOpenTrigger,
   UsePromiseReturnType
 } from '~/typings/general';
+
+const assert = createAssert('useSSE');
+const MessageType: Record<Capitalize<keyof EventSourceEventMap>, keyof EventSourceEventMap> = {
+  Open: 'open',
+  Error: 'error',
+  Message: 'message'
+} as const;
 
 export default <Data, S, E, R, T, RC, RE, RH>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
@@ -71,12 +77,12 @@ export default <Data, S, E, R, T, RC, RE, RH>(
     withCredentials,
     interceptByGlobalResponded = trueValue,
     /** abortLast = trueValue, */
-    immediate = trueValue
+    immediate = falseValue
   } = config;
   // ! 暂时不支持指定 abortLast
   const abortLast = trueValue;
 
-  let eventSource = $<EventSource | undefined>(undefinedValue, trueValue);
+  let eventSource = useFlag$<EventSource | undefined>(undefinedValue);
   let sendPromiseObject = useFlag$<UsePromiseReturnType<void> | undefined>(undefinedValue);
 
   const data = $<Data>(initialData, trueValue);
@@ -116,10 +122,9 @@ export default <Data, S, E, R, T, RC, RE, RH>(
   /**
    * 处理响应任务，失败时不缓存数据
    * @param handlerReturns 拦截器返回后的数据
-   * @param doNotCache 是否不要更新缓存
    * @returns 处理后的response
    */
-  const handleResponseTask = async (handlerReturns: any, doNotCache?: boolean) => {
+  const handleResponseTask = async (handlerReturns: any) => {
     const { headers, name: methodInstanceName, transformData: transformDataFn = __self } = getConfig(methodInstance);
     const methodKey = getMethodInternalKey(methodInstance);
 
@@ -127,10 +132,6 @@ export default <Data, S, E, R, T, RC, RE, RH>(
     const transformedData = await transformDataFn(returnsData, (headers || {}) as RH);
 
     upd$(data, transformedData);
-
-    if (!doNotCache) {
-      updateState(methodInstance, { data: transformedData });
-    }
 
     // 查找hitTarget
     const hitMethods = matchSnapshotMethod({
@@ -168,7 +169,7 @@ export default <Data, S, E, R, T, RC, RE, RH>(
         // eslint-disable-next-line prettier/prettier
         promiseCatch(
           handleResponseTask(responseSuccessHandler(data, methodInstance)),
-          (error: any) => handleResponseTask(responseErrorHandler(error, methodInstance), true)
+          (error: any) => handleResponseTask(responseErrorHandler(error, methodInstance))
         ),
         // finally
         () => responseCompleteHandler(methodInstance)
@@ -182,10 +183,8 @@ export default <Data, S, E, R, T, RC, RE, RH>(
    * 将 SourceEvent 产生的事件变为 AlovaSSEHook 的事件
    */
   const createSSEEvent = async (eventName: string, event: MessageEvent<any> | Event) => {
-    const es = _$(eventSource);
-    if (!es) {
-      throw new Error('eventSource is undefined');
-    }
+    assert(!!eventSource.current, 'EventSource is not initialized');
+    const es = eventSource.current!;
 
     const ev = (type: AlovaHookEventType, data?: any, error?: any) => {
       const event = createHookEvent(
@@ -207,16 +206,16 @@ export default <Data, S, E, R, T, RC, RE, RH>(
       return event;
     };
 
-    if (eventName === 'open') {
-      return ev(AlovaHookEventType.ScopedSQEvent);
+    if (eventName === MessageType.Open) {
+      return ev(AlovaHookEventType.SSEOpenEvent);
     }
-    if (eventName === 'error') {
-      return ev(AlovaHookEventType.ScopedSQErrorEvent, undefinedValue, new Error('SSE Error'));
+    if (eventName === MessageType.Error) {
+      return ev(AlovaHookEventType.SSEErrorEvent, undefinedValue, new Error('SSE Error'));
     }
 
     // 其余名称的事件都是（类）message 的事件，data 交给 dataHandler 处理
     const data = await dataHandler((event as MessageEvent<any>).data);
-    return ev(AlovaHookEventType.ScopedSQSuccessEvent, data);
+    return ev(AlovaHookEventType.SSEMessageEvent, data);
   };
 
   // * MARK: EventSource 的事件处理
@@ -225,14 +224,14 @@ export default <Data, S, E, R, T, RC, RE, RH>(
     if (!customEventMap.has(eventName)) {
       const useCallbackObject = useCallback<(event: AlovaSSEEvent<S, E, R, T, RC, RE, RH>) => void>(callbacks => {
         if (callbacks.length === 0) {
-          _$(eventSource)?.removeEventListener(eventName, useCallbackObject[1] as any);
+          eventSource.current?.removeEventListener(eventName, useCallbackObject[1] as any);
           customEventMap.delete(eventName);
         }
       });
 
       const trigger = useCallbackObject[1];
       customEventMap.set(eventName, useCallbackObject);
-      _$(eventSource)?.addEventListener(eventName, event => {
+      eventSource.current?.addEventListener(eventName, event => {
         promiseThen(createSSEEvent(eventName, event), trigger as any);
       });
     }
@@ -255,26 +254,26 @@ export default <Data, S, E, R, T, RC, RE, RH>(
   const esOpen = (event: Event) => {
     // resolve 使用 send() 时返回的 promise
     upd$(readyState, SSEHookReadyState.OPEN);
-    promiseThen(createSSEEvent('open', event), triggerOnOpen as any);
+    promiseThen(createSSEEvent(MessageType.Open, event), triggerOnOpen as any);
     // ! 一定要在调用 onOpen 之后 resolve
     sendPromiseObject.current?.resolve();
   };
 
   const esError = (event: Event) => {
     upd$(readyState, SSEHookReadyState.CLOSED);
-    promiseThen(createSSEEvent('error', event), triggerOnError as any);
+    promiseThen(createSSEEvent(MessageType.Error, event), triggerOnError as any);
     // ? 这里是否需要 close()
   };
 
   const esMessage = (event: MessageEvent<any>) => {
-    promiseThen(createSSEEvent('message', event), triggerOnMessage as any);
+    promiseThen(createSSEEvent(MessageType.Message, event), triggerOnMessage as any);
   };
 
   /**
    * 关闭当前 eventSource 的注册
    */
   const close = useMemorizedCallback$(() => {
-    const es = _$(eventSource);
+    const es = eventSource.current;
     if (!es) {
       return;
     }
@@ -286,9 +285,9 @@ export default <Data, S, E, R, T, RC, RE, RH>(
 
     // * MARK: 解绑事件处理
     es.close();
-    es.removeEventListener('open', esOpen);
-    es.removeEventListener('error', esError);
-    es.removeEventListener('message', esMessage);
+    es.removeEventListener(MessageType.Open, esOpen);
+    es.removeEventListener(MessageType.Error, esError);
+    es.removeEventListener(MessageType.Message, esMessage);
     upd$(readyState, SSEHookReadyState.CLOSED);
 
     // eventSource 关闭后，取消注册所有自定义事件
@@ -302,18 +301,19 @@ export default <Data, S, E, R, T, RC, RE, RH>(
    * 发送请求并初始化 eventSource
    */
   const connect = useMemorizedCallback$((...sendArgs: any[]) => {
-    let es = _$(eventSource);
+    let es = eventSource.current;
+    let promiseObj = sendPromiseObject.current;
     if (es && abortLast) {
       // 当 abortLast === true，关闭之前的连接并重新建立
       close();
     }
 
     // 设置 send 函数使用的 promise 对象
-    if (!sendPromiseObject.current) {
-      sendPromiseObject.current = usePromise();
+    if (!promiseObj) {
+      promiseObj = sendPromiseObject.current = usePromise();
       // open 后清除 promise 对象
-      sendPromiseObject.current.promise.finally(() => {
-        sendPromiseObject.current = undefinedValue;
+      promiseObj.promise.finally(() => {
+        promiseObj = undefinedValue;
       });
     }
 
@@ -327,15 +327,15 @@ export default <Data, S, E, R, T, RC, RE, RH>(
 
     // 建立连接
     es = new EventSource(fullURL, { withCredentials });
+    eventSource.current = es;
     upd$(readyState, SSEHookReadyState.CONNECTING);
-    upd$(eventSource, es);
 
     // * MARK: 注册处理事件
 
     // 注册处理事件 open error message
-    es.addEventListener('open', esOpen);
-    es.addEventListener('error', esError);
-    es.addEventListener('message', esMessage);
+    es.addEventListener(MessageType.Open, esOpen);
+    es.addEventListener(MessageType.Error, esError);
+    es.addEventListener(MessageType.Message, esMessage);
 
     // 以及 自定义时间
     // 如果在 connect（send）之前就使用了 on 监听，则 customEventMap 里就已经有事件存在
@@ -345,7 +345,7 @@ export default <Data, S, E, R, T, RC, RE, RH>(
       });
     });
 
-    return sendPromiseObject.current!.promise;
+    return promiseObj!.promise;
   });
 
   onUnmounted$(() => {
@@ -361,11 +361,9 @@ export default <Data, S, E, R, T, RC, RE, RH>(
 
   // * MARK: 初始化动作
   onMounted$(() => {
-    setTimeoutFn(() => {
-      if (immediate) {
-        connect();
-      }
-    });
+    if (immediate) {
+      connect();
+    }
   });
 
   return {

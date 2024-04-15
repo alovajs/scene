@@ -42,7 +42,7 @@ describe('vue => useSSE', () => {
   test('should default NOT request immediately', async () => {
     await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${IntervalEventName}`, data);
-    const { on, onOpen, data, readyState, send } = useSSE(poster, { immediate: false });
+    const { on, onOpen, data, readyState, send } = useSSE(poster);
     const cb = jest.fn();
     const openCb = jest.fn();
     on(IntervalEventName, cb);
@@ -83,7 +83,7 @@ describe('vue => useSSE', () => {
       name: 'Tom',
       age: 18
     };
-    const { onMessage, onOpen, data, readyState, send } = useSSE(poster, { immediate: false, initialData });
+    const { onMessage, onOpen, data, readyState, send } = useSSE(poster, { initialData });
 
     const testDataA = 'test-data-1';
     const testDataB = 'test-data-2';
@@ -135,11 +135,11 @@ describe('vue => useSSE', () => {
       props: {
         port,
         path: `/${TriggerEventName}`,
-        initialData
+        initialData,
+        immediate: true
       }
     });
 
-    expect(screen.getByRole('status')).toHaveTextContent('closed');
     expect(screen.getByRole('data')).toHaveTextContent(initialData);
 
     await screen.findByText(/opened/);
@@ -163,7 +163,8 @@ describe('vue => useSSE', () => {
     render(CompUseSSE, {
       props: {
         port,
-        path: `/${TriggerEventName}`
+        path: `/${TriggerEventName}`,
+        immediate: true
       }
     });
 

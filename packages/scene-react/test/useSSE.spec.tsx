@@ -50,7 +50,7 @@ describe('react => useSSE', () => {
     // const mockOpenFn = jest.fn();
 
     const Page = () => {
-      const { on, onOpen, data, readyState, send } = useSSE(poster, { immediate: false });
+      const { on, onOpen, data, readyState, send } = useSSE(poster);
       on(IntervalEventName, mockOnFn);
       onOpen(mockOpenFn);
 
@@ -113,7 +113,7 @@ describe('react => useSSE', () => {
     // const mockOpenFn = jest.fn();
 
     const Page = () => {
-      const { onMessage, onOpen, data, readyState, send } = useSSE(poster, { immediate: false, initialData });
+      const { onMessage, onOpen, data, readyState, send } = useSSE(poster, { initialData });
       onMessage(mockOnFn);
       onOpen(mockOpenFn);
 
@@ -191,7 +191,7 @@ describe('react => useSSE', () => {
     });
 
     const Page = () => {
-      const { onMessage, onOpen, data, readyState } = useSSE(poster, { initialData });
+      const { onMessage, onOpen, data, readyState } = useSSE(poster, { immediate: true, initialData });
       onMessage(mockOnFn);
       onOpen(mockOpenFn);
 
@@ -211,7 +211,7 @@ describe('react => useSSE', () => {
 
     render((<Page />) as ReactElement<any, any>);
 
-    expect(screen.getByRole('status')).toHaveTextContent('closed');
+    expect(screen.getByRole('status')).toHaveTextContent('connecting');
     expect(screen.getByRole('data')).toHaveTextContent(initialData);
 
     await screen.findByText(/opened/);
@@ -243,7 +243,7 @@ describe('react => useSSE', () => {
     });
 
     const Page = () => {
-      const { onMessage, onOpen, data, readyState, send, close } = useSSE(poster);
+      const { onMessage, onOpen, data, readyState, send, close } = useSSE(poster, { immediate: true });
       onMessage(mockOnMessageFn);
       onOpen(mockOpenFn);
 
@@ -273,6 +273,7 @@ describe('react => useSSE', () => {
 
     render((<Page />) as ReactElement<any, any>);
 
+    expect(screen.getByRole('status')).toHaveTextContent('connecting');
     await screen.findByText(/opened/);
 
     expect(screen.getByRole('data')).toBeEmptyDOMElement();

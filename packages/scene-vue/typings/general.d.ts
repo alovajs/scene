@@ -889,7 +889,7 @@ type SSEHookConfig = {
 
   /**
    * 是否立即发起请求
-   * @default true
+   * @default false
    */
   immediate?: boolean;
 
