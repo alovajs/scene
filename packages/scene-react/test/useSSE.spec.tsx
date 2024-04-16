@@ -424,7 +424,7 @@ describe('react => useSSE', () => {
     expect(mockOpenFn).not.toHaveBeenCalled();
     expect(mockMessageFn).not.toHaveBeenCalled();
     expect(mockErrorFn).toHaveBeenCalled();
-  }, 1e10);
+  });
 
   // ! 拦截器应该触发 (interceptByGlobalResponded: true)
   // https://alova.js.org/zh-CN/tutorial/combine-framework/response
@@ -587,7 +587,7 @@ describe('react => useSSE', () => {
     expect(mockOnMessageFn).toHaveBeenCalledTimes(2);
     expect(mockResponseErrorFn).toHaveBeenCalledTimes(1);
     expect(mockResponseCompleteFn).toHaveBeenCalledTimes(3);
-  }, 1e10);
+  });
 
   // ! 拦截器不应该触发 (interceptByGlobalResponded: false)
   test('should NOT trigger global response', async () => {
