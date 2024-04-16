@@ -22,6 +22,11 @@ export const server = http.createServer(function (req, res) {
     return;
   }
 
+  if (path === './not-exist-path') {
+    res.statusCode = 404;
+    res.end();
+  }
+
   if (path === `./${TriggerEventName}`) {
     replyList.push(res);
     res.writeHead(200, {

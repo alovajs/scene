@@ -11,6 +11,7 @@ import { untilCbCalled } from '~/test/utils';
 import { AnyFn, SSEHookReadyState } from '~/typings/general';
 import { useSSE } from '..';
 import { AlovaSSEMessageEvent } from '../typings/general';
+import CompUseSSEGlobalResponse from './components/use-sse-global-response.vue';
 import CompUseSSE from './components/use-sse.vue';
 
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
@@ -63,6 +64,7 @@ describe('vue => useSSE', () => {
     expect(openCb).not.toHaveBeenCalled();
 
     await send();
+    await untilCbCalled(setTimeout, 100);
     expect(openCb).toHaveBeenCalled();
 
     const { data: recvData } = (await untilCbCalled(onIntervalCb)) as AnyMessageType<string>;
@@ -218,5 +220,182 @@ describe('vue => useSSE', () => {
     // abortLast 为 true（默认）时，调用 send 会断开之前建立的连接
     expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('2');
     expect(screen.getByRole('data')).toHaveTextContent(testDataB);
+  });
+
+  // ! 打开失败应该报错，立即发送请求
+  test('should throw error then try to connect a not exist url', async () => {
+    const { port } = server.listen().address() as AddressInfo;
+    render(CompUseSSE, {
+      props: {
+        port,
+        path: '/not-exist-path',
+        immediate: true
+      }
+    });
+
+    await untilCbCalled(setTimeout, 500);
+    await screen.findByText(/closed/);
+    expect(screen.getByRole('data')).toBeEmptyDOMElement();
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('onerror').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('0');
+  });
+
+  // ! 打开失败应该报错，不立即发送请求
+  test('should throw error then try to connect a not exist url (immediate: false)', async () => {
+    const { port } = server.listen().address() as AddressInfo;
+    render(CompUseSSE, {
+      props: {
+        port,
+        path: '/not-exist-path'
+      }
+    });
+
+    await screen.findByText(/closed/);
+    expect(screen.getByRole('data')).toBeEmptyDOMElement();
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('onerror').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('0');
+
+    fireEvent.click(screen.getByRole('send'));
+    await screen.findByText(/connecting/);
+    await untilCbCalled(setTimeout, 500);
+
+    await screen.findByText(/closed/);
+    expect(screen.getByRole('data')).toBeEmptyDOMElement();
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('onerror').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('0');
+  });
+
+  // ! 拦截器应该触发 (interceptByGlobalResponded: true)
+  test('should trigger global response', async () => {
+    const initialData = 'initial-data';
+
+    const replacedData = 'replaced-data';
+    const dataReplaceMe = 'data-replace-me';
+
+    const dataThrowError = 'never-gonna-give-you-up';
+
+    const { port } = server.listen().address() as AddressInfo;
+    render(CompUseSSEGlobalResponse, {
+      props: {
+        port,
+        interceptByGlobalResponded: true,
+        immediate: true,
+        initialData,
+        path: `/${TriggerEventName}`
+      }
+    });
+
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
+
+    await screen.findByText(/opened/);
+
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('on-response').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('on-response-error').innerHTML).toStrictEqual('0');
+
+    // 这个数据会被响应拦截器替换掉
+    await serverSend(dataReplaceMe);
+    await untilCbCalled(setTimeout, 500);
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('data')).toHaveTextContent(replacedData);
+        expect(screen.getByRole('onerror').innerHTML).toStrictEqual('0');
+        expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('1');
+
+        expect(screen.getByRole('on-response').innerHTML).toStrictEqual('1');
+        expect(screen.getByRole('on-response-error').innerHTML).toStrictEqual('0');
+        expect(screen.getByRole('on-response-complete').innerHTML).toStrictEqual('1');
+      },
+      { timeout: 4000 }
+    );
+
+    // 连接到不存在的地址
+    fireEvent.click(screen.getByRole('send-to-not-exist'));
+
+    // 等 useSSE 反应一会儿
+    await untilCbCalled(setTimeout, 100);
+
+    // 因为目标不存在，所以：
+    // 1. resErrorExpect 会触发
+    // 2. onMessage, responseExpect 不会被触发，触发次数和上面一样；onError不被触发，因为被 onError 拦截
+    // 3. resCompleteExpect 会被触发
+
+    // 全局错误拦截器会返回 initialData
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
+
+    expect(screen.getByRole('onerror').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('on-response').innerHTML).toStrictEqual('1');
+
+    // 因为错误被全局拦截器拦截，所以 会调用 onMessage
+    expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('2');
+    expect(screen.getByRole('on-response-error').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('on-response-complete').innerHTML).toStrictEqual('2');
+
+    // ! 测试抛出错误
+
+    // 连接到正常地址
+    fireEvent.click(screen.getByRole('send'));
+    // 等 useSSE 反应一会儿
+    await untilCbCalled(setTimeout, 100);
+    expect(screen.getByRole('status')).toHaveTextContent('opened');
+
+    // 这个数据会导致抛出异常
+    // 触发responseExpect 和 onError
+    await serverSend(dataThrowError);
+    await untilCbCalled(setTimeout, 300);
+
+    expect(screen.getByRole('onerror').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('on-response').innerHTML).toStrictEqual('2');
+
+    expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('2');
+    expect(screen.getByRole('on-response-error').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('on-response-complete').innerHTML).toStrictEqual('3');
+  });
+
+  // ! 拦截器不应该触发 (interceptByGlobalResponded: false)
+  test('should NOT trigger global response', async () => {
+    const initialData = 'initial-data';
+    const testDataA = 'test-data-1';
+
+    const { port } = server.listen().address() as AddressInfo;
+    render(CompUseSSEGlobalResponse, {
+      props: {
+        port,
+        interceptByGlobalResponded: false,
+        immediate: true,
+        initialData,
+        path: `/${TriggerEventName}`
+      }
+    });
+
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
+
+    await screen.findByText(/opened/);
+
+    expect(screen.getByRole('onopen').innerHTML).toStrictEqual('1');
+    expect(screen.getByRole('on-response').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('on-response-error').innerHTML).toStrictEqual('0');
+    expect(screen.getByRole('on-response-complete').innerHTML).toStrictEqual('0');
+
+    // 这个数据会被响应拦截器替换掉
+    await serverSend(testDataA);
+    await untilCbCalled(setTimeout, 500);
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('data')).toHaveTextContent(testDataA);
+        expect(screen.getByRole('onmessage').innerHTML).toStrictEqual('1');
+        expect(screen.getByRole('onerror').innerHTML).toStrictEqual('0');
+
+        expect(screen.getByRole('on-response').innerHTML).toStrictEqual('0');
+        expect(screen.getByRole('on-response-error').innerHTML).toStrictEqual('0');
+        expect(screen.getByRole('on-response-complete').innerHTML).toStrictEqual('0');
+      },
+      { timeout: 4000 }
+    );
   });
 });

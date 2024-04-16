@@ -8,13 +8,13 @@ import ES from 'eventsource';
 import { AddressInfo } from 'net';
 import React, { ReactElement } from 'react';
 import { IntervalEventName, IntervalMessage, TriggerEventName, server, send as serverSend } from '~/test/sseServer';
-import { untilCbCalled } from '~/test/utils';
+import { getAlovaInstance, untilCbCalled } from '~/test/utils';
 import { ReactState, useSSE } from '..';
 import { AlovaSSEMessageEvent, SSEHookReadyState } from '../typings/general';
 
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
 
-let alovaInst: Alova<ReactState<any>, unknown, FetchRequestInit, any, Record<string, string | number>>;
+let alovaInst: Alova<ReactState<any>, unknown, FetchRequestInit, any, any>;
 
 afterEach(() => {
   server.close();
@@ -85,7 +85,6 @@ describe('react => useSSE', () => {
     expect(mockOpenFn).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('btn'));
-
     await waitFor(
       () => {
         expect(screen.getByRole('status')).toHaveTextContent('opened');
@@ -324,5 +323,352 @@ describe('react => useSSE', () => {
     expect(mockOnMessageFn).toHaveBeenCalledTimes(2);
     expect(recv).toStrictEqual(testDataB);
     expect(screen.getByRole('data')).toHaveTextContent(testDataB);
+  });
+
+  // ! 打开失败应该报错，立即发送请求
+  test('should throw error then try to connect a not exist url', async () => {
+    await prepareAlova();
+    const poster = (data: any) => alovaInst.Get('/not-exist-path', data);
+
+    let recv = undefinedValue;
+    const mockOpenFn = jest.fn();
+    const mockErrorFn = jest.fn();
+    const mockMessageFn = jest.fn((event: AnyMessageType) => {
+      recv = event.data;
+    });
+
+    const Page = () => {
+      const { onMessage, onOpen, onError, data, readyState } = useSSE(poster, { immediate: true });
+      onMessage(mockMessageFn);
+      onOpen(mockOpenFn);
+      onError(mockErrorFn);
+
+      return (
+        <div>
+          <span role="status">
+            {readyState === SSEHookReadyState.OPEN
+              ? 'opened'
+              : readyState === SSEHookReadyState.CLOSED
+              ? 'closed'
+              : 'connecting'}
+          </span>
+          <span role="data">{data}</span>
+        </div>
+      );
+    };
+
+    render((<Page />) as ReactElement<any, any>);
+
+    await untilCbCalled(setTimeout, 500);
+    await screen.findByText(/closed/);
+
+    expect(screen.getByRole('data')).toBeEmptyDOMElement();
+    expect(recv).toBeUndefined();
+    expect(mockOpenFn).not.toHaveBeenCalled();
+    expect(mockMessageFn).not.toHaveBeenCalled();
+    expect(mockErrorFn).toHaveBeenCalled();
+  });
+
+  // ! 打开失败应该报错，不立即发送请求
+  test('should throw error then try to connect a not exist url (immediate: false)', async () => {
+    await prepareAlova();
+    const poster = (data: any) => alovaInst.Get('/not-exist-path', data);
+
+    let recv = undefinedValue;
+    const mockOpenFn = jest.fn();
+    const mockErrorFn = jest.fn();
+    const mockMessageFn = jest.fn((event: AnyMessageType) => {
+      recv = event.data;
+    });
+
+    const Page = () => {
+      const { onMessage, onOpen, onError, data, readyState, send } = useSSE(poster);
+      onMessage(mockMessageFn);
+      onOpen(mockOpenFn);
+      onError(mockErrorFn);
+
+      return (
+        <div>
+          <span role="status">
+            {readyState === SSEHookReadyState.OPEN
+              ? 'opened'
+              : readyState === SSEHookReadyState.CLOSED
+              ? 'closed'
+              : 'connecting'}
+          </span>
+          <span role="data">{data}</span>
+          <button
+            role="send"
+            onClick={send}>
+            send request
+          </button>
+        </div>
+      );
+    };
+
+    render((<Page />) as ReactElement<any, any>);
+
+    await screen.findByText(/closed/);
+    expect(screen.getByRole('data')).toBeEmptyDOMElement();
+    expect(mockOpenFn).not.toHaveBeenCalled();
+    expect(mockMessageFn).not.toHaveBeenCalled();
+    expect(mockErrorFn).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('send'));
+    await screen.findByText(/connecting/);
+    await untilCbCalled(setTimeout, 500);
+
+    await screen.findByText(/closed/);
+    expect(screen.getByRole('data')).toBeEmptyDOMElement();
+    expect(recv).toBeUndefined();
+    expect(mockOpenFn).not.toHaveBeenCalled();
+    expect(mockMessageFn).not.toHaveBeenCalled();
+    expect(mockErrorFn).toHaveBeenCalled();
+  }, 1e10);
+
+  // ! 拦截器应该触发 (interceptByGlobalResponded: true)
+  // https://alova.js.org/zh-CN/tutorial/combine-framework/response
+  test('should trigger global response', async () => {
+    const { port } = server.listen().address() as AddressInfo;
+    const initialData = 'initial-data';
+
+    const replacedData = 'replaced-data';
+    const dataReplaceMe = 'data-replace-me';
+
+    const dataThrowError = 'never-gonna-give-you-up';
+
+    const mockResponseFn = jest.fn();
+    const mockResponseErrorFn = jest.fn();
+    const mockResponseCompleteFn = jest.fn();
+
+    alovaInst = getAlovaInstance(ReactHook, {
+      baseURL: `http://localhost:${port}`,
+      responseExpect: data => {
+        mockResponseFn();
+        if ((data as any) === dataReplaceMe) {
+          return replacedData;
+        }
+
+        if ((data as any) === dataThrowError) {
+          throw new Error('an error...');
+        }
+
+        return data;
+      },
+      resErrorExpect(err) {
+        mockResponseErrorFn();
+
+        console.log(err);
+        return initialData;
+      },
+      resCompleteExpect() {
+        mockResponseCompleteFn();
+      }
+    });
+    const poster = (url = `/${TriggerEventName}`) => alovaInst.Get(url);
+
+    let recv = undefinedValue;
+    const mockErrorFn = jest.fn();
+    const mockOpenFn = jest.fn();
+    const mockOnMessageFn = jest.fn((event: AnyMessageType) => {
+      recv = event.data;
+    });
+
+    const Page = () => {
+      const { onMessage, onOpen, onError, data, readyState, send } = useSSE(poster, {
+        immediate: true,
+        initialData,
+        interceptByGlobalResponded: true
+      });
+      onMessage(mockOnMessageFn);
+      onOpen(mockOpenFn);
+      onError(mockErrorFn);
+
+      const sendError = () => {
+        send('/not-exist-path');
+      };
+
+      return (
+        <div>
+          <span role="status">
+            {readyState === SSEHookReadyState.OPEN
+              ? 'opened'
+              : readyState === SSEHookReadyState.CLOSED
+              ? 'closed'
+              : 'connecting'}
+          </span>
+          <span role="data">{data}</span>
+          <button
+            role="send"
+            onClick={() => send()}>
+            send request
+          </button>
+          <button
+            role="send-to-not-exist"
+            onClick={sendError}>
+            send request to nowhere
+          </button>
+        </div>
+      );
+    };
+
+    render((<Page />) as ReactElement<any, any>);
+
+    expect(screen.getByRole('status')).toHaveTextContent('connecting');
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
+
+    await screen.findByText(/opened/);
+    expect(mockOpenFn).toHaveBeenCalled();
+    expect(mockResponseFn).not.toHaveBeenCalled();
+    expect(mockResponseErrorFn).not.toHaveBeenCalled();
+
+    // 这个数据会被响应拦截器替换掉
+    await serverSend(dataReplaceMe);
+    await untilCbCalled(setTimeout, 500);
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('data')).toHaveTextContent(replacedData);
+        expect(recv).toEqual(replacedData);
+        expect(mockErrorFn).not.toHaveBeenCalled();
+        expect(mockOnMessageFn).toHaveBeenCalledTimes(1);
+
+        expect(mockResponseFn).toHaveBeenCalledTimes(1);
+        expect(mockResponseErrorFn).not.toHaveBeenCalled();
+        expect(mockResponseCompleteFn).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 4000 }
+    );
+
+    // 连接到不存在的地址
+    fireEvent.click(screen.getByRole('send-to-not-exist'));
+    expect(screen.getByRole('status')).toHaveTextContent('connecting');
+
+    // 等 useSSE 反应一会儿
+    await untilCbCalled(setTimeout, 100);
+
+    // 因为目标不存在，所以：
+    // 1. resErrorExpect 会触发
+    // 2. onMessage, responseExpect 不会被触发，触发次数和上面一样；onError不被触发，因为被 onError 拦截
+    // 3. resCompleteExpect 会被触发
+
+    // 全局错误拦截器会返回 initialData
+    expect(recv).toEqual(initialData);
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
+
+    expect(mockErrorFn).toHaveBeenCalledTimes(0);
+    expect(mockResponseFn).toHaveBeenCalledTimes(1);
+
+    // 因为错误被全局拦截器拦截，所以 会调用 onMessage
+    expect(mockOnMessageFn).toHaveBeenCalledTimes(2);
+    expect(mockResponseErrorFn).toHaveBeenCalledTimes(1);
+    expect(mockResponseCompleteFn).toHaveBeenCalledTimes(2);
+
+    // ! 测试抛出错误
+
+    // 连接到正常地址
+    fireEvent.click(screen.getByRole('send'));
+    // 等 useSSE 反应一会儿
+    await untilCbCalled(setTimeout, 100);
+    expect(screen.getByRole('status')).toHaveTextContent('opened');
+
+    // 这个数据会导致抛出异常
+    // 触发responseExpect 和 onError
+    await serverSend(dataThrowError);
+    await untilCbCalled(setTimeout, 300);
+
+    // 全局错误拦截器会返回 initialData
+    expect(recv).toEqual(initialData);
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
+
+    expect(mockErrorFn).toHaveBeenCalledTimes(1);
+    expect(mockResponseFn).toHaveBeenCalledTimes(2);
+
+    expect(mockOnMessageFn).toHaveBeenCalledTimes(2);
+    expect(mockResponseErrorFn).toHaveBeenCalledTimes(1);
+    expect(mockResponseCompleteFn).toHaveBeenCalledTimes(3);
+  }, 1e10);
+
+  // ! 拦截器不应该触发 (interceptByGlobalResponded: false)
+  test('should NOT trigger global response', async () => {
+    const { port } = server.listen().address() as AddressInfo;
+    const initialData = 'initial-data';
+    const testDataA = 'test-data-1';
+    const replacedData = 'replaced-data';
+
+    const mockResponseFn = jest.fn();
+    const mockResponseErrorFn = jest.fn();
+    const mockResponseCompleteFn = jest.fn();
+
+    alovaInst = getAlovaInstance(ReactHook, {
+      baseURL: `http://localhost:${port}`,
+      responseExpect: () => {
+        mockResponseFn();
+        return replacedData;
+      },
+      resErrorExpect: mockResponseErrorFn,
+      resCompleteExpect: mockResponseCompleteFn
+    });
+    const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
+
+    let recv = undefinedValue;
+    const mockOpenFn = jest.fn();
+    const mockErrorFn = jest.fn();
+    const mockOnMessageFn = jest.fn((event: AnyMessageType) => {
+      recv = event.data;
+    });
+
+    const Page = () => {
+      const { onMessage, onOpen, onError, data, readyState } = useSSE(poster, {
+        immediate: true,
+        initialData,
+        interceptByGlobalResponded: false
+      });
+      onMessage(mockOnMessageFn);
+      onOpen(mockOpenFn);
+      onError(mockErrorFn);
+
+      return (
+        <div>
+          <span role="status">
+            {readyState === SSEHookReadyState.OPEN
+              ? 'opened'
+              : readyState === SSEHookReadyState.CLOSED
+              ? 'closed'
+              : 'connecting'}
+          </span>
+          <span role="data">{data}</span>
+        </div>
+      );
+    };
+
+    render((<Page />) as ReactElement<any, any>);
+
+    expect(screen.getByRole('status')).toHaveTextContent('connecting');
+    expect(screen.getByRole('data')).toHaveTextContent(initialData);
+
+    await screen.findByText(/opened/);
+    expect(mockOpenFn).toHaveBeenCalled();
+    expect(mockResponseFn).not.toHaveBeenCalled();
+    expect(mockResponseErrorFn).not.toHaveBeenCalled();
+    expect(mockResponseCompleteFn).not.toHaveBeenCalled();
+    expect(mockOnMessageFn).not.toHaveBeenCalled();
+    expect(mockErrorFn).not.toHaveBeenCalled();
+
+    await serverSend(testDataA);
+
+    await waitFor(
+      () => {
+        expect(recv).toEqual(testDataA);
+        expect(screen.getByRole('data')).toHaveTextContent(testDataA);
+
+        expect(mockOnMessageFn).toHaveBeenCalledTimes(1);
+        expect(mockErrorFn).not.toHaveBeenCalled();
+        expect(mockResponseFn).not.toHaveBeenCalled();
+        expect(mockResponseErrorFn).not.toHaveBeenCalled();
+        expect(mockResponseCompleteFn).not.toHaveBeenCalled();
+      },
+      { timeout: 4000 }
+    );
   });
 });

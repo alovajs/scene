@@ -3,6 +3,7 @@
     <span role="status"> {{ getStatusText }} </span>
     <span role="data">{{ data }}</span>
     <span role="onopen">{{ onOpenCounter }}</span>
+    <span role="onerror">{{ onErrorCounter }}</span>
     <span role="onmessage">{{ onMessageCounter }}</span>
     <button role="send" @click="send">send request</button>
     <button role="close" @click="close">close request</button>
@@ -17,31 +18,37 @@ import { computed, ref } from 'vue';
 import { useSSE } from '../..';
 
 const props = defineProps<{
+  baseURL?: string
   immediate: boolean
   initialData: any
-  port: number
+  port?: number
   path: string
 }>()
 
 const alovaInst = createAlova({
-  baseURL: `http://127.0.0.1:${props.port}`,
+  baseURL: props.baseURL ?? `http://127.0.0.1:${props.port}`,
   statesHook: VueHook,
   requestAdapter: GlobalFetch(),
   cacheLogger: false
 });
 
 const onOpenCounter = ref(0);
+const onErrorCounter = ref(0);
 const onMessageCounter = ref(0);
 
 const poster = (data: any) => alovaInst.Get(props.path, data);
-const { onMessage, onOpen, data, readyState, send, close } = useSSE(poster, { initialData: props.initialData, immediate:props.immediate });
+const { onMessage, onOpen, onError, data, readyState, send, close } = useSSE(poster, { initialData: props.initialData, immediate: props.immediate });
 
-onMessage(() => {
+onMessage((e) => {
   onMessageCounter.value += 1;
 });
 
 onOpen(() => {
   onOpenCounter.value += 1;
+});
+
+onError(() => {
+  onErrorCounter.value += 1;
 });
 
 

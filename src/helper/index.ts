@@ -102,6 +102,14 @@ export const noop = () => {};
  */
 export const __self = <T>(value: T) => value;
 
+/**
+ * 兼容函数，抛出参数
+ * @param error 错误
+ */
+export const __throw = <T>(error: T) => {
+  throw error;
+};
+
 // 判断是否为某个类的实例
 export const instanceOf = <T>(arg: any, cls: new (...args: any[]) => T): arg is T => arg instanceof cls;
 

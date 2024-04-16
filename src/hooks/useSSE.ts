@@ -13,6 +13,7 @@ import {
 import { buildCompletedURL } from '@/functions/sendRequest';
 import {
   __self,
+  __throw,
   createAssert,
   getConfig,
   getHandlerMethod,
@@ -22,7 +23,6 @@ import {
   isFn,
   isPlainOrCustomObject,
   noop,
-  promiseCatch,
   promiseFinally,
   promiseThen,
   useCallback,
@@ -41,7 +41,9 @@ import {
   matchSnapshotMethod
 } from 'alova';
 import {
+  AlovaSSEErrorEvent,
   AlovaSSEEvent,
+  AlovaSSEMessageEvent,
   SSEHookConfig,
   SSEHookReadyState,
   SSEOn,
@@ -50,6 +52,10 @@ import {
   SSEOnOpenTrigger,
   UsePromiseReturnType
 } from '~/typings/general';
+
+type AnySSEEventType = AlovaSSEMessageEvent<any, any, any, any, any, any, any, any> &
+  AlovaSSEErrorEvent<any, any, any, any, any, any, any> &
+  AlovaSSEEvent<any, any, any, any, any, any, any>;
 
 const assert = createAssert('useSSE');
 const MessageType: Record<Capitalize<keyof EventSourceEventMap>, keyof EventSourceEventMap> = {
@@ -99,7 +105,7 @@ export default <Data, S, E, R, T, RC, RE, RH>(
   const [onError, triggerOnError, offError] = useCallback<SSEOnErrorTrigger<S, E, R, T, RC, RE, RH>>();
 
   let responseSuccessHandler: ResponsedHandler<any, any, RC, RE, RH> = __self,
-    responseErrorHandler: ResponseErrorHandler<any, any, RC, RE, RH> = noop,
+    responseErrorHandler: ResponseErrorHandler<any, any, RC, RE, RH> = __throw,
     responseCompleteHandler: ResponseCompleteHandler<any, any, RC, RE, RH> = noop;
 
   /**
@@ -152,41 +158,15 @@ export default <Data, S, E, R, T, RC, RE, RH>(
   };
 
   /**
-   * 处理收到的数据，调用响应拦截并转换数据
-   * @param data EventSource 返回的数据
-   * @url https://alova.js.org/zh-CN/tutorial/getting-started/global-interceptor#全局的响应拦截器
-   * @returns 转换后的数据
+   * 创建 AlovaSSEHook 事件
+   * 具体数据处理流程参考以下链接
+   * @link https://alova.js.org/zh-CN/tutorial/combine-framework/response
    */
-  const dataHandler = async (data: any) => {
-    if (interceptByGlobalResponded) {
-      // 如果需要响应拦截器处理
-      // 1. 调用 responseSuccessHandler 处理
-      //  1.1. 如果步骤 1 无异常抛出，则使用其返回的值传递给 transformDataFn 处理
-      //  1.2. 如果步骤 1/2 抛出异常，则传递错误给 responseErrorHandler
-      // 2. 最后，调用 responseCompleteHandler
-
-      return promiseFinally(
-        // eslint-disable-next-line prettier/prettier
-        promiseCatch(
-          handleResponseTask(responseSuccessHandler(data, methodInstance)),
-          (error: any) => handleResponseTask(responseErrorHandler(error, methodInstance))
-        ),
-        // finally
-        () => responseCompleteHandler(methodInstance)
-      );
-    }
-    // 如果不需要响应拦截器处理
-    return handleResponseTask(data);
-  };
-
-  /**
-   * 将 SourceEvent 产生的事件变为 AlovaSSEHook 的事件
-   */
-  const createSSEEvent = async (eventName: string, event: MessageEvent<any> | Event) => {
+  const createSSEEvent = async (eventFrom: keyof EventSourceEventMap, dataOrError: Promise<any>) => {
     assert(!!eventSource.current, 'EventSource is not initialized');
     const es = eventSource.current!;
 
-    const ev = (type: AlovaHookEventType, data?: any, error?: any) => {
+    const ev = (type: AlovaHookEventType, data?: any, error?: Error) => {
       const event = createHookEvent(
         type,
         methodInstance,
@@ -206,16 +186,48 @@ export default <Data, S, E, R, T, RC, RE, RH>(
       return event;
     };
 
-    if (eventName === MessageType.Open) {
-      return ev(AlovaHookEventType.SSEOpenEvent);
-    }
-    if (eventName === MessageType.Error) {
-      return ev(AlovaHookEventType.SSEErrorEvent, undefinedValue, new Error('SSE Error'));
+    if (eventFrom === MessageType.Open) {
+      return Promise.resolve(ev(AlovaHookEventType.SSEOpenEvent));
     }
 
-    // 其余名称的事件都是（类）message 的事件，data 交给 dataHandler 处理
-    const data = await dataHandler((event as MessageEvent<any>).data);
-    return ev(AlovaHookEventType.SSEMessageEvent, data);
+    const globalSuccess = interceptByGlobalResponded ? responseSuccessHandler : __self;
+    const globalError = interceptByGlobalResponded ? responseErrorHandler : __throw;
+    const globalFinally = interceptByGlobalResponded ? responseCompleteHandler : noop;
+
+    const p = promiseFinally(
+      promiseThen(
+        dataOrError,
+        data => handleResponseTask(globalSuccess(data, methodInstance)),
+        error => handleResponseTask(globalError(error, methodInstance))
+      ),
+      // finally
+      () => {
+        globalFinally(methodInstance);
+      }
+    );
+
+    // 无论如何，函数返回的 Promise 对象一定都会 fulfilled
+    return promiseThen(
+      p,
+      // 得到处理好的数据（transform 之后的数据）
+      data => ev(AlovaHookEventType.SSEMessageEvent, data),
+      // 有错误
+      error => ev(AlovaHookEventType.SSEErrorEvent, undefinedValue, error)
+    );
+  };
+
+  /**
+   * 根据事件选择需要的触发函数。如果事件无错误则触发传传入的回调函数
+   * @param callback 无错误时触发的回调函数
+   */
+  const sendSSEEvent = (callback: (event: AnySSEEventType) => any) => {
+    return (event: AnySSEEventType) => {
+      if (event.error === undefinedValue) {
+        return callback(event);
+      } else {
+        return triggerOnError(event);
+      }
+    };
   };
 
   // * MARK: EventSource 的事件处理
@@ -232,7 +244,7 @@ export default <Data, S, E, R, T, RC, RE, RH>(
       const trigger = useCallbackObject[1];
       customEventMap.set(eventName, useCallbackObject);
       eventSource.current?.addEventListener(eventName, event => {
-        promiseThen(createSSEEvent(eventName, event), trigger as any);
+        promiseThen(createSSEEvent(eventName as any, Promise.resolve(event.data)), sendSSEEvent(trigger) as any);
       });
     }
 
@@ -251,22 +263,27 @@ export default <Data, S, E, R, T, RC, RE, RH>(
     });
   };
 
-  const esOpen = (event: Event) => {
+  const esOpen = () => {
     // resolve 使用 send() 时返回的 promise
     upd$(readyState, SSEHookReadyState.OPEN);
-    promiseThen(createSSEEvent(MessageType.Open, event), triggerOnOpen as any);
+    promiseThen(createSSEEvent(MessageType.Open, Promise.resolve()), triggerOnOpen as any);
     // ! 一定要在调用 onOpen 之后 resolve
     sendPromiseObject.current?.resolve();
   };
 
   const esError = (event: Event) => {
     upd$(readyState, SSEHookReadyState.CLOSED);
-    promiseThen(createSSEEvent(MessageType.Error, event), triggerOnError as any);
-    // ? 这里是否需要 close()
+    promiseThen(
+      createSSEEvent(MessageType.Error, Promise.reject((event as any)?.message ?? 'SSE Error')),
+      sendSSEEvent(triggerOnMessage) as any
+    );
   };
 
   const esMessage = (event: MessageEvent<any>) => {
-    promiseThen(createSSEEvent(MessageType.Message, event), triggerOnMessage as any);
+    promiseThen(
+      createSSEEvent(MessageType.Message, Promise.resolve(event.data)),
+      sendSSEEvent(triggerOnMessage) as any
+    );
   };
 
   /**
@@ -337,11 +354,11 @@ export default <Data, S, E, R, T, RC, RE, RH>(
     es.addEventListener(MessageType.Error, esError);
     es.addEventListener(MessageType.Message, esMessage);
 
-    // 以及 自定义时间
+    // 以及 自定义事件
     // 如果在 connect（send）之前就使用了 on 监听，则 customEventMap 里就已经有事件存在
     customEventMap.forEach(([_, eventTrigger], eventName) => {
       es?.addEventListener(eventName, event => {
-        promiseThen(createSSEEvent(eventName, event), eventTrigger as any);
+        promiseThen(createSSEEvent(eventName as any, Promise.resolve(event.data)), sendSSEEvent(eventTrigger) as any);
       });
     });
 
