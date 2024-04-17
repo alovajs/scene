@@ -42,6 +42,8 @@ import {
   SilentSubmitSuccessHandler,
   SQHookReturnType,
   SQRequestHookConfig,
+  SSEHookConfig,
+  SSEReturnType,
   TokenAuthenticationResult,
   UnbindHandler
 } from './general';
@@ -181,6 +183,20 @@ declare function useForm<F = any, S = any, E = any, R = any, T = any, RC = any, 
   handler: FormHookHandler<S, E, R, T, RC, RE, RH, F> | NonNullable<FormHookConfig<S, E, R, T, RC, RE, RH, F>['id']>,
   config?: FormHookConfig<S, E, R, T, RC, RE, RH, F>
 ): FormReturnType<S, E, R, T, RC, RE, RH, F>;
+
+/**
+ * useSSE
+ * 使用 Server-sent events 发送请求
+ *
+ *
+ * @param handler method获取函数
+ * @param config 配置参数
+ * @return useSSE相关数据和操作函数
+ */
+declare function useSSE<Data = any, S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
+  config?: SSEHookConfig
+): SSEReturnType<S, Data>;
 
 /**
  * useRetriableRequest

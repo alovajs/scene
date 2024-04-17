@@ -1,6 +1,11 @@
 import { act } from '@testing-library/react';
+import { GlobalLocalCacheConfig, Method, StatesHook, createAlova } from 'alova';
+import GlobalFetch, { FetchRequestInit } from 'alova/GlobalFetch';
 
-export const untilCbCalled = <T>(setCb: (cb: (arg: T) => void, ...others: any[]) => void, ...args: any[]) =>
+export const untilCbCalled = <T>(
+  setCb: (cb: (arg: T, ...args: any[]) => any, ...others: any[]) => any,
+  ...args: any[]
+) =>
   new Promise<T>(resolve => {
     setCb(d => {
       resolve(d);
@@ -30,3 +35,47 @@ export async function waitForWithFakeTimers(cb: () => void) {
     } catch {}
   }
 }
+
+type FetchMethod = Method<any, any, any, any, FetchRequestInit, Response, Headers>;
+export const getAlovaInstance = <S, E>(
+  statesHook: StatesHook<S, E>,
+  {
+    baseURL,
+    localCache,
+    beforeRequestExpect,
+    responseExpect,
+    resErrorExpect,
+    resCompleteExpect
+  }: {
+    baseURL?: string;
+    localCache?: GlobalLocalCacheConfig;
+    beforeRequestExpect?: (methodInstance: FetchMethod) => void;
+    responseExpect?: (response: Response, method: FetchMethod) => void;
+    resErrorExpect?: (err: Error, method: FetchMethod) => void;
+    resCompleteExpect?: (method: FetchMethod) => void;
+  } = {}
+) => {
+  const alovaInst = createAlova({
+    baseURL,
+    timeout: 3000,
+    statesHook: statesHook,
+    requestAdapter: GlobalFetch(),
+    beforeRequest(config) {
+      beforeRequestExpect && beforeRequestExpect(config);
+    },
+    responded:
+      responseExpect && !resErrorExpect && !resCompleteExpect
+        ? responseExpect
+        : {
+            onSuccess: responseExpect,
+            onError: resErrorExpect,
+            onComplete: resCompleteExpect
+          },
+    errorLogger: false,
+    cacheLogger: false
+  });
+  if (localCache !== undefined) {
+    alovaInst.options.localCache = localCache;
+  }
+  return alovaInst;
+};
