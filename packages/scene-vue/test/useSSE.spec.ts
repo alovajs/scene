@@ -16,7 +16,7 @@ import CompUseSSE from './components/use-sse.vue';
 
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
 
-let alovaInst: Alova<Ref<unknown>, Ref<unknown>, FetchRequestInit, any, Record<string, string | number>>;
+let alovaInst: Alova<Ref<unknown>, Ref<unknown>, FetchRequestInit, Response, Headers>;
 
 afterEach(() => {
   server.close();
@@ -35,7 +35,7 @@ const prepareAlova = async () => {
     statesHook: VueHook,
     requestAdapter: GlobalFetch(),
     cacheLogger: false
-  }) as any;
+  });
 };
 
 describe('vue => useSSE', () => {

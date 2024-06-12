@@ -174,10 +174,10 @@ declare const silentQueueMap: SilentQueueMap;
  * @param 配置参数
  * @return useCaptcha相关数据和操作函数
  */
-declare function useCaptcha<S, E, R, T, RC, RE, RH>(
-  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config?: CaptchaHookConfig<S, E, R, T, RC, RE, RH>
-): CaptchaReturnType<S, E, R, T, RC, RE, RH>;
+declare function useCaptcha<S, E, R, T, RC, RE, RH, ARG extends any[]>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+  config?: CaptchaHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): CaptchaReturnType<S, E, R, T, RC, RE, RH, ARG>;
 
 /**
  * useForm
@@ -221,10 +221,10 @@ declare function useSSE<Data = any, S = any, E = any, R = any, T = any, RC = any
  * @param config 配置参数
  * @return useRetriableRequest相关数据和操作函数
  */
-declare function useRetriableRequest<S, E, R, T, RC, RE, RH>(
-  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config?: RetriableHookConfig<S, E, R, T, RC, RE, RH>
-): RetriableReturnType<S, E, R, T, RC, RE, RH>;
+declare function useRetriableRequest<S, E, R, T, RC, RE, RH, ARG extends any[]>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+  config?: RetriableHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): RetriableReturnType<S, E, R, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialRequest
@@ -234,13 +234,13 @@ declare function useRetriableRequest<S, E, R, T, RC, RE, RH>(
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2>(
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, ARG extends any[], R2>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>
   ],
-  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R2, T, RC, RE, RH>;
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R2, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialRequest(重载)
@@ -250,14 +250,14 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2>(
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3>(
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>
   ],
-  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R3, T, RC, RE, RH>;
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R3, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialRequest(重载)
@@ -267,15 +267,15 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3>(
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4>(
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>
   ],
-  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R4, T, RC, RE, RH>;
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R4, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialRequest(重载)
@@ -285,16 +285,16 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4>(
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>
   ],
-  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R5, T, RC, RE, RH>;
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R5, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialRequest(重载)
@@ -304,17 +304,17 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5, R6>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
-    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: [...ARG, ...any]) => Method<S, E, R6, T, RC, RE, RH>
   ],
-  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R6, T, RC, RE, RH>;
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R6, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialRequest(重载)
@@ -324,17 +324,17 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7>(
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5, R6, R7>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
-    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
-    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: [...ARG, ...any]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: [...ARG, ...any]) => Method<S, E, R7, T, RC, RE, RH>
   ],
-  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
 ): UseHookReturnType<S, E, R7, T, RC, RE, RH>;
 
 /**
@@ -345,19 +345,19 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7, R8>(
+declare function useSerialRequest<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5, R6, R7, R8>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
-    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
-    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>,
-    (value: R7, ...args: any[]) => Method<S, E, R8, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: [...ARG, ...any]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: [...ARG, ...any]) => Method<S, E, R7, T, RC, RE, RH>,
+    (value: R7, ...args: [...ARG, ...any]) => Method<S, E, R8, T, RC, RE, RH>
   ],
-  config?: RequestHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R8, T, RC, RE, RH>;
+  config?: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R8, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialWatcher
@@ -367,14 +367,14 @@ declare function useSerialRequest<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7
  * @param config 配置参数
  * @return useSerialWatcher相关数据和操作函数
  */
-declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2>(
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, ARG extends any[], R2>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>
   ],
-  watchingStates: Writable<any>[],
-  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R2, T, RC, RE, RH>;
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R2, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialWatcher(重载)
@@ -384,15 +384,15 @@ declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2>(
  * @param config 配置参数
  * @return useSerialWatcher相关数据和操作函数
  */
-declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3>(
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>
   ],
-  watchingStates: Writable<any>[],
-  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R3, T, RC, RE, RH>;
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R3, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialWatcher(重载)
@@ -402,16 +402,16 @@ declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3>(
  * @param config 配置参数
  * @return useSerialWatcher相关数据和操作函数
  */
-declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4>(
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>
   ],
-  watchingStates: Writable<any>[],
-  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R4, T, RC, RE, RH>;
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R4, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialWatcher(重载)
@@ -421,17 +421,17 @@ declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4>(
  * @param config 配置参数
  * @return useSerialWatcher相关数据和操作函数
  */
-declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>
   ],
-  watchingStates: Writable<any>[],
-  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R5, T, RC, RE, RH>;
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R5, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialWatcher(重载)
@@ -441,18 +441,18 @@ declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5>(
  * @param config 配置参数
  * @return useSerialWatcher相关数据和操作函数
  */
-declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5, R6>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
-    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: [...ARG, ...any]) => Method<S, E, R6, T, RC, RE, RH>
   ],
-  watchingStates: Writable<any>[],
-  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R6, T, RC, RE, RH>;
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R6, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialWatcher(重载)
@@ -462,19 +462,19 @@ declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6>(
  * @param config 配置参数
  * @return useSerialWatcher相关数据和操作函数
  */
-declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7>(
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5, R6, R7>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
-    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
-    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: [...ARG, ...any]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: [...ARG, ...any]) => Method<S, E, R7, T, RC, RE, RH>
   ],
-  watchingStates: Writable<any>[],
-  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R7, T, RC, RE, RH>;
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R7, T, RC, RE, RH, ARG>;
 
 /**
  * useSerialWatcher(重载)
@@ -484,20 +484,20 @@ declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7
  * @param config 配置参数
  * @return useSerialWatcher相关数据和操作函数
  */
-declare function useSerialWatcher<S, E, R, T, RC, RE, RH, R2, R3, R4, R5, R6, R7, R8>(
+declare function useSerialWatcher<S, E, R, T, RC, RE, RH, ARG extends any[], R2, R3, R4, R5, R6, R7, R8>(
   serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    (value: R, ...args: any[]) => Method<S, E, R2, T, RC, RE, RH>,
-    (value: R2, ...args: any[]) => Method<S, E, R3, T, RC, RE, RH>,
-    (value: R3, ...args: any[]) => Method<S, E, R4, T, RC, RE, RH>,
-    (value: R4, ...args: any[]) => Method<S, E, R5, T, RC, RE, RH>,
-    (value: R5, ...args: any[]) => Method<S, E, R6, T, RC, RE, RH>,
-    (value: R6, ...args: any[]) => Method<S, E, R7, T, RC, RE, RH>,
-    (value: R7, ...args: any[]) => Method<S, E, R8, T, RC, RE, RH>
+    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+    (value: R, ...args: [...ARG, ...any]) => Method<S, E, R2, T, RC, RE, RH>,
+    (value: R2, ...args: [...ARG, ...any]) => Method<S, E, R3, T, RC, RE, RH>,
+    (value: R3, ...args: [...ARG, ...any]) => Method<S, E, R4, T, RC, RE, RH>,
+    (value: R4, ...args: [...ARG, ...any]) => Method<S, E, R5, T, RC, RE, RH>,
+    (value: R5, ...args: [...ARG, ...any]) => Method<S, E, R6, T, RC, RE, RH>,
+    (value: R6, ...args: [...ARG, ...any]) => Method<S, E, R7, T, RC, RE, RH>,
+    (value: R7, ...args: [...ARG, ...any]) => Method<S, E, R8, T, RC, RE, RH>
   ],
-  watchingStates: Writable<any>[],
-  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R8, T, RC, RE, RH>;
+  watchingStates: any[],
+  config?: WatcherHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R8, T, RC, RE, RH, ARG>;
 
 /**
  * 操作函数委托中间件
@@ -539,7 +539,7 @@ declare const accessAction: AccessAction;
  * @param options 配置参数
  * @returns token认证拦截器函数
  */
-export function createClientTokenAuthentication<
+declare function createClientTokenAuthentication<
   SH extends StatesHook<any, any>,
   RA extends
     | AlovaRequestAdapter<any, any, any, any, any>
@@ -571,7 +571,7 @@ export function createClientTokenAuthentication<
  * @param options 配置参数
  * @returns token认证拦截器函数
  */
-export function createServerTokenAuthentication<
+declare function createServerTokenAuthentication<
   SH extends StatesHook<any, any>,
   RA extends
     | AlovaRequestAdapter<any, any, any, any, any>
@@ -591,25 +591,25 @@ export function createServerTokenAuthentication<
  * @param config 配置参数
  * @return useAutoRequest相关数据和操作函数
  */
-declare function useAutoRequest<S, E, R, T, RC, RE, RH>(
-  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config?: AutoRequestHookConfig<S, E, R, T, RC, RE, RH>
-): UseHookReturnType<S, E, R, T, RC, RE, RH>;
+declare function useAutoRequest<S, E, R, T, RC, RE, RH, ARG extends any[]>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+  config?: AutoRequestHookConfig<S, E, R, T, RC, RE, RH, ARG>
+): UseHookReturnType<S, E, R, T, RC, RE, RH, ARG>;
 declare namespace useAutoRequest {
   function onNetwork(
     notify: NotifyHandler,
-    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any, any>
   ): UnbindHandler;
   function onPolling(
     notify: NotifyHandler,
-    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any, any>
   ): UnbindHandler;
   function onVisibility(
     notify: NotifyHandler,
-    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any, any>
   ): UnbindHandler;
   function onFocus(
     notify: NotifyHandler,
-    config: AutoRequestHookConfig<any, any, any, any, any, any, any>
+    config: AutoRequestHookConfig<any, any, any, any, any, any, any, any>
   ): UnbindHandler;
 }

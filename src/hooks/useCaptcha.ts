@@ -6,9 +6,9 @@ import { CaptchaHookConfig } from '~/typings/general';
 
 const hookPrefix = 'useCaptcha';
 const captchaAssert = createAssert(hookPrefix);
-export default <S, E, R, T, RC, RE, RH>(
-  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config: CaptchaHookConfig<S, E, R, T, RC, RE, RH>,
+export default <S, E, R, T, RC, RE, RH, ARG extends any[]>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+  config: CaptchaHookConfig<S, E, R, T, RC, RE, RH, ARG>,
   $: T$,
   upd$: Tupd$,
   _$: T_$,
@@ -31,7 +31,7 @@ export default <S, E, R, T, RC, RE, RH>(
     newInstance(PromiseCls, (resolve, reject) => {
       if (_$(countdown) <= 0) {
         requestReturned
-          .send(...args)
+          .send(...args as any)
           .then(result => {
             upd$(countdown, config.initialCountdown || 60);
             timer.current = setInterval(() => {

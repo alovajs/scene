@@ -48,7 +48,7 @@
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
     "@vue/vue3-jest": "^29.2.4",
-    "alova": "^2.20.5",
+    "alova": "^2.21.0",
     "babel-jest": "^29.2.2",
     "commitizen": "^4.3.0",
     "commitlint": "^17.5.1",

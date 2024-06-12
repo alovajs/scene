@@ -4,25 +4,25 @@ import { falseValue, isSSR, trueValue } from '@/helper/variables';
 import { AlovaMethodHandler, Method, UseHookReturnType, useRequest } from 'alova';
 import { AutoRequestHookConfig, NotifyHandler, UnbindHandler } from '~/typings/general';
 
-interface AutoRequestHook<S, E, R, T, RC, RE, RH> {
+interface AutoRequestHook<S, E, R, T, RC, RE, RH, ARG extends any[]> {
   (
     handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH>,
+    config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH, ARG>,
     onMounted$: TonMounted$,
     onUnmounted$: TonUnmounted$
   ): UseHookReturnType<S, E, R, T, RC, RE, RH>;
-  onNetwork(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH>): UnbindHandler;
-  onPolling(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH>): UnbindHandler;
-  onVisibility(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH>): UnbindHandler;
-  onFocus(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH>): UnbindHandler;
+  onNetwork(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH, ARG>): UnbindHandler;
+  onPolling(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH, ARG>): UnbindHandler;
+  onVisibility(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH, ARG>): UnbindHandler;
+  onFocus(notify: NotifyHandler, config: AutoRequestHookConfig<S, E, R, T, RC, RE, RH, ARG>): UnbindHandler;
 }
 
-export const defaultConfig: AutoRequestHookConfig<any, any, any, any, any, any, any> = {
+export const defaultConfig: AutoRequestHookConfig<any, any, any, any, any, any, any, any> = {
   enableFocus: trueValue,
   enableNetwork: trueValue,
   throttle: 1000
 };
-const useAutoRequest: AutoRequestHook<any, any, any, any, any, any, any> = (
+const useAutoRequest: AutoRequestHook<any, any, any, any, any, any, any, any> = (
   handler,
   config,
   onMounted$,

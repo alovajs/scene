@@ -19,19 +19,19 @@ import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import { AlovaMethodHandler, Method, useRequest } from 'alova';
 import { RetriableFailEvent, RetriableHookConfig, RetriableRetryEvent } from '~/typings/general';
 
-type RetryHandler<S, E, R, T, RC, RE, RH> = (event: RetriableRetryEvent<S, E, R, T, RC, RE, RH>) => void;
-type FailHandler<S, E, R, T, RC, RE, RH> = (event: RetriableFailEvent<S, E, R, T, RC, RE, RH>) => void;
+type RetryHandler<S, E, R, T, RC, RE, RH, ARG extends any[]> = (event: RetriableRetryEvent<S, E, R, T, RC, RE, RH, ARG>) => void;
+type FailHandler<S, E, R, T, RC, RE, RH, ARG extends any[]> = (event: RetriableFailEvent<S, E, R, T, RC, RE, RH, ARG>) => void;
 const hookPrefix = 'useRetriableRequest';
 const assert = createAssert(hookPrefix);
-export default <S, E, R, T, RC, RE, RH>(
-  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  config: RetriableHookConfig<S, E, R, T, RC, RE, RH>,
+export default <S, E, R, T, RC, RE, RH, ARG extends any[]>(
+  handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+  config: RetriableHookConfig<S, E, R, T, RC, RE, RH, ARG>,
   useFlag$: TuseFlag$,
   useMemorizedCallback$: TuseMemorizedCallback$
 ) => {
   const { retry = 3, backoff = { delay: 1000 }, middleware = noop } = config;
-  const retryHandlers: RetryHandler<S, E, R, T, RC, RE, RH>[] = [];
-  const failHandlers: FailHandler<S, E, R, T, RC, RE, RH>[] = [];
+  const retryHandlers: RetryHandler<S, E, R, T, RC, RE, RH, ARG>[] = [];
+  const failHandlers: FailHandler<S, E, R, T, RC, RE, RH, ARG>[] = [];
   const retryTimes = useFlag$(0);
   const stopManuallyError = useFlag$(undefinedValue as Error | undefined); // 停止错误对象，在手动触发停止时有值
   const methodInstanceLastest = useFlag$(undefinedValue as Method<S, E, R, T, RC, RE, RH> | undefined);
@@ -163,7 +163,7 @@ export default <S, E, R, T, RC, RE, RH>(
    * 它们将在重试发起后触发
    * @param handler 重试事件回调
    */
-  const onRetry = (handler: RetryHandler<S, E, R, T, RC, RE, RH>) => {
+  const onRetry = (handler: RetryHandler<S, E, R, T, RC, RE, RH, ARG>) => {
     pushItem(retryHandlers, handler);
   };
 
@@ -176,7 +176,7 @@ export default <S, E, R, T, RC, RE, RH>(
    *
    * @param handler 失败事件回调
    */
-  const onFail = (handler: FailHandler<S, E, R, T, RC, RE, RH>) => {
+  const onFail = (handler: FailHandler<S, E, R, T, RC, RE, RH, ARG>) => {
     pushItem(failHandlers, handler);
   };
 

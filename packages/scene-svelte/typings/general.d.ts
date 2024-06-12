@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Alova,
   AlovaCompleteEvent,
@@ -472,18 +471,18 @@ type SilentQueueMap = Record<string, SilentMethod[]>;
 /**
  * useCaptcha配置
  */
-type CaptchaHookConfig<S, E, R, T, RC, RE, RH> = {
+type CaptchaHookConfig<S, E, R, T, RC, RE, RH, ARG extends any[]> = {
   /**
    * 初始倒计时，当验证码发送成功时将会以此数据来开始倒计时
    * @default 60
    */
   initialCountdown?: number;
-} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>;
 
 /**
  * useCaptcha返回值
  */
-type CaptchaReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+type CaptchaReturnType<S, E, R, T, RC, RE, RH, ARG extends any[]> = UseHookReturnType<S, E, R, T, RC, RE, RH, ARG> & {
   /**
    * 当前倒计时，每秒-1，当倒计时到0时可再次发送验证码
    */
@@ -572,7 +571,7 @@ type FormReturnType<S, E, R, T, RC, RE, RH, F> = UseHookReturnType<S, E, R, T, R
 /**
  * useRetriableRequest配置
  */
-type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {
+type RetriableHookConfig<S, E, R, T, RC, RE, RH, ARG extends any[]> = {
   /**
    * 最大重试次数，也可以设置为返回 boolean 值的函数，来动态判断是否继续重试。
    * @default 3
@@ -583,12 +582,12 @@ type RetriableHookConfig<S, E, R, T, RC, RE, RH> = {
    * 避让策略
    */
   backoff?: BackoffPolicy;
-} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>;
 
 /**
  * useRetriableRequest onRetry回调事件实例
  */
-interface RetriableRetryEvent<S, E, R, T, RC, RE, RH> extends AlovaEvent<S, E, R, T, RC, RE, RH> {
+interface RetriableRetryEvent<S, E, R, T, RC, RE, RH, ARG extends any[]> extends AlovaEvent<S, E, R, T, RC, RE, RH, ARG> {
   /**
    * 当前的重试次数
    */
@@ -602,7 +601,7 @@ interface RetriableRetryEvent<S, E, R, T, RC, RE, RH> extends AlovaEvent<S, E, R
 /**
  * useRetriableRequest onFail回调事件实例
  */
-interface RetriableFailEvent<S, E, R, T, RC, RE, RH> extends AlovaErrorEvent<S, E, R, T, RC, RE, RH> {
+interface RetriableFailEvent<S, E, R, T, RC, RE, RH, ARG extends any[]> extends AlovaErrorEvent<S, E, R, T, RC, RE, RH, ARG> {
   /**
    * 失败时的重试次数
    */
@@ -611,7 +610,7 @@ interface RetriableFailEvent<S, E, R, T, RC, RE, RH> extends AlovaErrorEvent<S, 
 /**
  * useRetriableRequest返回值
  */
-type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T, RC, RE, RH> & {
+type RetriableReturnType<S, E, R, T, RC, RE, RH, ARG extends any[]> = UseHookReturnType<S, E, R, T, RC, RE, RH, ARG> & {
   /**
    * 停止重试，只在重试期间调用有效
    * 停止后将立即触发onFail事件
@@ -624,7 +623,7 @@ type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T,
    * 它们将在重试发起后触发
    * @param handler 重试事件回调
    */
-  onRetry(handler: (event: RetriableRetryEvent<S, E, R, T, RC, RE, RH>) => void): void;
+  onRetry(handler: (event: RetriableRetryEvent<S, E, R, T, RC, RE, RH, ARG>) => void): void;
 
   /**
    * 失败事件绑定
@@ -635,7 +634,7 @@ type RetriableReturnType<S, E, R, T, RC, RE, RH> = UseHookReturnType<S, E, R, T,
    *
    * @param handler 失败事件回调
    */
-  onFail(handler: (event: RetriableFailEvent<S, E, R, T, RC, RE, RH>) => void): void;
+  onFail(handler: (event: RetriableFailEvent<S, E, R, T, RC, RE, RH, ARG>) => void): void;
 };
 
 // middlewares
@@ -650,14 +649,14 @@ interface Actions {
  * @param id 委托者id
  * @returns alova中间件函数
  */
-type ActionDelegationMiddleware = (id: string | number | symbol) => <S, E, R, T, RC, RE, RH>(
+type ActionDelegationMiddleware = (id: string | number | symbol) => <S, E, R, T, RC, RE, RH, ARG extends any[]>(
   context: (
-    | AlovaFrontMiddlewareContext<S, E, R, T, RC, RE, RH>
-    | AlovaFetcherMiddlewareContext<S, E, R, T, RC, RE, RH>
+    | AlovaFrontMiddlewareContext<S, E, R, T, RC, RE, RH, ARG>
+    | AlovaFetcherMiddlewareContext<S, E, R, T, RC, RE, RH, ARG>
   ) & {
     delegatingActions?: Actions;
   },
-  next: AlovaGuardNext<S, E, R, T, RC, RE, RH>
+  next: AlovaGuardNext<S, E, R, T, RC, RE, RH, ARG>
 ) => Promise<any>;
 
 /**
@@ -810,7 +809,7 @@ type AlovaRequestAdapterUnified<
 /**
  * useAutoRequest配置
  */
-type AutoRequestHookConfig<S, E, R, T, RC, RE, RH> = {
+type AutoRequestHookConfig<S, E, R, T, RC, RE, RH, ARG extends any[]> = {
   /**
    * 轮询事件，单位ms，0表示不开启
    * @default 0
@@ -836,7 +835,7 @@ type AutoRequestHookConfig<S, E, R, T, RC, RE, RH> = {
    * @default 1000
    */
   throttle?: number;
-} & RequestHookConfig<S, E, R, T, RC, RE, RH>;
+} & RequestHookConfig<S, E, R, T, RC, RE, RH, ARG>;
 
 const enum SSEHookReadyState {
   CONNECTING = 0,
@@ -952,3 +951,5 @@ type UsePromiseReturnType<T> = {
   resolve: (value: T | PromiseLike<T>) => void;
   reject: (reason?: any) => void;
 };
+
+type FetchRequestInit = Omit<RequestInit, 'body' | 'headers' | 'method'>;
