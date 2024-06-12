@@ -1,14 +1,14 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/vue';
 import { Alova, createAlova } from 'alova';
-import GlobalFetch, { FetchRequestInit } from 'alova/GlobalFetch';
+import GlobalFetch from 'alova/GlobalFetch';
 import VueHook from 'alova/vue';
 import ES from 'eventsource';
 import { AddressInfo } from 'net';
 import { Ref } from 'vue';
 import { IntervalEventName, IntervalMessage, TriggerEventName, server, send as serverSend } from '~/test/sseServer';
 import { untilCbCalled } from '~/test/utils';
-import { AnyFn, SSEHookReadyState } from '~/typings/general';
+import { AnyFn, FetchRequestInit, SSEHookReadyState } from '~/typings/general';
 import { useSSE } from '..';
 import { AlovaSSEMessageEvent } from '../typings/general';
 import CompUseSSEGlobalResponse from './components/use-sse-global-response.vue';
@@ -16,7 +16,7 @@ import CompUseSSE from './components/use-sse.vue';
 
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
 
-let alovaInst: Alova<Ref<unknown>, Ref<unknown>, FetchRequestInit, any, Record<string, string | number>>;
+let alovaInst: Alova<Ref<unknown>, Ref<unknown>, FetchRequestInit, Response, Headers>;
 
 afterEach(() => {
   server.close();
@@ -35,7 +35,7 @@ const prepareAlova = async () => {
     statesHook: VueHook,
     requestAdapter: GlobalFetch(),
     cacheLogger: false
-  }) as any;
+  });
 };
 
 describe('vue => useSSE', () => {

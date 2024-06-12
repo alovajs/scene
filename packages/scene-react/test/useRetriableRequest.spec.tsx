@@ -99,7 +99,7 @@ describe('react => useRetriableRequest', () => {
         expect(mockCompleteFn).toHaveBeenCalledTimes(4);
         expect(mockSuccessFn).not.toBeCalled();
         expect(mockFailFn).toHaveBeenCalledTimes(1);
-        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(3); // 分别在初始化、设置为true、恢复为false三次被调用（立即发起请求时loading默认为true）
       },
       {
         timeout: 4000
@@ -476,7 +476,7 @@ describe('react => useRetriableRequest', () => {
         expect(screen.getByRole('error')).toHaveTextContent('[alova/useRetriableRequest]stop retry manually');
         expect(mockRetryFn).toHaveBeenCalledTimes(2);
         expect(mockFailFn).toHaveBeenCalledTimes(1);
-        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(3); // 分别在初始化、设置为true、恢复为false三次被调用
       },
       {
         timeout: 4000
@@ -489,7 +489,7 @@ describe('react => useRetriableRequest', () => {
         expect(screen.getByRole('error')).toHaveTextContent('[alova/useRetriableRequest]stop retry manually');
         expect(mockRetryFn).toHaveBeenCalledTimes(4);
         expect(mockFailFn).toHaveBeenCalledTimes(2);
-        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(4); // 设置为true、设置回false两次被调用
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(5); // 设置为true、设置回false两次被调用
       },
       {
         timeout: 4000
@@ -550,7 +550,7 @@ describe('react => useRetriableRequest', () => {
         expect(mockCompleteFn).toHaveBeenCalledTimes(4);
         expect(mockSuccessFn).not.toBeCalled();
         expect(mockFailFn).toHaveBeenCalledTimes(1);
-        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(2); // 分别在初始化、恢复为false两次被调用（立即发起请求时loading默认为true）
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(3); // 分别在初始化、设置为true、恢复为false三次被调用
       },
       {
         timeout: 4000
@@ -565,7 +565,7 @@ describe('react => useRetriableRequest', () => {
         expect(mockCompleteFn).toHaveBeenCalledTimes(8);
         expect(mockSuccessFn).not.toBeCalled();
         expect(mockFailFn).toHaveBeenCalledTimes(2);
-        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(4); // 设置为true、恢复为false两次被调用
+        expect(mockLoadingChangeFn).toHaveBeenCalledTimes(5); // 设置为true、恢复为false两次被调用
       },
       {
         timeout: 4000

@@ -21,13 +21,14 @@ import createHookEvent from '@/helper/createHookEvent';
 import {
   BEHAVIOR_SILENT,
   DEFAUT_QUEUE_NAME,
-  falseValue,
   RegExpCls,
+  falseValue,
   trueValue,
   undefinedValue
 } from '@/helper/variables';
-import { Method, setCache, updateState, UpdateStateCollection } from 'alova';
+import { Method, UpdateStateCollection, setCache, updateState } from 'alova';
 import { RetryErrorDetailed, SilentQueueMap } from '~/typings/general';
+import { SilentMethod } from './SilentMethod';
 import {
   beforeHandlers,
   errorHandlers,
@@ -37,7 +38,6 @@ import {
   silentFactoryStatus,
   successHandlers
 } from './globalVariables';
-import { SilentMethod } from './SilentMethod';
 import {
   persistSilentMethod,
   push2PersistentSilentQueue,
@@ -283,7 +283,8 @@ export const bootSilentQueue = (queue: SilentQueueMap[string], queueName: string
           // 在silent行为模式下，判断是否需要重试
           // 重试只有在响应错误符合retryError正则匹配时有效
           const { name: errorName = '', message: errorMsg = '' } = reason || {};
-          let regRetryErrorName: RegExp | void, regRetryErrorMsg: RegExp | void;
+          let regRetryErrorName: RegExp | void = void 0,
+            regRetryErrorMsg: RegExp | void = void 0;
           if (instanceOf(retryError, RegExp)) {
             regRetryErrorMsg = retryError;
           } else if (isObject(retryError)) {

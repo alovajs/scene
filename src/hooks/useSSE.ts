@@ -232,7 +232,7 @@ export default <Data, S, E, R, T, RC, RE, RH>(
 
   // * MARK: EventSource 的事件处理
 
-  const onCustomEvent: SSEOn<S, E, R, T, RC, RE, RH> = useMemorizedCallback$((eventName, handler) => {
+  const onCustomEvent: SSEOn<S, E, R, T, RC, RE, RH, Data> = useMemorizedCallback$((eventName, handler) => {
     if (!customEventMap.has(eventName)) {
       const useCallbackObject = useCallback<(event: AlovaSSEEvent<S, E, R, T, RC, RE, RH>) => void>(callbacks => {
         if (callbacks.length === 0) {

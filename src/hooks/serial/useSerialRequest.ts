@@ -1,5 +1,5 @@
-import { AlovaMethodHandler, Method, RequestHookConfig, useRequest } from 'alova';
-import { assertSerialHandlers, serialMiddleware } from './general';
+import { RequestHookConfig, useRequest } from 'alova';
+import { SerialHandlers, assertSerialHandlers, serialMiddleware } from './general';
 
 /**
  * 串行请求hook，每个serialHandlers中将接收到上一个请求的结果
@@ -8,12 +8,9 @@ import { assertSerialHandlers, serialMiddleware } from './general';
  * @param config 配置参数
  * @return useSerialRequest相关数据和操作函数
  */
-export default <S, E, R, T, RC, RE, RH>(
-  serialHandlers: [
-    Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-    ...AlovaMethodHandler<S, E, R, T, RC, RE, RH>[]
-  ],
-  config: RequestHookConfig<S, E, R, T, RC, RE, RH> = {}
+export default <S, E, R, T, RC, RE, RH, ARG extends any[]>(
+  serialHandlers: SerialHandlers<S, E, R, T, RC, RE, RH, ARG>,
+  config: RequestHookConfig<S, E, R, T, RC, RE, RH, ARG> = {}
 ) => {
   assertSerialHandlers('useSerialRequest', serialHandlers);
   return useRequest(serialHandlers[0], {

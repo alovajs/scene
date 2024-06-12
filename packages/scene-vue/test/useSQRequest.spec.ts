@@ -1,20 +1,20 @@
 import { mockRequestAdapter } from '#/mockData';
 import { untilCbCalled } from '#/utils';
+import { SilentMethod } from '@/hooks/silent/SilentMethod';
 import { setSilentFactoryStatus } from '@/hooks/silent/globalVariables';
 import { bootSilentFactory, onSilentSubmitSuccess } from '@/hooks/silent/silentFactory';
-import { SilentMethod } from '@/hooks/silent/SilentMethod';
 import { silentQueueMap } from '@/hooks/silent/silentQueue';
 import loadSilentQueueMapFromStorage from '@/hooks/silent/storage/loadSilentQueueMapFromStorage';
 import useSQRequest from '@/hooks/silent/useSQRequest';
+import Undefined from '@/hooks/silent/virtualResponse/Undefined';
 import createVirtualResponse from '@/hooks/silent/virtualResponse/createVirtualResponse';
 import dehydrateVData from '@/hooks/silent/virtualResponse/dehydrateVData';
 import stringifyVData from '@/hooks/silent/virtualResponse/stringifyVData';
-import Undefined from '@/hooks/silent/virtualResponse/Undefined';
 import updateStateEffect from '@/hooks/silent/virtualResponse/updateStateEffect';
 import { symbolVDataId } from '@/hooks/silent/virtualResponse/variables';
 import { createAlova } from 'alova';
 import VueHook from 'alova/vue';
-import { ScopedSQErrorEvent, ScopedSQSuccessEvent, SQHookBehavior } from '~/typings/general';
+import { SQHookBehavior, ScopedSQErrorEvent, ScopedSQSuccessEvent } from '~/typings/general';
 import { accessAction, actionDelegationMiddleware } from '..';
 
 const alovaInst = createAlova({
@@ -70,7 +70,7 @@ describe('vue => useSQRequest', () => {
       expect(silentQueueMap[queue][0]).toBe(event.silentMethod);
     });
 
-    expect(loading.value).toBeTruthy();
+    expect(loading.value).toBeFalsy();
     expect(data.value).toBeUndefined();
     expect(downloading.value).toEqual({ total: 0, loaded: 0 });
     expect(uploading.value).toEqual({ total: 0, loaded: 0 });

@@ -13,9 +13,13 @@ export const assertSerialHandlers = (hookName: string, serialHandlers: any) =>
     'please use an array to represent serial requests'
   );
 
-export type SerialHandlers<S, E, R, T, RC, RE, RH> = [
-  Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
-  ...AlovaMethodHandler<S, E, R, T, RC, RE, RH>[]
+type SerialHandler<S, E, R, T, RC, RE, RH, ARG extends any[]> = (
+  value: any,
+  ...args: [...ARG, ...any]
+) => Method<S, E, R, T, RC, RE, RH>;
+export type SerialHandlers<S, E, R, T, RC, RE, RH, ARG extends any[]> = [
+  Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH, ARG>,
+  ...SerialHandler<S, E, R, T, RC, RE, RH, ARG>[]
 ];
 
 /**
@@ -24,9 +28,9 @@ export type SerialHandlers<S, E, R, T, RC, RE, RH> = [
  * @param hookMiddleware use hook的中间件
  * @returns 串行请求中间件
  */
-export const serialMiddleware = <S, E, R, T, RC, RE, RH>(
-  serialHandlers: SerialHandlers<S, E, R, T, RC, RE, RH>,
-  hookMiddleware?: AlovaFrontMiddleware<S, E, R, T, RC, RE, RH>
+export const serialMiddleware = <S, E, R, T, RC, RE, RH, ARG extends any[]>(
+  serialHandlers: SerialHandlers<S, E, R, T, RC, RE, RH, ARG>,
+  hookMiddleware?: AlovaFrontMiddleware<S, E, R, T, RC, RE, RH, ARG>
 ) => {
   // 第一个handler在外部传递给了use hook，不需要再次请求
   shift(serialHandlers);
@@ -39,7 +43,7 @@ export const serialMiddleware = <S, E, R, T, RC, RE, RH>(
     let serialPromise = next();
     for (const i in serialHandlers) {
       serialPromise = promiseThen(serialPromise, value => {
-        const methodItem = (serialHandlers as AlovaMethodHandler<S, E, R, T, RC, RE, RH>[])[i](value, ...ctx.sendArgs);
+        const methodItem = (serialHandlers as SerialHandler<S, E, R, T, RC, RE, RH, ARG>[])[i](value, ...ctx.sendArgs);
         pushItem(methods, methodItem);
         return methodItem.send();
       });
@@ -53,5 +57,5 @@ export const serialMiddleware = <S, E, R, T, RC, RE, RH>(
     return serialPromise.finally(() => {
       ctx.update({ loading: falseValue });
     });
-  }) as AlovaFrontMiddleware<S, E, R, T, RC, RE, RH>;
+  }) as AlovaFrontMiddleware<S, E, R, T, RC, RE, RH, ARG>;
 };
