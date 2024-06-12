@@ -33,6 +33,7 @@ import {
   PaginationHookConfig,
   RetriableHookConfig,
   RetriableReturnType,
+  ServerTokenAuthenticationOptions,
   SilentFactoryBootOptions,
   SilentMethod,
   SilentQueueMap,
@@ -196,7 +197,7 @@ declare function useForm<F = any, S = any, E = any, R = any, T = any, RC = any, 
 declare function useSSE<Data = any, S = any, E = any, R = any, T = any, RC = any, RE = any, RH = any>(
   handler: Method<S, E, R, T, RC, RE, RH> | AlovaMethodHandler<S, E, R, T, RC, RE, RH>,
   config?: SSEHookConfig
-): SSEReturnType<S, Data>;
+): SSEReturnType<S, Data, E, R, T, RC, RE, RH>;
 
 /**
  * useRetriableRequest

@@ -650,14 +650,14 @@ interface Actions {
  * @param id 委托者id
  * @returns alova中间件函数
  */
-type ActionDelegationMiddleware = (id: string | number | symbol) => <S, E, R, T, RC, RE, RH>(
+type ActionDelegationMiddleware = (id: string | number | symbol) => <S, E, R, T, RC, RE, RH, ARG extends any[]>(
   context: (
-    | AlovaFrontMiddlewareContext<S, E, R, T, RC, RE, RH>
-    | AlovaFetcherMiddlewareContext<S, E, R, T, RC, RE, RH>
+    | AlovaFrontMiddlewareContext<S, E, R, T, RC, RE, RH, ARG>
+    | AlovaFetcherMiddlewareContext<S, E, R, T, RC, RE, RH, ARG>
   ) & {
     delegatingActions?: Actions;
   },
-  next: AlovaGuardNext<S, E, R, T, RC, RE, RH>
+  next: AlovaGuardNext<S, E, R, T, RC, RE, RH, ARG>
 ) => Promise<any>;
 
 /**
@@ -859,9 +859,9 @@ type SSEOnMessageTrigger<Data, S, E, R, T, RC, RE, RH> = (
   event: AlovaSSEMessageEvent<Data, S, E, R, T, RC, RE, RH>
 ) => void;
 type SSEOnErrorTrigger<S, E, R, T, RC, RE, RH> = (event: AlovaSSEErrorEvent<S, E, R, T, RC, RE, RH>) => void;
-type SSEOn<S, E, R, T, RC, RE, RH> = (
+type SSEOn<S, E, R, T, RC, RE, RH, Data> = (
   eventName: string,
-  handler: (event: AlovaSSEMessageEvent<S, E, R, T, RC, RE, RH>) => void
+  handler: (event: AlovaSSEMessageEvent<Data, S, E, R, T, RC, RE, RH>) => void
 ) => () => void;
 
 type NotifyHandler = () => void;
@@ -904,7 +904,7 @@ type SSEHookConfig = {
 /**
  * useSSE() 返回类型
  */
-type SSEReturnType<S, Data> = {
+type SSEReturnType<S, Data, E, R, T, RC, RE, RH> = {
   readyState: ExportedType<SSEHookReadyState, S>;
   data: ExportedType<Data | undefined, S>;
   eventSource: ExportedType<EventSource | undefined, S>;
@@ -922,30 +922,30 @@ type SSEReturnType<S, Data> = {
    * @param callback 回调函数
    * @returns 取消注册函数
    */
-  onOpen(callback: SSEOnOpenTrigger): () => void;
+  onOpen(callback: SSEOnOpenTrigger<S, E, R, T, RC, RE, RH>): () => void;
 
   /**
    * 注册 EventSource message 的回调函数
    * @param callback 回调函数
    * @returns 取消注册函数
    */
-  onMessage<T = Data>(callback: SSEOnMessageTrigger<T>): () => void;
+  onMessage<T = Data>(callback: SSEOnMessageTrigger<T, S, E, R, T, RC, RE, RH>): () => void;
 
   /**
    * 注册 EventSource error 的回调函数
    * @param callback 回调函数
    * @returns 取消注册函数
    */
-  onError(callback: SSEOnErrorTrigger): () => void;
+  onError(callback: SSEOnErrorTrigger<S, E, R, T, RC, RE, RH>): () => void;
 
   /**
    * @param eventName 事件名称，默认存在 `open` | `error` | `message`
    * @param handler 事件处理器
    */
-  on: SSEOn;
+  on: SSEOn<S, E, R, T, RC, RE, RH, Data>;
 };
 
-type AnyFn<T = Any> = (...args: any[]) => T;
+type AnyFn<T = any> = (...args: any[]) => T;
 
 type UsePromiseReturnType<T> = {
   promise: Promise<T>;
