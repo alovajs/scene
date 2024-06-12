@@ -31,7 +31,7 @@ export default <S, E, R, T, RC, RE, RH, ARG extends any[]>(
     newInstance(PromiseCls, (resolve, reject) => {
       if (_$(countdown) <= 0) {
         requestReturned
-          .send(...args as any)
+          .send(...(args as any))
           .then(result => {
             upd$(countdown, config.initialCountdown || 60);
             timer.current = setInterval(() => {
