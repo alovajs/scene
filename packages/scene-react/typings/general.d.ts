@@ -929,7 +929,7 @@ type SSEReturnType<S, Data, E, R, T, RC, RE, RH> = {
    * @param callback 回调函数
    * @returns 取消注册函数
    */
-  onMessage<T = Data>(callback: SSEOnMessageTrigger<T, S, E, R, T, RC, RE, RH>): () => void;
+  onMessage<D = Data>(callback: SSEOnMessageTrigger<D, S, E, R, T, RC, RE, RH>): () => void;
 
   /**
    * 注册 EventSource error 的回调函数

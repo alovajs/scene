@@ -36,7 +36,8 @@
     "packages/**/*.ts",
     "packages/**/*.js",
     "packages/**/*.tsx",
-    "packages/**/*.vue"
+    "packages/**/*.vue",
+    "typings/general.ts"
   ],
   "exclude": ["node_modules", "packages/*/node_modules", "**.d.ts"]
 }
