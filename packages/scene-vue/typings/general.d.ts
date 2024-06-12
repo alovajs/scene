@@ -952,3 +952,5 @@ type UsePromiseReturnType<T> = {
   resolve: (value: T | PromiseLike<T>) => void;
   reject: (reason?: any) => void;
 };
+
+type FetchRequestInit = Omit<RequestInit, 'body' | 'headers' | 'method'>;

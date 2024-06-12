@@ -2,16 +2,16 @@ import { undefinedValue } from '@/helper/variables';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Alova, createAlova } from 'alova';
-import GlobalFetch, { FetchRequestInit } from 'alova/GlobalFetch';
+import GlobalFetch from 'alova/GlobalFetch';
 import ReactHook from 'alova/react';
 import ES from 'eventsource';
 import { AddressInfo } from 'net';
 import React, { ReactElement } from 'react';
 import { IntervalEventName, IntervalMessage, TriggerEventName, server, send as serverSend } from '~/test/sseServer';
 import { getAlovaInstance, untilCbCalled } from '~/test/utils';
+import { FetchRequestInit } from '~/typings/general';
 import { ReactState, useSSE } from '..';
 import { AlovaSSEMessageEvent, SSEHookReadyState } from '../typings/general';
-
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
 
 let alovaInst: Alova<ReactState<any>, unknown, FetchRequestInit, any, any>;
