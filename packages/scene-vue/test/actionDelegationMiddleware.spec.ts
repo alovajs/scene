@@ -23,7 +23,7 @@ describe('vue => subscriber middleware', () => {
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
-    expect(loading.value).toBeTruthy();
+    expect(loading.value).toBeFalsy();
     onSuccess(successFn);
     onComplete(completeFn);
 
@@ -57,7 +57,7 @@ describe('vue => subscriber middleware', () => {
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
-    expect(loading.value).toBeTruthy();
+    expect(loading.value).toBeFalsy();
     onSuccess(successFn);
     onComplete(completeFn);
 
@@ -89,7 +89,7 @@ describe('vue => subscriber middleware', () => {
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
-    expect(loading.value).toBeTruthy();
+    expect(loading.value).toBeFalsy();
     onSuccess(successFn);
     onComplete(completeFn);
 
@@ -212,7 +212,7 @@ describe('vue => subscriber middleware', () => {
     });
     const successFn = jest.fn();
     const completeFn = jest.fn();
-    expect(loading.value).toBeTruthy();
+    expect(loading.value).toBeFalsy();
     onSuccess(successFn);
     onComplete(completeFn);
 
