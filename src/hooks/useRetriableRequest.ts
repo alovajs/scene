@@ -19,8 +19,12 @@ import { falseValue, trueValue, undefinedValue } from '@/helper/variables';
 import { AlovaMethodHandler, Method, useRequest } from 'alova';
 import { RetriableFailEvent, RetriableHookConfig, RetriableRetryEvent } from '~/typings/general';
 
-type RetryHandler<S, E, R, T, RC, RE, RH, ARG extends any[]> = (event: RetriableRetryEvent<S, E, R, T, RC, RE, RH, ARG>) => void;
-type FailHandler<S, E, R, T, RC, RE, RH, ARG extends any[]> = (event: RetriableFailEvent<S, E, R, T, RC, RE, RH, ARG>) => void;
+type RetryHandler<S, E, R, T, RC, RE, RH, ARG extends any[]> = (
+  event: RetriableRetryEvent<S, E, R, T, RC, RE, RH, ARG>
+) => void;
+type FailHandler<S, E, R, T, RC, RE, RH, ARG extends any[]> = (
+  event: RetriableFailEvent<S, E, R, T, RC, RE, RH, ARG>
+) => void;
 const hookPrefix = 'useRetriableRequest';
 const assert = createAssert(hookPrefix);
 export default <S, E, R, T, RC, RE, RH, ARG extends any[]>(
