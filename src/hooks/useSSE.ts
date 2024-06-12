@@ -164,6 +164,7 @@ export default <Data, S, E, R, T, RC, RE, RH>(
    */
   const createSSEEvent = async (eventFrom: keyof EventSourceEventMap, dataOrError: Promise<any>) => {
     assert(!!eventSource.current, 'EventSource is not initialized');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const es = eventSource.current!;
 
     const ev = (type: AlovaHookEventType, data?: any, error?: Error) => {
@@ -362,7 +363,7 @@ export default <Data, S, E, R, T, RC, RE, RH>(
       });
     });
 
-    return promiseObj!.promise;
+    return promiseObj.promise;
   });
 
   onUnmounted$(() => {

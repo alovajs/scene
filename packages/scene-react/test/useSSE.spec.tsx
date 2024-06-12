@@ -1,7 +1,7 @@
 import { undefinedValue } from '@/helper/variables';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { Alova, createAlova } from 'alova';
+import { createAlova } from 'alova';
 import GlobalFetch from 'alova/GlobalFetch';
 import ReactHook from 'alova/react';
 import ES from 'eventsource';
@@ -9,12 +9,9 @@ import { AddressInfo } from 'net';
 import React, { ReactElement } from 'react';
 import { IntervalEventName, IntervalMessage, TriggerEventName, server, send as serverSend } from '~/test/sseServer';
 import { getAlovaInstance, untilCbCalled } from '~/test/utils';
-import { FetchRequestInit } from '~/typings/general';
-import { ReactState, useSSE } from '..';
+import { useSSE } from '..';
 import { AlovaSSEMessageEvent, SSEHookReadyState } from '../typings/general';
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
-
-let alovaInst: Alova<ReactState<any>, unknown, FetchRequestInit, any, any>;
 
 afterEach(() => {
   server.close();
@@ -28,18 +25,18 @@ type AnyMessageType<T = any> = AlovaSSEMessageEvent<T, any, any, any, any, any, 
 const prepareAlova = async () => {
   await server.listen();
   const { port } = server.address() as AddressInfo;
-  alovaInst = createAlova({
+  return createAlova({
     baseURL: `http://127.0.0.1:${port}`,
     statesHook: ReactHook,
     requestAdapter: GlobalFetch(),
     cacheLogger: false
-  }) as any;
+  });
 };
 
 describe('react => useSSE', () => {
   // ! 无初始数据，不立即发送请求
   test('should default not request immediately', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${IntervalEventName}`, data);
 
     let recv = undefinedValue;
@@ -47,10 +44,9 @@ describe('react => useSSE', () => {
     const mockOnFn = jest.fn((event: AnyMessageType) => {
       recv = event.data;
     });
-    // const mockOpenFn = jest.fn();
 
     const Page = () => {
-      const { on, onOpen, data, readyState, send } = useSSE(poster);
+      const { on, onOpen, data, readyState, send, close } = useSSE(poster);
       on(IntervalEventName, mockOnFn);
       onOpen(mockOpenFn);
 
@@ -68,6 +64,11 @@ describe('react => useSSE', () => {
             role="btn"
             onClick={send}>
             send request
+          </button>
+          <button
+            role="close-btn"
+            onClick={close}>
+            close
           </button>
         </div>
       );
@@ -94,11 +95,15 @@ describe('react => useSSE', () => {
       },
       { timeout: 4000 }
     );
+
+    fireEvent.click(screen.getByRole('close-btn'));
+    await untilCbCalled(setTimeout, 200);
+    expect(screen.getByRole('status')).toHaveTextContent('closed');
   });
 
   // ! 有初始数据，不立即发送请求
   test('should get the initial data and NOT send request immediately', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
     const initialData = 'initial-data';
     const testDataA = 'test-data-1';
@@ -178,7 +183,7 @@ describe('react => useSSE', () => {
 
   // ! 有初始数据，立即发送请求
   test('should get the initial data and send request immediately', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
     const initialData = 'initial-data';
     const testDataA = 'test-data-1';
@@ -230,7 +235,7 @@ describe('react => useSSE', () => {
 
   // ! 测试关闭后重新连接
   test('should not trigger handler after close', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
     const testDataA = 'test-data-1';
     const testDataB = 'test-data-2';
@@ -327,7 +332,7 @@ describe('react => useSSE', () => {
 
   // ! 打开失败应该报错，立即发送请求
   test('should throw error then try to connect a not exist url', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get('/not-exist-path', data);
 
     let recv = undefinedValue;
@@ -359,7 +364,7 @@ describe('react => useSSE', () => {
 
     render((<Page />) as ReactElement<any, any>);
 
-    await untilCbCalled(setTimeout, 500);
+    await untilCbCalled(setTimeout, 1500);
     await screen.findByText(/closed/);
 
     expect(screen.getByRole('data')).toBeEmptyDOMElement();
@@ -371,7 +376,7 @@ describe('react => useSSE', () => {
 
   // ! 打开失败应该报错，不立即发送请求
   test('should throw error then try to connect a not exist url (immediate: false)', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get('/not-exist-path', data);
 
     let recv = undefinedValue;
@@ -399,7 +404,7 @@ describe('react => useSSE', () => {
           <span role="data">{data}</span>
           <button
             role="send"
-            onClick={send}>
+            onClick={() => send()}>
             send request
           </button>
         </div>
@@ -441,7 +446,7 @@ describe('react => useSSE', () => {
     const mockResponseErrorFn = jest.fn();
     const mockResponseCompleteFn = jest.fn();
 
-    alovaInst = getAlovaInstance(ReactHook, {
+    const alovaInst = getAlovaInstance(ReactHook, {
       baseURL: `http://localhost:${port}`,
       responseExpect: data => {
         mockResponseFn();
@@ -600,7 +605,7 @@ describe('react => useSSE', () => {
     const mockResponseErrorFn = jest.fn();
     const mockResponseCompleteFn = jest.fn();
 
-    alovaInst = getAlovaInstance(ReactHook, {
+    const alovaInst = getAlovaInstance(ReactHook, {
       baseURL: `http://localhost:${port}`,
       responseExpect: () => {
         mockResponseFn();

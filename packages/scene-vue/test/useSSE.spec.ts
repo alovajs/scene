@@ -1,14 +1,14 @@
+import { usePromise } from '@/helper';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/vue';
-import { Alova, createAlova } from 'alova';
+import { createAlova } from 'alova';
 import GlobalFetch from 'alova/GlobalFetch';
 import VueHook from 'alova/vue';
 import ES from 'eventsource';
 import { AddressInfo } from 'net';
-import { Ref } from 'vue';
 import { IntervalEventName, IntervalMessage, TriggerEventName, server, send as serverSend } from '~/test/sseServer';
 import { untilCbCalled } from '~/test/utils';
-import { AnyFn, FetchRequestInit, SSEHookReadyState } from '~/typings/general';
+import { AnyFn, SSEHookReadyState } from '~/typings/general';
 import { useSSE } from '..';
 import { AlovaSSEMessageEvent } from '../typings/general';
 import CompUseSSEGlobalResponse from './components/use-sse-global-response.vue';
@@ -16,10 +16,12 @@ import CompUseSSE from './components/use-sse.vue';
 
 Object.defineProperty(global, 'EventSource', { value: ES, writable: false });
 
-let alovaInst: Alova<Ref<unknown>, Ref<unknown>, FetchRequestInit, Response, Headers>;
-
 afterEach(() => {
-  server.close();
+  const { promise, resolve } = usePromise();
+  if (server.listening) {
+    server.close(resolve);
+    return promise;
+  }
 });
 
 type AnyMessageType<T = any> = AlovaSSEMessageEvent<T, any, any, any, any, any, any, any>;
@@ -30,7 +32,7 @@ type AnyMessageType<T = any> = AlovaSSEMessageEvent<T, any, any, any, any, any, 
 const prepareAlova = async () => {
   await server.listen();
   const { port } = server.address() as AddressInfo;
-  alovaInst = createAlova({
+  return createAlova({
     baseURL: `http://127.0.0.1:${port}`,
     statesHook: VueHook,
     requestAdapter: GlobalFetch(),
@@ -41,9 +43,9 @@ const prepareAlova = async () => {
 describe('vue => useSSE', () => {
   // ! 无初始数据，不立即发送请求
   test('should default NOT request immediately', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${IntervalEventName}`, data);
-    const { on, onOpen, data, readyState, send } = useSSE(poster);
+    const { on, onOpen, data, readyState, send, close } = useSSE(poster);
     const cb = jest.fn();
     const openCb = jest.fn();
     on(IntervalEventName, cb);
@@ -67,25 +69,26 @@ describe('vue => useSSE', () => {
     await untilCbCalled(setTimeout, 100);
     expect(openCb).toHaveBeenCalled();
 
-    const { data: recvData } = (await untilCbCalled(onIntervalCb)) as AnyMessageType<string>;
+    const { data: recvData } = (await untilCbCalled(onIntervalCb)) as AnyMessageType;
 
     expect(readyState.value).toStrictEqual(SSEHookReadyState.OPEN);
     expect(cb).toHaveBeenCalled();
 
     expect(recvData).toEqual(IntervalMessage);
     expect(data.value).toStrictEqual(IntervalMessage);
+    close();
   }, 3000);
 
   // ! 有初始数据，不立即发送请求
   test('should get the initial data and NOT send request immediately', async () => {
-    await prepareAlova();
+    const alovaInst = await prepareAlova();
     const poster = (data: any) => alovaInst.Get(`/${TriggerEventName}`, data);
     const initialData = {
       id: 9527,
       name: 'Tom',
       age: 18
     };
-    const { onMessage, onOpen, data, readyState, send } = useSSE(poster, { initialData });
+    const { onMessage, onOpen, data, readyState, send, close } = useSSE(poster, { initialData });
 
     const testDataA = 'test-data-1';
     const testDataB = 'test-data-2';
@@ -117,13 +120,14 @@ describe('vue => useSSE', () => {
     await send();
     serverSend(testDataB);
 
-    const { data: recvData } = (await untilCbCalled(onMessage)) as AnyMessageType<string>;
+    const { data: recvData } = (await untilCbCalled(onMessage)) as AnyMessageType;
 
     expect(readyState.value).toStrictEqual(SSEHookReadyState.OPEN);
     expect(cb).toHaveBeenCalled();
 
     expect(recvData).toEqual(testDataB);
     expect(data.value).toStrictEqual(testDataB);
+    close();
   });
 
   // ! 有初始数据，立即发送请求
@@ -145,6 +149,7 @@ describe('vue => useSSE', () => {
     expect(screen.getByRole('data')).toHaveTextContent(initialData);
 
     await screen.findByText(/opened/);
+    await untilCbCalled(setTimeout, 100);
 
     expect(screen.getByRole('onopen').innerHTML).toStrictEqual('1');
 
@@ -291,6 +296,7 @@ describe('vue => useSSE', () => {
     expect(screen.getByRole('data')).toHaveTextContent(initialData);
 
     await screen.findByText(/opened/);
+    await untilCbCalled(setTimeout, 100);
 
     expect(screen.getByRole('onopen').innerHTML).toStrictEqual('1');
     expect(screen.getByRole('on-response').innerHTML).toStrictEqual('0');
@@ -375,6 +381,7 @@ describe('vue => useSSE', () => {
     expect(screen.getByRole('data')).toHaveTextContent(initialData);
 
     await screen.findByText(/opened/);
+    await untilCbCalled(setTimeout, 100);
 
     expect(screen.getByRole('onopen').innerHTML).toStrictEqual('1');
     expect(screen.getByRole('on-response').innerHTML).toStrictEqual('0');
