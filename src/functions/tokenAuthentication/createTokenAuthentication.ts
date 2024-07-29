@@ -62,7 +62,7 @@ export const createClientTokenAuthentication = ({
       if (!isVisitorRole && !isLoginRole) {
         await assignToken(method);
       }
-      onBeforeRequest?.(method);
+      return onBeforeRequest?.(method);
     },
     onResponseRefreshToken: onRespondedHandlers => {
       const respondedRecord = onResponded2Record(onRespondedHandlers);
@@ -113,7 +113,7 @@ export const createServerTokenAuthentication = ({
       if (!isVisitorRole && !isLoginRole) {
         await assignToken(method);
       }
-      onBeforeRequest?.(method);
+      return onBeforeRequest?.(method);
     },
     onResponseRefreshToken: onRespondedHandlers => {
       const respondedRecord = onResponded2Record(onRespondedHandlers);
