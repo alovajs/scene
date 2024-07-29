@@ -1,6 +1,6 @@
 {
   "name": "@alova/scene-vue",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "scenario vue hooks with alova.js",
   "main": "dist/alova-scene.esm.js",
   "module": "dist/alova-scene.esm.js",
